@@ -1,0 +1,471 @@
+"""Database models for the UAE Financial Health Check application."""
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from app.database import Base
+
+
+class User(Base):
+    """User model for authentication and basic user information."""
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, index=True, nullable=False)
+    username = Column(String(100), unique=True, index=True, nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    date_of_birth = Column(DateTime, nullable=True)  # For simple authentication
+    is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    customer_profiles = relationship("CustomerProfile", back_populates="user")
+    survey_responses = relationship("SurveyResponse", back_populates="user")
+
+
+class CustomerProfile(Base):
+    """Customer profile model with personal and demographic information."""
+    __tablename__ = "customer_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Personal Information
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    age = Column(Integer, nullable=False, index=True)
+    gender = Column(String(20), nullable=False)
+    nationality = Column(String(100), nullable=False, index=True)
+    
+    # Location
+    emirate = Column(String(50), nullable=False, index=True)
+    city = Column(String(100), nullable=True)
+    
+    # Employment
+    employment_status = Column(String(50), nullable=False)
+    industry = Column(String(100), nullable=True)
+    position = Column(String(100), nullable=True)
+    
+    # Financial Information
+    monthly_income = Column(String(50), nullable=False)  # Income range
+    household_size = Column(Integer, nullable=False)
+    
+    # Family Information
+    children = Column(String(3), nullable=False, default="No")  # "Yes" or "No"
+    
+    # Additional Information
+    phone_number = Column(String(20), nullable=True)
+    preferred_language = Column(String(10), default="en")
+    
+    # Enhanced demographic fields for advanced features
+    education_level = Column(String(50), nullable=True)
+    years_in_uae = Column(Integer, nullable=True)  # For expats
+    family_status = Column(String(50), nullable=True)
+    housing_status = Column(String(50), nullable=True)  # own, rent, family
+    
+    # Financial context
+    banking_relationship = Column(String(100), nullable=True)
+    investment_experience = Column(String(50), nullable=True)
+    financial_goals = Column(JSON, nullable=True)
+    
+    # Preferences
+    preferred_communication = Column(String(20), default="email")
+    islamic_finance_preference = Column(Boolean, default=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="customer_profiles")
+    survey_responses = relationship("SurveyResponse", back_populates="customer_profile")
+
+
+class SurveyResponse(Base):
+    """Survey response model storing user answers and calculated scores."""
+    __tablename__ = "survey_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    customer_profile_id = Column(Integer, ForeignKey("customer_profiles.id"), nullable=False)
+    
+    # Survey data
+    responses = Column(JSON, nullable=False)  # Store all question responses as JSON
+    
+    # Calculated scores (0-100 scale)
+    overall_score = Column(Float, nullable=False)
+    budgeting_score = Column(Float, nullable=False)
+    savings_score = Column(Float, nullable=False)
+    debt_management_score = Column(Float, nullable=False)
+    financial_planning_score = Column(Float, nullable=False)
+    investment_knowledge_score = Column(Float, nullable=False)
+    
+    # Risk assessment
+    risk_tolerance = Column(String(20), nullable=False)  # low, moderate, high
+    financial_goals = Column(JSON, nullable=True)  # Array of goals
+    
+    # Metadata
+    completion_time = Column(Integer, nullable=True)  # Time in seconds
+    survey_version = Column(String(10), default="1.0")
+    
+    # Enhanced metadata for advanced features
+    question_set_id = Column(String(100), nullable=True)
+    question_variations_used = Column(JSON, nullable=True)
+    demographic_rules_applied = Column(JSON, nullable=True)
+    language = Column(String(5), default="en", index=True)
+    
+    # Company context
+    company_tracker_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=True, index=True)
+    
+    # Report delivery tracking
+    email_sent = Column(Boolean, default=False)
+    pdf_generated = Column(Boolean, default=False)
+    report_downloads = Column(Integer, default=0)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="survey_responses")
+    customer_profile = relationship("CustomerProfile", back_populates="survey_responses")
+    recommendations = relationship("Recommendation", back_populates="survey_response")
+    company_tracker = relationship("CompanyTracker")
+
+
+class Recommendation(Base):
+    """Personalized recommendations based on survey responses."""
+    __tablename__ = "recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    survey_response_id = Column(Integer, ForeignKey("survey_responses.id"), nullable=False)
+    
+    # Recommendation details
+    category = Column(String(50), nullable=False)  # budgeting, savings, debt, etc.
+    title = Column(String(200), nullable=False)
+    description = Column(Text, nullable=False)
+    priority = Column(Integer, default=1)  # 1 = high, 2 = medium, 3 = low
+    
+    # Implementation details
+    action_steps = Column(JSON, nullable=True)  # Array of actionable steps
+    resources = Column(JSON, nullable=True)  # Links, documents, tools
+    expected_impact = Column(String(20), nullable=True)  # high, medium, low
+    
+    # Tracking
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    survey_response = relationship("SurveyResponse", back_populates="recommendations")
+
+
+class CompanyTracker(Base):
+    """Company tracking for HR departments and bulk assessments."""
+    __tablename__ = "company_trackers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Company information
+    company_name = Column(String(200), nullable=False)
+    company_email = Column(String(255), nullable=False)
+    contact_person = Column(String(200), nullable=False)
+    phone_number = Column(String(20), nullable=True)
+    
+    # Tracking details
+    unique_url = Column(String(100), unique=True, index=True, nullable=False)
+    is_active = Column(Boolean, default=True)
+    
+    # Statistics
+    total_assessments = Column(Integer, default=0)
+    average_score = Column(Float, nullable=True)
+    
+    # Settings
+    custom_branding = Column(JSON, nullable=True)  # Logo, colors, etc.
+    notification_settings = Column(JSON, nullable=True)
+    
+    # Enhanced company-specific fields for advanced features
+    question_set_config = Column(JSON, nullable=True)  # Custom question sets
+    demographic_rules_config = Column(JSON, nullable=True)  # Company-specific rules
+    localization_settings = Column(JSON, nullable=True)  # Language preferences
+    report_branding = Column(JSON, nullable=True)  # Custom report branding
+    admin_users = Column(JSON, nullable=True)  # Company admin user IDs
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    company_assessments = relationship("CompanyAssessment", back_populates="company_tracker")
+
+
+class CompanyAssessment(Base):
+    """Individual assessments completed through company tracking."""
+    __tablename__ = "company_assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_tracker_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=False)
+    
+    # Anonymous employee data
+    employee_id = Column(String(100), nullable=True)  # Optional anonymous ID
+    department = Column(String(100), nullable=True)
+    position_level = Column(String(50), nullable=True)  # junior, mid, senior, executive
+    
+    # Assessment data (similar to SurveyResponse but company-focused)
+    responses = Column(JSON, nullable=False)
+    overall_score = Column(Float, nullable=False)
+    category_scores = Column(JSON, nullable=False)  # Detailed breakdown
+    
+    # Metadata
+    completion_time = Column(Integer, nullable=True)
+    ip_address = Column(String(45), nullable=True)  # For basic analytics
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    company_tracker = relationship("CompanyTracker", back_populates="company_assessments")
+
+
+class SimpleSession(Base):
+    """Simple authentication sessions for email + DOB login."""
+    __tablename__ = "simple_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    session_id = Column(String(255), unique=True, index=True, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User")
+
+
+class IncompleteSurvey(Base):
+    """Track incomplete/abandoned survey sessions for follow-up."""
+    __tablename__ = "incomplete_surveys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User information (can be null for guest users)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    customer_profile_id = Column(Integer, ForeignKey("customer_profiles.id"), nullable=True)
+    
+    # Session tracking
+    session_id = Column(String(255), unique=True, index=True, nullable=False)
+    
+    # Survey progress
+    current_step = Column(Integer, default=0)
+    total_steps = Column(Integer, nullable=False)
+    responses = Column(JSON, nullable=True)  # Partial responses
+    
+    # Metadata
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_activity = Column(DateTime(timezone=True), server_default=func.now())
+    abandoned_at = Column(DateTime(timezone=True), nullable=True)  # Set when considered abandoned
+    
+    # Contact information for follow-up (for guest users)
+    email = Column(String(255), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    
+    # Status
+    is_abandoned = Column(Boolean, default=False)
+    follow_up_sent = Column(Boolean, default=False)
+    follow_up_count = Column(Integer, default=0)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User")
+    customer_profile = relationship("CustomerProfile")
+
+
+class AuditLog(Base):
+    """Audit trail for important system actions."""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User and action details
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action = Column(String(100), nullable=False)  # login, survey_complete, profile_update
+    entity_type = Column(String(50), nullable=True)  # user, survey, profile
+    entity_id = Column(Integer, nullable=True)
+    
+    # Additional context
+    details = Column(JSON, nullable=True)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(500), nullable=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User")
+
+
+class QuestionVariation(Base):
+    """Different variations of questions for demographic/company customization."""
+    __tablename__ = "question_variations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    base_question_id = Column(String(50), nullable=False, index=True)  # e.g., "q1_income_stability"
+    variation_name = Column(String(100), nullable=False)  # e.g., "uae_citizen_version"
+    language = Column(String(5), nullable=False, default="en", index=True)
+    
+    # Question content
+    text = Column(Text, nullable=False)
+    options = Column(JSON, nullable=False)  # Array of {value, label}
+    
+    # Targeting rules
+    demographic_rules = Column(JSON, nullable=True)  # Conditions for when to use
+    company_ids = Column(JSON, nullable=True)  # Specific companies
+    
+    # Metadata
+    factor = Column(String(50), nullable=False)
+    weight = Column(Integer, nullable=False)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class DemographicRule(Base):
+    """Rules for determining which questions to show based on demographics."""
+    __tablename__ = "demographic_rules"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Rule conditions (JSON with complex logic)
+    conditions = Column(JSON, nullable=False)
+    # Example: {
+    #   "and": [
+    #     {"nationality": {"eq": "UAE"}},
+    #     {"age": {"gte": 25}},
+    #     {"or": [
+    #       {"emirate": {"in": ["Dubai", "Abu Dhabi"]}},
+    #       {"income": {"gte": "10000"}}
+    #     ]}
+    #   ]
+    # }
+    
+    # Actions to take when rule matches
+    actions = Column(JSON, nullable=False)
+    # Example: {
+    #   "include_questions": ["q1_uae_version", "q2_citizen_version"],
+    #   "exclude_questions": ["q1_expat_version"],
+    #   "add_questions": ["q17_zakat_planning"]
+    # }
+    
+    priority = Column(Integer, default=100, index=True)  # Lower = higher priority
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class LocalizedContent(Base):
+    """Localized content for questions, recommendations, and UI elements."""
+    __tablename__ = "localized_content"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    content_type = Column(String(50), nullable=False, index=True)  # question, recommendation, ui
+    content_id = Column(String(100), nullable=False, index=True)  # question_id, recommendation_id, ui_key
+    language = Column(String(5), nullable=False, index=True)
+    
+    # Content fields
+    title = Column(String(500), nullable=True)
+    text = Column(Text, nullable=False)
+    options = Column(JSON, nullable=True)  # For questions
+    extra_data = Column(JSON, nullable=True)  # Additional localized data
+    
+    # Versioning
+    version = Column(String(10), default="1.0")
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class ReportDelivery(Base):
+    """Track email and PDF report deliveries."""
+    __tablename__ = "report_deliveries"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    survey_response_id = Column(Integer, ForeignKey("survey_responses.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # Delivery details
+    delivery_type = Column(String(20), nullable=False, index=True)  # email, pdf_download
+    delivery_status = Column(String(20), nullable=False, index=True)  # pending, sent, failed, downloaded
+    recipient_email = Column(String(255), nullable=True)
+    
+    # File information
+    file_path = Column(String(500), nullable=True)  # For PDF files
+    file_size = Column(Integer, nullable=True)  # File size in bytes
+    language = Column(String(5), nullable=False, default="en")
+    
+    # Metadata and error handling
+    delivery_metadata = Column(JSON, nullable=True)  # Additional delivery info
+    error_message = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0)
+    
+    # Timestamps
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    survey_response = relationship("SurveyResponse")
+    user = relationship("User")
+    access_logs = relationship("ReportAccessLog", back_populates="report_delivery")
+
+
+class ReportAccessLog(Base):
+    """Track report downloads, views, and email opens."""
+    __tablename__ = "report_access_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    report_delivery_id = Column(Integer, ForeignKey("report_deliveries.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)  # Can be null for anonymous access
+    
+    # Access details
+    access_type = Column(String(20), nullable=False)  # download, view, email_open
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(500), nullable=True)
+    access_metadata = Column(JSON, nullable=True)  # Additional access info
+    
+    # Timestamp
+    accessed_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationships
+    report_delivery = relationship("ReportDelivery", back_populates="access_logs")
+    user = relationship("User")
+
+
+class CompanyQuestionSet(Base):
+    """Custom question sets for specific companies/URLs."""
+    __tablename__ = "company_question_sets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    company_tracker_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=False, index=True)
+    
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    
+    # Question configuration
+    base_questions = Column(JSON, nullable=False)  # Base question IDs
+    custom_questions = Column(JSON, nullable=True)  # Company-specific additions
+    excluded_questions = Column(JSON, nullable=True)  # Questions to skip
+    question_variations = Column(JSON, nullable=True)  # Variation mappings
+    
+    # Demographic rules specific to this company
+    demographic_rules = Column(JSON, nullable=True)
+    
+    # Metadata
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    company_tracker = relationship("CompanyTracker")

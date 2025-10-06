@@ -1,0 +1,1 @@
+"""Customer profile management module."""
