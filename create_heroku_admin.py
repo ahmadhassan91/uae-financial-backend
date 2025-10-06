@@ -20,7 +20,7 @@ def create_admin_user():
             return
         
         # Create admin user with shorter password
-        password = 'admin123'
+        password = 'admin123'[:72]  # Truncate to 72 bytes
         hashed_password = pwd_context.hash(password)
         
         admin_user = User(
