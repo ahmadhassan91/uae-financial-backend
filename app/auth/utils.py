@@ -1,22 +1,40 @@
 """Authentication utilities and JWT token management."""
 from datetime import datetime, timedelta
 from typing import Optional, Union
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 from app.config import settings
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a plain password against its hash using direct bcrypt."""
+    try:
+        # Convert strings to bytes
+        password_bytes = plain_password.encode('utf-8')
+        hash_bytes = hashed_password.encode('utf-8')
+        
+        # Use bcrypt directly to avoid passlib issues
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as e:
+        print(f"Password verification error: {e}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return pwd_context.hash(password)
+    """Hash a password using direct bcrypt."""
+    try:
+        # Ensure password is within bcrypt limits (72 bytes)
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            raise ValueError("Password too long for bcrypt (max 72 bytes)")
+        
+        # Generate salt and hash
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode('utf-8')
+    except Exception as e:
+        print(f"Password hashing error: {e}")
+        raise
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
