@@ -469,3 +469,132 @@ class CompanyQuestionSet(Base):
     
     # Relationships
     company_tracker = relationship("CompanyTracker")
+
+
+class Product(Base):
+    """Product recommendations for Financial Clinic system."""
+    __tablename__ = "products"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Product details
+    name = Column(String(200), nullable=False)
+    category = Column(String(100), nullable=False, index=True)  # Income Stream, Savings Habit, etc.
+    status_level = Column(String(50), nullable=False, index=True)  # at_risk, good, excellent
+    description = Column(Text, nullable=False)
+    
+    # Demographic filters (NULL means "applies to all")
+    nationality_filter = Column(String(50), nullable=True, index=True)  # "Emirati", "Non-Emirati", or NULL
+    gender_filter = Column(String(20), nullable=True, index=True)  # "Male", "Female", or NULL
+    children_filter = Column(String(20), nullable=True)  # "0", "1+", or NULL
+    
+    # Priority and status
+    priority = Column(Integer, default=1, index=True)  # Lower number = higher priority
+    active = Column(Boolean, default=True, index=True)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    def matches_demographics(
+        self,
+        nationality: str,
+        gender: Optional[str] = None,
+        children: int = 0
+    ) -> bool:
+        """
+        Check if product matches user demographics.
+        
+        Args:
+            nationality: User nationality ("Emirati" or "Non-Emirati")
+            gender: User gender ("Male" or "Female")
+            children: Number of children (0-5+)
+            
+        Returns:
+            True if product matches all applicable filters
+        """
+        # Check nationality filter
+        if self.nationality_filter and self.nationality_filter != nationality:
+            return False
+        
+        # Check gender filter
+        if self.gender_filter and gender and self.gender_filter != gender:
+            return False
+        
+        # Check children filter
+        if self.children_filter:
+            if self.children_filter == "0" and children > 0:
+                return False
+            if self.children_filter == "1+" and children == 0:
+                return False
+        
+        return True
+
+
+class FinancialClinicProfile(Base):
+    """
+    Financial Clinic customer profile.
+    Stores demographic and contact information for Financial Clinic assessments.
+    This is separate from CustomerProfile to allow standalone Financial Clinic usage.
+    """
+    __tablename__ = "financial_clinic_profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Required Personal Information
+    name = Column(String(200), nullable=False)
+    date_of_birth = Column(String(20), nullable=False)  # Format: DD/MM/YYYY
+    gender = Column(String(20), nullable=False, index=True)  # Male, Female
+    nationality = Column(String(50), nullable=False, index=True)  # Emirati, Non-Emirati
+    
+    # Family Information
+    children = Column(Integer, nullable=False, default=0, index=True)  # 0-5+
+    
+    # Employment & Income
+    employment_status = Column(String(50), nullable=False, index=True)  # Employed, Self-Employed, Unemployed
+    income_range = Column(String(50), nullable=False, index=True)  # Below 5K, 5K-10K, etc.
+    
+    # Location
+    emirate = Column(String(100), nullable=False, index=True)  # Dubai, Abu Dhabi, etc.
+    
+    # Contact Information
+    email = Column(String(255), nullable=False, index=True)
+    mobile_number = Column(String(20), nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    survey_responses = relationship("FinancialClinicResponse", back_populates="profile")
+
+
+class FinancialClinicResponse(Base):
+    """
+    Financial Clinic survey response.
+    Stores answers and calculated results for Financial Clinic assessments.
+    """
+    __tablename__ = "financial_clinic_responses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    profile_id = Column(Integer, ForeignKey("financial_clinic_profiles.id"), nullable=False, index=True)
+    
+    # Survey Data
+    answers = Column(JSON, nullable=False)  # {question_id: answer_value}
+    
+    # Calculated Results
+    total_score = Column(Float, nullable=False, index=True)  # 0-100
+    status_band = Column(String(50), nullable=False, index=True)  # At Risk, Good, Excellent, etc.
+    category_scores = Column(JSON, nullable=False)  # Detailed category breakdown
+    
+    # Recommendations
+    insights = Column(JSON, nullable=True)  # Selected insights
+    product_recommendations = Column(JSON, nullable=True)  # Recommended products
+    
+    # Metadata
+    questions_answered = Column(Integer, nullable=False)
+    total_questions = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    profile = relationship("FinancialClinicProfile", back_populates="survey_responses")

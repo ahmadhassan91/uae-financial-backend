@@ -22,6 +22,7 @@ from app.admin.question_variation_routes import router as admin_question_variati
 from app.admin.demographic_rule_routes import router as admin_demographic_rule_router
 from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
+from app.surveys.financial_clinic_routes import router as financial_clinic_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -134,6 +135,7 @@ app.include_router(customers_router)
 app.include_router(surveys_router)
 app.include_router(incomplete_surveys_router)
 app.include_router(dynamic_questions_router)
+app.include_router(financial_clinic_router)  # Financial Clinic survey system
 app.include_router(companies_router)
 app.include_router(company_questions_router)
 app.include_router(url_config_router)

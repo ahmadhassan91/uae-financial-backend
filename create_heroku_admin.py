@@ -3,12 +3,12 @@
 
 from app.database import SessionLocal
 from app.models import User
-from passlib.context import CryptContext
+import hashlib
 from datetime import date
 
 def create_admin_user():
     """Create admin user if it doesn't exist."""
-    pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+    # Simple hash for admin user creation
     db = SessionLocal()
     
     try:
@@ -19,9 +19,10 @@ def create_admin_user():
             print('Email: admin@nationalbonds.ae')
             return
         
-        # Create admin user with shorter password
-        password = 'admin123'[:72]  # Truncate to 72 bytes
-        hashed_password = pwd_context.hash(password)
+        # Create admin user with simple hash (for initial setup only)
+        password = 'admin123'
+        # Use a simple hash for now - admin should change password after first login
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
         
         admin_user = User(
             email='admin@nationalbonds.ae',

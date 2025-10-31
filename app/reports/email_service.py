@@ -449,3 +449,365 @@ National Bonds Team
 </body>
 </html>
 """
+    
+    async def send_financial_clinic_report(
+        self,
+        recipient_email: str,
+        result: Dict[str, Any],
+        pdf_content: bytes,
+        profile: Optional[Dict[str, Any]] = None,
+        language: str = "en"
+    ) -> Dict[str, Any]:
+        """
+        Send Financial Clinic assessment report via email.
+        
+        Args:
+            recipient_email: Recipient's email address
+            result: Financial Clinic calculation result
+            pdf_content: PDF report content as bytes
+            profile: Optional user profile information
+            language: Language code ('en' or 'ar')
+            
+        Returns:
+            Dictionary with delivery status
+        """
+        try:
+            # Create email message
+            msg = MIMEMultipart('alternative')
+            
+            # Set email headers
+            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['To'] = recipient_email
+            
+            # Set subject based on language
+            if language == "ar":
+                msg['Subject'] = "تقرير تقييم العيادة المالية"
+            else:
+                msg['Subject'] = "Your Financial Clinic Assessment Report"
+            
+            # Generate email content
+            html_content = self._generate_financial_clinic_email_html(
+                result, profile, language
+            )
+            text_content = self._generate_financial_clinic_email_text(
+                result, profile, language
+            )
+            
+            # Attach HTML and text versions
+            msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+            
+            # Attach PDF report
+            pdf_attachment = MIMEBase('application', 'pdf')
+            pdf_attachment.set_payload(pdf_content)
+            encoders.encode_base64(pdf_attachment)
+            
+            filename = f"financial_clinic_report_{datetime.now().strftime('%Y%m%d')}.pdf"
+            pdf_attachment.add_header(
+                'Content-Disposition',
+                f'attachment; filename="{filename}"'
+            )
+            msg.attach(pdf_attachment)
+            
+            # Send email
+            delivery_result = self._send_email(msg)
+            
+            return {
+                'success': delivery_result['success'],
+                'message': delivery_result['message'],
+                'recipient': recipient_email,
+                'subject': msg['Subject'],
+                'attachment_size': len(pdf_content)
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f"Failed to send email: {str(e)}",
+                'recipient': recipient_email,
+                'error': str(e)
+            }
+    
+    def _generate_financial_clinic_email_html(
+        self,
+        result: Dict[str, Any],
+        profile: Optional[Dict[str, Any]],
+        language: str
+    ) -> str:
+        """Generate HTML email content for Financial Clinic report."""
+        # Use total_score from Financial Clinic (not overall_score)
+        score = result.get('total_score', result.get('overall_score', 0))
+        categories = result.get('category_scores', [])
+        status_band = result.get('status_band', 'Moderate')
+        
+        # Get primary color
+        primary_color = "#1e3a8a"  # National Bonds blue
+        secondary_color = "#059669"  # Green
+        
+        # Determine score color based on score ranges
+        if score >= 81:
+            score_color = "#059669"  # Green - Excellent
+        elif score >= 61:
+            score_color = "#3b82f6"  # Blue - Good  
+        elif score >= 41:
+            score_color = "#f59e0b"  # Amber - Moderate
+        elif score >= 21:
+            score_color = "#ef4444"  # Red - Needs Attention
+        else:
+            score_color = "#991b1b"  # Dark Red - At Risk
+        
+        # Get user name
+        user_name = ""
+        if profile:
+            user_name = profile.get('name', '')
+        
+        # Build category HTML for Arabic
+        categories_html_ar = ""
+        for cat in categories:
+            cat_name_ar = cat.get('category_ar', cat.get('category', ''))
+            cat_score = cat.get('score', 0)
+            cat_color = self._get_category_color(cat.get('status_level', 'moderate'))
+            categories_html_ar += f"""
+                <div class="category">
+                    <span class="category-name">{cat_name_ar}</span>
+                    <span class="category-score" style="color: {cat_color};">{cat_score:.1f}</span>
+                    <div style="clear: both;"></div>
+                </div>
+            """
+        
+        # Build category HTML for English
+        categories_html_en = ""
+        for cat in categories:
+            cat_name = cat.get('category', '')
+            cat_score = cat.get('score', 0)
+            cat_color = self._get_category_color(cat.get('status_level', 'moderate'))
+            categories_html_en += f"""
+                <div class="category">
+                    <span class="category-name">{cat_name}</span>
+                    <span class="category-score" style="color: {cat_color};">{cat_score:.1f}</span>
+                </div>
+            """
+        user_name = ""
+        if profile:
+            user_name = profile.get('name', '')
+        
+        if language == "ar":
+            return f"""
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقرير العيادة المالية</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: {primary_color}; color: white; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .score-box {{ background-color: #f8f9fa; border: 3px solid {score_color}; border-radius: 15px; padding: 30px; margin: 20px 0; text-align: center; }}
+        .score {{ font-size: 64px; font-weight: bold; color: {score_color}; margin: 10px 0; }}
+        .score-label {{ font-size: 18px; color: #666; }}
+        .content {{ padding: 30px 20px; background: white; }}
+        .category {{ background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-right: 4px solid {secondary_color}; }}
+        .category-name {{ font-weight: bold; color: {primary_color}; }}
+        .category-score {{ float: left; font-size: 20px; font-weight: bold; color: {secondary_color}; }}
+        .footer {{ background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px; }}
+        .highlight {{ background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+        ul {{ line-height: 2; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">العيادة المالية</h1>
+            <p style="margin: 10px 0; font-size: 18px;">تقرير التقييم الشخصي</p>
+        </div>
+        
+        <div class="content">
+            <h2>مرحباً {user_name}،</h2>
+            
+            <p>شكراً لك على إكمال تقييم العيادة المالية! نحن متحمسون لمساعدتك في تحسين صحتك المالية.</p>
+            
+            <div class="score-box">
+                <div class="score-label">نتيجتك الإجمالية</div>
+                <div class="score">{score:.1f}</div>
+                <div class="score-label">من 100</div>
+            </div>
+            
+            <div class="highlight">
+                <h3 style="margin-top: 0;">📊 تفصيل النتائج حسب الفئة</h3>
+                {categories_html_ar}
+            </div>
+            
+            <h3>📄 التقرير المرفق يتضمن:</h3>
+            <ul>
+                <li>تحليل تفصيلي لجميع جوانب صحتك المالية</li>
+                <li>توصيات شخصية مبنية على إجاباتك</li>
+                <li>خطوات عملية لتحسين وضعك المالي</li>
+                <li>موارد تعليمية مفيدة</li>
+            </ul>
+            
+            <h3>🎯 الخطوات التالية:</h3>
+            <ul>
+                <li>راجع التقرير المفصل المرفق بعناية</li>
+                <li>حدد أولوياتك المالية</li>
+                <li>ابدأ بتطبيق التوصيات الأكثر تأثيراً</li>
+                <li>احفظ هذا التقرير للرجوع إليه مستقبلاً</li>
+            </ul>
+            
+            <p><strong>تذكر:</strong> تحسين صحتك المالية رحلة تتطلب الصبر والمثابرة. نحن معك في كل خطوة!</p>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 5px 0;">هذا التقرير لأغراض إعلامية فقط</p>
+            <p style="margin: 5px 0; font-weight: bold;">السندات الوطنية</p>
+            <p style="margin: 5px 0;">www.nationalbonds.ae</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+        else:
+            return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Clinic Report</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: {primary_color}; color: white; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .score-box {{ background-color: #f8f9fa; border: 3px solid {score_color}; border-radius: 15px; padding: 30px; margin: 20px 0; text-align: center; }}
+        .score {{ font-size: 64px; font-weight: bold; color: {score_color}; margin: 10px 0; }}
+        .score-label {{ font-size: 18px; color: #666; }}
+        .content {{ padding: 30px 20px; background: white; }}
+        .category {{ background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid {secondary_color}; display: flex; justify-content: space-between; align-items: center; }}
+        .category-name {{ font-weight: bold; color: {primary_color}; }}
+        .category-score {{ font-size: 20px; font-weight: bold; color: {secondary_color}; }}
+        .footer {{ background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px; }}
+        .highlight {{ background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+        ul {{ line-height: 2; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0;">Financial Clinic</h1>
+            <p style="margin: 10px 0; font-size: 18px;">Your Personal Assessment Report</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello {user_name},</h2>
+            
+            <p>Thank you for completing the Financial Clinic assessment! We're excited to help you improve your financial health.</p>
+            
+            <div class="score-box">
+                <div class="score-label">Your Overall Score</div>
+                <div class="score">{score:.1f}</div>
+                <div class="score-label">out of 100</div>
+            </div>
+            
+            <div class="highlight">
+                <h3 style="margin-top: 0;">📊 Category Breakdown</h3>
+                {categories_html_en}
+            </div>
+            
+            <h3>📄 Your Attached Report Includes:</h3>
+            <ul>
+                <li>Detailed analysis of all aspects of your financial health</li>
+                <li>Personalized recommendations based on your responses</li>
+                <li>Actionable steps to improve your financial situation</li>
+                <li>Helpful educational resources</li>
+            </ul>
+            
+            <h3>🎯 Next Steps:</h3>
+            <ul>
+                <li>Review your detailed report attached carefully</li>
+                <li>Identify your financial priorities</li>
+                <li>Start implementing the most impactful recommendations</li>
+                <li>Save this report for future reference</li>
+            </ul>
+            
+            <p><strong>Remember:</strong> Improving your financial health is a journey that requires patience and persistence. We're with you every step of the way!</p>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 5px 0;">This report is for informational purposes only</p>
+            <p style="margin: 5px 0; font-weight: bold;">National Bonds</p>
+            <p style="margin: 5px 0;">www.nationalbonds.ae</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+    
+    def _generate_financial_clinic_email_text(
+        self,
+        result: Dict[str, Any],
+        profile: Optional[Dict[str, Any]],
+        language: str
+    ) -> str:
+        """Generate plain text email content for Financial Clinic report."""
+        score = result.get('total_score', result.get('overall_score', 0))
+        user_name = profile.get('name', '') if profile else ''
+        
+        if language == "ar":
+            return f"""
+مرحباً {user_name},
+
+شكراً لك على إكمال تقييم العيادة المالية!
+
+نتيجتك الإجمالية: {score:.1f}/100
+
+تجد مرفقاً تقريراً مفصلاً يتضمن:
+• تحليل تفصيلي لجميع جوانب صحتك المالية
+• توصيات شخصية مبنية على إجاباتك
+• خطوات عملية لتحسين وضعك المالي
+• موارد تعليمية مفيدة
+
+الخطوات التالية:
+1. راجع التقرير المفصل المرفق بعناية
+2. حدد أولوياتك المالية
+3. ابدأ بتطبيق التوصيات الأكثر تأثيراً
+
+للاستفسارات: www.nationalbonds.ae
+
+مع أطيب التحيات,
+فريق السندات الوطنية
+"""
+        else:
+            return f"""
+Hello {user_name},
+
+Thank you for completing the Financial Clinic assessment!
+
+Your Overall Score: {score:.1f}/100
+
+Please find attached your detailed report including:
+• Comprehensive analysis of all aspects of your financial health
+• Personalized recommendations based on your responses
+• Actionable steps to improve your financial situation
+• Helpful educational resources
+
+Next Steps:
+1. Review your detailed report attached carefully
+2. Identify your financial priorities
+3. Start implementing the most impactful recommendations
+
+For inquiries: www.nationalbonds.ae
+
+Best regards,
+National Bonds Team
+"""
+    
+    def _get_category_color(self, status_level: str) -> str:
+        """Get color code based on status level."""
+        color_map = {
+            'excellent': '#059669',  # Green
+            'good': '#3b82f6',       # Blue
+            'moderate': '#f59e0b',   # Amber
+            'needs_attention': '#ef4444',  # Red
+            'at_risk': '#991b1b'     # Dark Red
+        }
+        return color_map.get(status_level.lower(), '#6b7280')  # Gray as default

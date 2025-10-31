@@ -885,3 +885,376 @@ class PDFReportService:
                 self.children = data.get('children', 'No')
         
         return MockCustomerProfile(data)
+    
+    def generate_financial_clinic_pdf(
+        self,
+        result: Dict[str, Any],
+        profile: Optional[Dict[str, Any]] = None,
+        language: str = "en"
+    ) -> bytes:
+        """
+        Generate PDF report for Financial Clinic assessment matching the results page.
+        
+        Args:
+            result: Financial Clinic calculation result with scores and categories
+            profile: Optional user profile information
+            language: Language code ('en' or 'ar')
+            
+        Returns:
+            PDF content as bytes
+        """
+        buffer = io.BytesIO()
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            rightMargin=60,
+            leftMargin=60,
+            topMargin=60,
+            bottomMargin=50
+        )
+        
+        # Container for the 'Flowable' objects
+        elements = []
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        
+        # Create custom styles to match the web page
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=28,
+            textColor=colors.HexColor('#1e3a8a'),
+            spaceAfter=10,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold'
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#6b7280'),
+            spaceAfter=25,
+            alignment=TA_CENTER
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=18,
+            textColor=colors.HexColor('#1e3a8a'),
+            spaceAfter=15,
+            spaceBefore=20,
+            fontName='Helvetica-Bold'
+        )
+        
+        body_style = ParagraphStyle(
+            'CustomBody',
+            parent=styles['BodyText'],
+            fontSize=10,
+            spaceAfter=8,
+            leading=14,
+            textColor=colors.HexColor('#374151')
+        )
+        
+        insight_style = ParagraphStyle(
+            'InsightStyle',
+            parent=styles['BodyText'],
+            fontSize=10,
+            spaceAfter=8,
+            leading=14,
+            leftIndent=20,
+            textColor=colors.HexColor('#1e3a8a')
+        )
+        
+        # Title Section
+        if language == "ar":
+            title_text = "نتيجة صحتك المالية"
+            subtitle_text = "بناءً على إجاباتك، إليك تقييمك المالي الشامل"
+        else:
+            title_text = "Your Financial Health Score"
+            subtitle_text = "Based on your responses, here's your comprehensive financial assessment"
+        
+        elements.append(Paragraph(title_text, title_style))
+        elements.append(Paragraph(subtitle_text, subtitle_style))
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Main Score Card - matching the gradient card on the web page
+        total_score = result.get('total_score', 0)
+        status_band = result.get('status_band', 'Moderate')
+        
+        status_translations = {
+            'Excellent': {'en': 'Excellent', 'ar': 'ممتاز'},
+            'Good': {'en': 'Good', 'ar': 'جيد'},
+            'Moderate': {'en': 'Moderate', 'ar': 'معتدل'},
+            'Needs Immediate Attention': {'en': 'Needs Attention', 'ar': 'يحتاج إلى اهتمام'},
+            'At Risk': {'en': 'At Risk', 'ar': 'في خطر'}
+        }
+        
+        status_display = status_translations.get(status_band, {'en': status_band, 'ar': status_band})
+        status_text = status_display['ar'] if language == 'ar' else status_display['en']
+        
+        score_color = self._get_clinic_score_color(total_score)
+        
+        # Create score style with proper spacing
+        score_style = ParagraphStyle(
+            'ScoreStyle', 
+            fontSize=48, 
+            textColor=score_color, 
+            alignment=TA_CENTER, 
+            fontName='Helvetica-Bold',
+            leading=50,  # Line height
+            spaceAfter=5
+        )
+        
+        score_label_style = ParagraphStyle(
+            'ScoreLabelStyle', 
+            fontSize=11, 
+            alignment=TA_CENTER, 
+            textColor=colors.HexColor('#6b7280'),
+            spaceAfter=15
+        )
+        
+        status_style = ParagraphStyle(
+            'StatusStyle', 
+            fontSize=16, 
+            alignment=TA_CENTER, 
+            textColor=score_color, 
+            fontName='Helvetica-Bold',
+            spaceAfter=20
+        )
+        
+        desc_style = ParagraphStyle(
+            'DescStyle', 
+            fontSize=10, 
+            alignment=TA_CENTER, 
+            textColor=colors.HexColor('#6b7280'),
+            leading=14
+        )
+        
+        score_card_data = [
+            [Paragraph(f"<b>{round(total_score)}</b>", score_style)],
+            [Paragraph(language == 'ar' and 'من 100' or 'out of 100', score_label_style)],
+            [Paragraph(f"<b>{status_text}</b>", status_style)],
+            [Paragraph(
+                language == 'ar' and 'نتيجتك تعكس صحتك المالية الحالية عبر 6 مجالات رئيسية' or 
+                'Your score reflects your current financial wellness across 6 key areas',
+                desc_style
+            )]
+        ]
+        
+        score_table = Table(score_card_data, colWidths=[5*inch])
+        score_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
+            ('TOPPADDING', (0, 0), (-1, 0), 25),  # Extra top padding for score
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),  # Bottom padding for score
+            ('TOPPADDING', (0, 1), (-1, 1), 0),   # No top padding for "out of 100"
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 8), # Bottom padding for "out of 100"
+            ('TOPPADDING', (0, 2), (-1, 2), 8),   # Top padding for status
+            ('BOTTOMPADDING', (0, 2), (-1, 2), 8), # Bottom padding for status
+            ('TOPPADDING', (0, 3), (-1, 3), 8),   # Top padding for description
+            ('BOTTOMPADDING', (0, 3), (-1, 3), 25), # Extra bottom padding for description
+            ('LEFTPADDING', (0, 0), (-1, -1), 20),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 20),
+        ]))
+        
+        elements.append(score_table)
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Category Breakdown - matching the web page structure
+        category_header = language == 'ar' and "تفصيل الفئات" or "Category Breakdown"
+        elements.append(Paragraph(category_header, heading_style))
+        
+        category_scores = result.get('category_scores', {})
+        
+        # Category name translations
+        category_translations = {
+            'Income Stream': {'en': 'Income Stream', 'ar': 'تدفق الدخل'},
+            'Savings Habit': {'en': 'Savings Habit', 'ar': 'عادات الادخار'},
+            'Emergency Savings': {'en': 'Emergency Savings', 'ar': 'مدخرات الطوارئ'},
+            'Debt Management': {'en': 'Debt Management', 'ar': 'إدارة الديون'},
+            'Retirement Planning': {'en': 'Retirement Planning', 'ar': 'التخطيط للتقاعد'},
+            'Protecting Your Family': {'en': 'Protecting Your Family', 'ar': 'حماية عائلتك'}
+        }
+        
+        # Create category table matching the web cards
+        cat_table_data = []
+        cat_table_data.append([
+            Paragraph('<b>' + (language == 'ar' and 'الفئة' or 'Category') + '</b>', body_style),
+            Paragraph('<b>' + (language == 'ar' and 'النتيجة' or 'Score') + '</b>', body_style),
+            Paragraph('<b>' + (language == 'ar' and 'الحالة' or 'Status') + '</b>', body_style)
+        ])
+        
+        # Handle category_scores as either list or dict
+        if isinstance(category_scores, list):
+            # List format from Financial Clinic
+            for cat_data in category_scores:
+                display_name = cat_data.get('category_ar') if language == 'ar' else cat_data.get('category', '')
+                cat_score = cat_data.get('score', 0)
+                cat_max = cat_data.get('max_possible', 100)
+                cat_status = cat_data.get('status_level', 'moderate')
+                
+                status_trans = status_translations.get(cat_status.title(), {'en': cat_status, 'ar': cat_status})
+                status_display = status_trans['ar'] if language == 'ar' else status_trans['en']
+                
+                cat_table_data.append([
+                    Paragraph(display_name, body_style),
+                    Paragraph(f"{round(cat_score)} / {round(cat_max)}", body_style),
+                    Paragraph(status_display, body_style)
+                ])
+        else:
+            # Dict format (legacy)
+            for cat_name, cat_data in category_scores.items():
+                cat_translation = category_translations.get(cat_name, {'en': cat_name, 'ar': cat_name})
+                display_name = cat_translation['ar'] if language == 'ar' else cat_translation['en']
+                
+                cat_score = cat_data.get('score', 0)
+                cat_max = cat_data.get('max_possible', 100)
+                cat_status = cat_data.get('status_level', 'Moderate')
+                
+                status_trans = status_translations.get(cat_status, {'en': cat_status, 'ar': cat_status})
+                status_display = status_trans['ar'] if language == 'ar' else status_trans['en']
+                
+                cat_table_data.append([
+                    Paragraph(display_name, body_style),
+                    Paragraph(f"{round(cat_score)} / {round(cat_max)}", body_style),
+                    Paragraph(status_display, body_style)
+                ])
+        
+        cat_table = Table(cat_table_data, colWidths=[3*inch, 1.2*inch, 1.3*inch])
+        cat_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f9fafb')),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        
+        elements.append(cat_table)
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Personalized Insights - matching the web page
+        insights = result.get('insights', [])
+        if insights:
+            insights_header = language == 'ar' and "رؤى مخصصة" or "Personalized Insights"
+            elements.append(Paragraph(insights_header, heading_style))
+            
+            for insight in insights[:5]:  # Limit to 5 as on web page
+                insight_text = insight.get('text', str(insight))
+                elements.append(Paragraph(f"• {insight_text}", insight_style))
+                elements.append(Spacer(1, 0.05*inch))
+            
+            elements.append(Spacer(1, 0.2*inch))
+        
+        # Understanding Your Score section
+        understanding_header = language == 'ar' and "فهم نتيجتك" or "Understanding Your Score"
+        elements.append(Paragraph(understanding_header, heading_style))
+        
+        understanding_text = (language == 'ar' and 
+            'تتراوح درجة الصحة المالية من 0 إلى 100 نقطة:' or
+            'Financial Health Score ranges from 0 to 100 points:')
+        elements.append(Paragraph(understanding_text, body_style))
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # Score bands table
+        bands_data = []
+        if language == 'ar':
+            bands_data = [
+                ['0-20', 'في خطر', 'ثغرات مالية عالية. يلزم اتخاذ إجراءات فورية'],
+                ['21-40', 'يحتاج إلى اهتمام', 'صحة مالية غير مستقرة'],
+                ['41-60', 'معتدل', 'أساس لائق مع مجال للتحسين'],
+                ['61-80', 'جيد', 'على المسار الصحيح'],
+                ['81-100', 'ممتاز', 'عادات مالية قوية جداً']
+            ]
+        else:
+            bands_data = [
+                ['0-20', 'At Risk', 'High financial vulnerability. Immediate action needed'],
+                ['21-40', 'Needs Attention', 'Unstable financial health'],
+                ['41-60', 'Moderate', 'Decent foundation with room for improvement'],
+                ['61-80', 'Good', 'On the right track'],
+                ['81-100', 'Excellent', 'Very strong financial habits']
+            ]
+        
+        bands_table = Table(bands_data, colWidths=[0.8*inch, 1.5*inch, 3.2*inch])
+        bands_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        
+        elements.append(bands_table)
+        elements.append(Spacer(1, 0.4*inch))
+        
+        # Footer note matching web page
+        footer_note = (language == 'ar' and
+            'هذه التوصيات مصممة خصيصاً بناءً على ملفك الشخصي وإجاباتك' or
+            'These recommendations are tailored based on your profile and responses')
+        elements.append(Paragraph(footer_note, ParagraphStyle('FooterNote', fontSize=9, textColor=colors.HexColor('#6b7280'), alignment=TA_CENTER)))
+        
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Disclaimer
+        disclaimer_style = ParagraphStyle(
+            'Disclaimer',
+            fontSize=8,
+            textColor=colors.HexColor('#9ca3af'),
+            alignment=TA_CENTER,
+            leading=11
+        )
+        
+        disclaimer_text = (language == 'ar' and
+            '<i>هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية.<br/>' +
+            'للحصول على مشورة مالية شخصية، يرجى استشارة مستشار مالي مؤهل.</i>' or
+            '<i>This report is for informational purposes only and does not constitute financial advice.<br/>' +
+            'For personalized financial guidance, please consult a qualified financial advisor.</i>')
+        
+        elements.append(Paragraph(disclaimer_text, disclaimer_style))
+        
+        # Build PDF
+        doc.build(elements, onFirstPage=self._add_clinic_page_number, onLaterPages=self._add_clinic_page_number)
+        
+        # Get PDF data
+        pdf_data = buffer.getvalue()
+        buffer.close()
+        
+        return pdf_data
+    
+    def _get_clinic_score_color(self, score: float) -> colors.Color:
+        """Get color based on score for Financial Clinic - matching web page colors."""
+        if score >= 81:
+            return colors.HexColor('#059669')  # Green - Excellent
+        elif score >= 61:
+            return colors.HexColor('#2563eb')  # Blue - Good
+        elif score >= 41:
+            return colors.HexColor('#eab308')  # Yellow - Moderate
+        elif score >= 21:
+            return colors.HexColor('#f97316')  # Orange - Needs Attention
+        else:
+            return colors.HexColor('#dc2626')  # Red - At Risk
+    
+    def _add_clinic_page_number(self, canvas_obj, doc):
+        """Add page number to the footer for Financial Clinic reports."""
+        page_num = canvas_obj.getPageNumber()
+        text = f"Page {page_num}"
+        canvas_obj.setFont('Helvetica', 9)
+        canvas_obj.setFillColor(colors.grey)
+        canvas_obj.drawRightString(7.5*inch, 0.5*inch, text)
+        canvas_obj.drawString(1*inch, 0.5*inch, f"Generated on {datetime.now().strftime('%B %d, %Y')}")

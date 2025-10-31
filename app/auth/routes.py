@@ -244,7 +244,7 @@ async def simple_login(
         AuditLog.created_at > datetime.utcnow() - timedelta(minutes=15)
     ).count()
     
-    if recent_attempts >= 5:
+    if recent_attempts >= 20:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many failed attempts. Please try again later."
