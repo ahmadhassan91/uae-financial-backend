@@ -15,10 +15,91 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.legends import Legend
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
+import io
+
+# Try to import Arabic reshaping libraries
+try:
+    from arabic_reshaper import reshape
+    from bidi.algorithm import get_display
+    ARABIC_SUPPORT = True
+except ImportError:
+    ARABIC_SUPPORT = False
 
 from app.models import SurveyResponse, CustomerProfile, Recommendation
 from app.surveys.scoring import SurveyScorer
 from app.surveys.recommendations import RecommendationEngine
+
+
+def process_arabic_text(text: str) -> str:
+    """
+    Process Arabic text for proper display in PDFs.
+    
+    Args:
+        text: Arabic text string
+        
+    Returns:
+        Processed text ready for PDF rendering
+    """
+    if not ARABIC_SUPPORT:
+        # Return original text if libraries not available
+        return text
+    
+    try:
+        # Reshape Arabic text (handles character joining)
+        reshaped_text = reshape(text)
+        # Apply bidirectional algorithm for RTL display
+        bidi_text = get_display(reshaped_text)
+        return bidi_text
+    except Exception as e:
+        # Fallback to original text if processing fails
+        return text
+
+
+def setup_arabic_fonts():
+    """
+    Register Arabic-compatible fonts for PDF generation.
+    
+    Note: This tries to use system fonts. If not available,
+    falls back to standard fonts (which won't display Arabic correctly).
+    """
+    try:
+        # Try to register DejaVu Sans (widely available and supports Arabic)
+        # Common locations on different systems
+        font_paths = [
+            '/System/Library/Fonts/Supplemental/DejaVuSans.ttf',  # macOS
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',    # Linux
+            'C:\\Windows\\Fonts\\DejaVuSans.ttf',                 # Windows
+            '/Library/Fonts/DejaVuSans.ttf',                       # macOS alternative
+        ]
+        
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont('Arabic', font_path))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', font_path))
+                return True
+        
+        # If DejaVu not found, try Arial Unicode
+        arial_paths = [
+            '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
+            'C:\\Windows\\Fonts\\ARIALUNI.TTF',
+        ]
+        
+        for font_path in arial_paths:
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont('Arabic', font_path))
+                pdfmetrics.registerFont(TTFont('Arabic-Bold', font_path))
+                return True
+                
+        return False
+    except Exception:
+        return False
+
+
+# Try to setup Arabic fonts on module load
+ARABIC_FONTS_AVAILABLE = setup_arabic_fonts()
 
 
 class BrandingConfig:
@@ -921,6 +1002,16 @@ class PDFReportService:
         # Get styles
         styles = getSampleStyleSheet()
         
+        # Determine font based on language
+        if language == "ar" and ARABIC_FONTS_AVAILABLE:
+            title_font = 'Arabic-Bold'
+            body_font = 'Arabic'
+            alignment = TA_RIGHT  # RTL for Arabic
+        else:
+            title_font = 'Helvetica-Bold'
+            body_font = 'Helvetica'
+            alignment = TA_LEFT
+        
         # Create custom styles to match the web page
         title_style = ParagraphStyle(
             'CustomTitle',
@@ -929,7 +1020,7 @@ class PDFReportService:
             textColor=colors.HexColor('#1e3a8a'),
             spaceAfter=10,
             alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
+            fontName=title_font
         )
         
         subtitle_style = ParagraphStyle(
@@ -938,7 +1029,8 @@ class PDFReportService:
             fontSize=12,
             textColor=colors.HexColor('#6b7280'),
             spaceAfter=25,
-            alignment=TA_CENTER
+            alignment=TA_CENTER,
+            fontName=body_font
         )
         
         heading_style = ParagraphStyle(
@@ -948,7 +1040,8 @@ class PDFReportService:
             textColor=colors.HexColor('#1e3a8a'),
             spaceAfter=15,
             spaceBefore=20,
-            fontName='Helvetica-Bold'
+            fontName=title_font,
+            alignment=alignment
         )
         
         body_style = ParagraphStyle(
@@ -957,7 +1050,9 @@ class PDFReportService:
             fontSize=10,
             spaceAfter=8,
             leading=14,
-            textColor=colors.HexColor('#374151')
+            textColor=colors.HexColor('#374151'),
+            fontName=body_font,
+            alignment=alignment
         )
         
         insight_style = ParagraphStyle(
@@ -966,14 +1061,17 @@ class PDFReportService:
             fontSize=10,
             spaceAfter=8,
             leading=14,
-            leftIndent=20,
-            textColor=colors.HexColor('#1e3a8a')
+            leftIndent=20 if language != "ar" else 0,
+            rightIndent=0 if language != "ar" else 20,
+            textColor=colors.HexColor('#1e3a8a'),
+            fontName=body_font,
+            alignment=alignment
         )
         
         # Title Section
         if language == "ar":
-            title_text = "نتيجة صحتك المالية"
-            subtitle_text = "بناءً على إجاباتك، إليك تقييمك المالي الشامل"
+            title_text = process_arabic_text("نتيجة صحتك المالية")
+            subtitle_text = process_arabic_text("بناءً على إجاباتك، إليك تقييمك المالي الشامل")
         else:
             title_text = "Your Financial Health Score"
             subtitle_text = "Based on your responses, here's your comprehensive financial assessment"
@@ -995,7 +1093,8 @@ class PDFReportService:
         }
         
         status_display = status_translations.get(status_band, {'en': status_band, 'ar': status_band})
-        status_text = status_display['ar'] if language == 'ar' else status_display['en']
+        status_text_raw = status_display['ar'] if language == 'ar' else status_display['en']
+        status_text = process_arabic_text(status_text_raw) if language == 'ar' else status_text_raw
         
         score_color = self._get_clinic_score_color(total_score)
         
@@ -1015,7 +1114,8 @@ class PDFReportService:
             fontSize=11, 
             alignment=TA_CENTER, 
             textColor=colors.HexColor('#6b7280'),
-            spaceAfter=15
+            spaceAfter=15,
+            fontName=body_font
         )
         
         status_style = ParagraphStyle(
@@ -1023,7 +1123,7 @@ class PDFReportService:
             fontSize=16, 
             alignment=TA_CENTER, 
             textColor=score_color, 
-            fontName='Helvetica-Bold',
+            fontName=title_font,
             spaceAfter=20
         )
         
@@ -1032,18 +1132,19 @@ class PDFReportService:
             fontSize=10, 
             alignment=TA_CENTER, 
             textColor=colors.HexColor('#6b7280'),
-            leading=14
+            leading=14,
+            fontName=body_font
         )
+        
+        # Process Arabic text for all labels
+        label_text = process_arabic_text('من 100') if language == 'ar' else 'out of 100'
+        desc_text = process_arabic_text('نتيجتك تعكس صحتك المالية الحالية عبر 6 مجالات رئيسية') if language == 'ar' else 'Your score reflects your current financial wellness across 6 key areas'
         
         score_card_data = [
             [Paragraph(f"<b>{round(total_score)}</b>", score_style)],
-            [Paragraph(language == 'ar' and 'من 100' or 'out of 100', score_label_style)],
+            [Paragraph(label_text, score_label_style)],
             [Paragraph(f"<b>{status_text}</b>", status_style)],
-            [Paragraph(
-                language == 'ar' and 'نتيجتك تعكس صحتك المالية الحالية عبر 6 مجالات رئيسية' or 
-                'Your score reflects your current financial wellness across 6 key areas',
-                desc_style
-            )]
+            [Paragraph(desc_text, desc_style)]
         ]
         
         score_table = Table(score_card_data, colWidths=[5*inch])
@@ -1068,8 +1169,8 @@ class PDFReportService:
         elements.append(Spacer(1, 0.4*inch))
         
         # Category Breakdown - matching the web page structure
-        category_header = language == 'ar' and "تفصيل الفئات" or "Category Breakdown"
-        elements.append(Paragraph(category_header, heading_style))
+        category_header_text = process_arabic_text("تفصيل الفئات") if language == 'ar' else "Category Breakdown"
+        elements.append(Paragraph(category_header_text, heading_style))
         
         category_scores = result.get('category_scores', {})
         
@@ -1084,24 +1185,34 @@ class PDFReportService:
         }
         
         # Create category table matching the web cards
+        # Create header style with proper font
+        header_style = ParagraphStyle(
+            'HeaderStyle',
+            parent=body_style,
+            fontName=title_font
+        )
+        
         cat_table_data = []
-        cat_table_data.append([
-            Paragraph('<b>' + (language == 'ar' and 'الفئة' or 'Category') + '</b>', body_style),
-            Paragraph('<b>' + (language == 'ar' and 'النتيجة' or 'Score') + '</b>', body_style),
-            Paragraph('<b>' + (language == 'ar' and 'الحالة' or 'Status') + '</b>', body_style)
-        ])
+        header_row = [
+            Paragraph('<b>' + (process_arabic_text('الفئة') if language == 'ar' else 'Category') + '</b>', header_style),
+            Paragraph('<b>' + (process_arabic_text('النتيجة') if language == 'ar' else 'Score') + '</b>', header_style),
+            Paragraph('<b>' + (process_arabic_text('الحالة') if language == 'ar' else 'Status') + '</b>', header_style)
+        ]
+        cat_table_data.append(header_row)
         
         # Handle category_scores as either list or dict
         if isinstance(category_scores, list):
             # List format from Financial Clinic
             for cat_data in category_scores:
-                display_name = cat_data.get('category_ar') if language == 'ar' else cat_data.get('category', '')
+                display_name_raw = cat_data.get('category_ar') if language == 'ar' else cat_data.get('category', '')
+                display_name = process_arabic_text(display_name_raw) if language == 'ar' else display_name_raw
                 cat_score = cat_data.get('score', 0)
                 cat_max = cat_data.get('max_possible', 100)
                 cat_status = cat_data.get('status_level', 'moderate')
                 
                 status_trans = status_translations.get(cat_status.title(), {'en': cat_status, 'ar': cat_status})
-                status_display = status_trans['ar'] if language == 'ar' else status_trans['en']
+                status_display_raw = status_trans['ar'] if language == 'ar' else status_trans['en']
+                status_display = process_arabic_text(status_display_raw) if language == 'ar' else status_display_raw
                 
                 cat_table_data.append([
                     Paragraph(display_name, body_style),
@@ -1149,69 +1260,110 @@ class PDFReportService:
         # Personalized Insights - matching the web page
         insights = result.get('insights', [])
         if insights:
-            insights_header = language == 'ar' and "رؤى مخصصة" or "Personalized Insights"
-            elements.append(Paragraph(insights_header, heading_style))
+            insights_header_text = process_arabic_text("رؤى مخصصة") if language == 'ar' else "Personalized Insights"
+            elements.append(Paragraph(insights_header_text, heading_style))
             
             for insight in insights[:5]:  # Limit to 5 as on web page
                 # Handle both string and dict formats
                 if isinstance(insight, dict):
-                    insight_text = insight.get('text', str(insight))
+                    insight_text_raw = insight.get('text', str(insight))
                 else:
-                    insight_text = str(insight)
+                    insight_text_raw = str(insight)
+                
+                # Process Arabic text if needed
+                insight_text = process_arabic_text(insight_text_raw) if language == 'ar' else insight_text_raw
                 elements.append(Paragraph(f"• {insight_text}", insight_style))
                 elements.append(Spacer(1, 0.05*inch))
             
             elements.append(Spacer(1, 0.2*inch))
         
         # Understanding Your Score section
-        understanding_header = language == 'ar' and "فهم نتيجتك" or "Understanding Your Score"
-        elements.append(Paragraph(understanding_header, heading_style))
+        understanding_header_text = process_arabic_text("فهم نتيجتك") if language == 'ar' else "Understanding Your Score"
+        elements.append(Paragraph(understanding_header_text, heading_style))
         
-        understanding_text = (language == 'ar' and 
-            'تتراوح درجة الصحة المالية من 0 إلى 100 نقطة:' or
-            'Financial Health Score ranges from 0 to 100 points:')
+        understanding_text_raw = 'تتراوح درجة الصحة المالية من 0 إلى 100 نقطة:' if language == 'ar' else 'Financial Health Score ranges from 0 to 100 points:'
+        understanding_text = process_arabic_text(understanding_text_raw) if language == 'ar' else understanding_text_raw
         elements.append(Paragraph(understanding_text, body_style))
         elements.append(Spacer(1, 0.15*inch))
         
-        # Score bands table
+        # Score bands table - create with Paragraph objects for proper font support
         bands_data = []
         if language == 'ar':
-            bands_data = [
+            # Create a table style for Arabic content
+            table_cell_style = ParagraphStyle(
+                'TableCellArabic',
+                parent=body_style,
+                fontSize=9,
+                fontName=body_font,
+                alignment=alignment
+            )
+            
+            bands_raw = [
                 ['0-20', 'في خطر', 'ثغرات مالية عالية. يلزم اتخاذ إجراءات فورية'],
                 ['21-40', 'يحتاج إلى اهتمام', 'صحة مالية غير مستقرة'],
                 ['41-60', 'معتدل', 'أساس لائق مع مجال للتحسين'],
                 ['61-80', 'جيد', 'على المسار الصحيح'],
                 ['81-100', 'ممتاز', 'عادات مالية قوية جداً']
             ]
+            
+            # Process each cell
+            for row in bands_raw:
+                processed_row = [
+                    Paragraph(row[0], table_cell_style),  # Range doesn't need processing
+                    Paragraph(process_arabic_text(row[1]), table_cell_style),  # Status
+                    Paragraph(process_arabic_text(row[2]), table_cell_style)   # Description
+                ]
+                bands_data.append(processed_row)
         else:
-            bands_data = [
+            table_cell_style = ParagraphStyle(
+                'TableCellEnglish',
+                parent=body_style,
+                fontSize=9,
+                fontName='Helvetica'
+            )
+            
+            bands_raw = [
                 ['0-20', 'At Risk', 'High financial vulnerability. Immediate action needed'],
                 ['21-40', 'Needs Attention', 'Unstable financial health'],
                 ['41-60', 'Moderate', 'Decent foundation with room for improvement'],
                 ['61-80', 'Good', 'On the right track'],
                 ['81-100', 'Excellent', 'Very strong financial habits']
             ]
+            
+            for row in bands_raw:
+                processed_row = [
+                    Paragraph(row[0], table_cell_style),
+                    Paragraph(row[1], table_cell_style),
+                    Paragraph(row[2], table_cell_style)
+                ]
+                bands_data.append(processed_row)
         
         bands_table = Table(bands_data, colWidths=[0.8*inch, 1.5*inch, 3.2*inch])
         bands_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT' if language != 'ar' else 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('TOPPADDING', (0, 0), (-1, -1), 8),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
             ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
         ]))
         
         elements.append(bands_table)
         elements.append(Spacer(1, 0.4*inch))
         
         # Footer note matching web page
-        footer_note = (language == 'ar' and
-            'هذه التوصيات مصممة خصيصاً بناءً على ملفك الشخصي وإجاباتك' or
-            'These recommendations are tailored based on your profile and responses')
-        elements.append(Paragraph(footer_note, ParagraphStyle('FooterNote', fontSize=9, textColor=colors.HexColor('#6b7280'), alignment=TA_CENTER)))
+        footer_note_raw = 'هذه التوصيات مصممة خصيصاً بناءً على ملفك الشخصي وإجاباتك' if language == 'ar' else 'These recommendations are tailored based on your profile and responses'
+        footer_note = process_arabic_text(footer_note_raw) if language == 'ar' else footer_note_raw
+        
+        footer_note_style = ParagraphStyle(
+            'FooterNote',
+            fontSize=9,
+            textColor=colors.HexColor('#6b7280'),
+            alignment=TA_CENTER,
+            fontName=body_font
+        )
+        elements.append(Paragraph(footer_note, footer_note_style))
         
         elements.append(Spacer(1, 0.2*inch))
         
@@ -1221,14 +1373,19 @@ class PDFReportService:
             fontSize=8,
             textColor=colors.HexColor('#9ca3af'),
             alignment=TA_CENTER,
-            leading=11
+            leading=11,
+            fontName=body_font
         )
         
-        disclaimer_text = (language == 'ar' and
-            '<i>هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية.<br/>' +
-            'للحصول على مشورة مالية شخصية، يرجى استشارة مستشار مالي مؤهل.</i>' or
-            '<i>This report is for informational purposes only and does not constitute financial advice.<br/>' +
-            'For personalized financial guidance, please consult a qualified financial advisor.</i>')
+        if language == 'ar':
+            disclaimer_line1 = process_arabic_text('هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية.')
+            disclaimer_line2 = process_arabic_text('للحصول على مشورة مالية شخصية، يرجى استشارة مستشار مالي مؤهل.')
+            disclaimer_text = f'<i>{disclaimer_line1}<br/>{disclaimer_line2}</i>'
+        else:
+            disclaimer_text = (
+                '<i>This report is for informational purposes only and does not constitute financial advice.<br/>' +
+                'For personalized financial guidance, please consult a qualified financial advisor.</i>'
+            )
         
         elements.append(Paragraph(disclaimer_text, disclaimer_style))
         
