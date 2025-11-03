@@ -462,7 +462,8 @@ async def send_email_report(
         Confirmation of email sent
     """
     try:
-        from app.reports.email_service import EmailService
+        from app.reports.email_service import EmailReportService
+        from app.reports.report_generation_service import ReportGenerationService
         from app.models import FinancialClinicResponse
         import re
         
@@ -471,7 +472,8 @@ async def send_email_report(
         if not re.match(email_pattern, request.email):
             raise HTTPException(status_code=400, detail="Invalid email address")
         
-        email_service = EmailService(db)
+        email_service = EmailReportService()
+        report_service = ReportGenerationService()
         
         # Check if email service has Financial Clinic method
         if not hasattr(email_service, 'send_financial_clinic_report'):
@@ -483,7 +485,7 @@ async def send_email_report(
                 "note": "The Financial Clinic email template needs to be added to the email service."
             }
         
-        # If survey_response_id provided, load from database
+        # Prepare survey data
         if request.survey_response_id:
             response = db.query(FinancialClinicResponse).filter(
                 FinancialClinicResponse.id == request.survey_response_id
@@ -492,35 +494,58 @@ async def send_email_report(
             if not response:
                 raise HTTPException(status_code=404, detail="Survey response not found")
             
-            # Send email using existing service
-            await email_service.send_financial_clinic_report(
-                email=request.email,
-                survey_response=response,
-                language=request.language
-            )
+            # Convert Financial Clinic response to format expected by services
+            survey_data = {
+                'profile': response.profile.__dict__ if response.profile else {},
+                'result': {
+                    'total_score': response.total_score,
+                    'status_band': response.status_band,
+                    'status_level': response.status_level,
+                    'category_scores': response.category_scores,
+                    'insights': response.insights,
+                    'products': response.recommended_products,
+                }
+            }
         elif request.result:
-            # Send email with provided data
+            # Use provided result data
             survey_data = {
                 'profile': request.profile.dict() if request.profile and hasattr(request.profile, 'dict') else (request.profile or {}),
                 'result': request.result.dict() if hasattr(request.result, 'dict') else request.result
             }
-            
-            await email_service.send_financial_clinic_report_from_data(
-                email=request.email,
-                survey_data=survey_data,
-                language=request.language
-            )
         else:
             raise HTTPException(
                 status_code=400,
                 detail="Either survey_response_id or result must be provided"
             )
         
-        return {
-            "success": True,
-            "message": f"Report sent to {request.email}",
-            "email": request.email
-        }
+        # Generate PDF
+        pdf_content = report_service.generate_financial_clinic_pdf(
+            survey_data=survey_data,
+            language=request.language
+        )
+        
+        # Send email with PDF attachment
+        email_result = await email_service.send_financial_clinic_report(
+            recipient_email=request.email,
+            result=survey_data['result'],
+            pdf_content=pdf_content,
+            profile=survey_data['profile'],
+            language=request.language
+        )
+        
+        if email_result.get('success'):
+            return {
+                "success": True,
+                "message": f"Report sent to {request.email}",
+                "email": request.email
+            }
+        else:
+            return {
+                "success": False,
+                "message": email_result.get('message', f"Failed to send email to {request.email}"),
+                "email": request.email,
+                "error": email_result.get('error')
+            }
         
     except AttributeError:
         # Method doesn't exist yet

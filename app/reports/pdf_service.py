@@ -1153,7 +1153,11 @@ class PDFReportService:
             elements.append(Paragraph(insights_header, heading_style))
             
             for insight in insights[:5]:  # Limit to 5 as on web page
-                insight_text = insight.get('text', str(insight))
+                # Handle both string and dict formats
+                if isinstance(insight, dict):
+                    insight_text = insight.get('text', str(insight))
+                else:
+                    insight_text = str(insight)
                 elements.append(Paragraph(f"• {insight_text}", insight_style))
                 elements.append(Spacer(1, 0.05*inch))
             

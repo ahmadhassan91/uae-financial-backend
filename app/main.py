@@ -129,22 +129,22 @@ async def root():
     }
 
 
-# Include routers
-app.include_router(auth_router)
-app.include_router(customers_router)
-app.include_router(surveys_router)
-app.include_router(incomplete_surveys_router)
-app.include_router(dynamic_questions_router)
-app.include_router(financial_clinic_router)  # Financial Clinic survey system
-app.include_router(companies_router)
-app.include_router(company_questions_router)
-app.include_router(url_config_router)
-app.include_router(reports_router)
-app.include_router(localization_router)
-app.include_router(admin_question_variation_router)
-app.include_router(admin_demographic_rule_router)
-app.include_router(admin_localization_router)
-app.include_router(simple_admin_router)
+# Include routers with /api/v1 prefix
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(customers_router, prefix="/api/v1")
+app.include_router(surveys_router, prefix="/api/v1")
+app.include_router(incomplete_surveys_router, prefix="/api/v1")
+app.include_router(dynamic_questions_router, prefix="/api/v1")
+app.include_router(financial_clinic_router, prefix="/api/v1")  # Financial Clinic survey system
+app.include_router(companies_router, prefix="/api/v1")
+app.include_router(company_questions_router, prefix="/api/v1")
+app.include_router(url_config_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
+app.include_router(localization_router)  # Already has /api prefix
+app.include_router(admin_question_variation_router, prefix="/api/v1")
+app.include_router(admin_demographic_rule_router, prefix="/api/v1")
+app.include_router(admin_localization_router, prefix="/api/v1")
+app.include_router(simple_admin_router, prefix="/api/v1")
 
 
 # Startup event
