@@ -53,11 +53,13 @@ class Settings(BaseSettings):
     ]
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0", "*.herokuapp.com"]
     
-    # Email (for notifications)
+    # Email (for notifications and OTP)
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
+    FROM_EMAIL: str = ""
+    FROM_NAME: str = "National Bonds"
     
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"

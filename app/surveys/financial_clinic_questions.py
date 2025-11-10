@@ -1,6 +1,6 @@
 """
 Financial Clinic Survey Questions
-6 Categories, 16 Questions, 0-100 Scoring System
+6 Categories, 15 Questions, 0-100 Scoring System
 
 This module defines the complete Financial Clinic question set as specified
 in the client requirements. This represents a complete replacement of the 
@@ -62,11 +62,11 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="How well are you managing your household monthly expenses?",
         text_ar="ما مدى نجاحك في إدارة نفقاتك الشهرية المنزلية؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Very well", label_ar="جيد جداً"),
-            FinancialClinicOption(value=4, label_en="Well", label_ar="جيد"),
-            FinancialClinicOption(value=3, label_en="Moderately", label_ar="معتدل"),
-            FinancialClinicOption(value=2, label_en="Poorly", label_ar="ضعيف"),
-            FinancialClinicOption(value=1, label_en="Very poorly", label_ar="ضعيف جداً"),
+            FinancialClinicOption(value=5, label_en="My monthly expenses are always below my budget", label_ar="نفقاتي الشهرية دائماً أقل من ميزانيتي"),
+            FinancialClinicOption(value=4, label_en="I stay as within my budget every month", label_ar="أبقى ضمن ميزانيتي كل شهر"),
+            FinancialClinicOption(value=3, label_en="My budget stays on track on most months", label_ar="ميزانيتي تسير على المسار الصحيح في معظم الأشهر"),
+            FinancialClinicOption(value=2, label_en="I usually go over budget with my spending", label_ar="عادةً ما أتجاوز الميزانية مع إنفاقي"),
+            FinancialClinicOption(value=1, label_en="I am unable to manage my monthly expenses", label_ar="أنا غير قادر على إدارة نفقاتي الشهرية"),
         ]
     ),
     FinancialClinicQuestion(
@@ -77,11 +77,11 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="Do you have more than one source of income?",
         text_ar="هل لديك أكثر من مصدر دخل؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, multiple sources", label_ar="نعم، مصادر متعددة"),
-            FinancialClinicOption(value=4, label_en="Yes, one additional", label_ar="نعم، مصدر إضافي واحد"),
-            FinancialClinicOption(value=3, label_en="No, but planning to", label_ar="لا، ولكن أخطط لذلك"),
-            FinancialClinicOption(value=2, label_en="No, not planning", label_ar="لا، ولا أخطط"),
-            FinancialClinicOption(value=1, label_en="No, don't need to", label_ar="لا، ولا أحتاج"),
+            FinancialClinicOption(value=5, label_en="I have multiple & consistent income streams", label_ar="لدي مصادر دخل متعددة ومتسقة"),
+            FinancialClinicOption(value=4, label_en="I have additional income but they are not consistent", label_ar="لدي دخل إضافي ولكن ليس متسقاً"),
+            FinancialClinicOption(value=3, label_en="I have only 1 stream of consistent income", label_ar="لدي مصدر دخل واحد فقط متسق"),
+            FinancialClinicOption(value=2, label_en="I have only 1 stream of income and it is not consistent", label_ar="لدي مصدر دخل واحد فقط وليس متسقاً"),
+            FinancialClinicOption(value=1, label_en="I currently have no income stream", label_ar="ليس لدي حالياً أي مصدر دخل"),
         ]
     ),
     
@@ -91,14 +91,14 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         number=3,
         category=FinancialClinicCategory.SAVINGS_HABIT,
         weight=10,  # 10% of total score
-        text_en="How much of your income are you able to save every month?",
-        text_ar="ما مقدار دخلك الذي تستطيع ادخاره كل شهر؟",
+        text_en="How much of your total income are you able to save every month?",
+        text_ar="ما مقدار إجمالي دخلك الذي تستطيع ادخاره كل شهر؟",
         options=[
-            FinancialClinicOption(value=5, label_en="20% or more", label_ar="20٪ أو أكثر"),
-            FinancialClinicOption(value=4, label_en="15-20%", label_ar="15-20٪"),
-            FinancialClinicOption(value=3, label_en="10-15%", label_ar="10-15٪"),
-            FinancialClinicOption(value=2, label_en="5-10%", label_ar="5-10٪"),
-            FinancialClinicOption(value=1, label_en="Less than 5%", label_ar="أقل من 5٪"),
+            FinancialClinicOption(value=5, label_en="More than 20% of my income", label_ar="أكثر من 20٪ من دخلي"),
+            FinancialClinicOption(value=4, label_en="15% to 20% of my income", label_ar="15٪ إلى 20٪ من دخلي"),
+            FinancialClinicOption(value=3, label_en="5% to 15% of my income", label_ar="5٪ إلى 15٪ من دخلي"),
+            FinancialClinicOption(value=2, label_en="Up to 5% of my income", label_ar="ما يصل إلى 5٪ من دخلي"),
+            FinancialClinicOption(value=1, label_en="I am not able to save from my income", label_ar="لا أستطيع الادخار من دخلي"),
         ]
     ),
     FinancialClinicQuestion(
@@ -109,11 +109,11 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="What is the typical duration of your savings goals?",
         text_ar="ما هي المدة النموذجية لأهداف الادخار الخاصة بك؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Long term (5+ years)", label_ar="طويلة الأجل (5+ سنوات)"),
-            FinancialClinicOption(value=4, label_en="Medium term (3-5 years)", label_ar="متوسطة الأجل (3-5 سنوات)"),
-            FinancialClinicOption(value=3, label_en="Short term (1-3 years)", label_ar="قصيرة الأجل (1-3 سنوات)"),
-            FinancialClinicOption(value=2, label_en="Irregular", label_ar="غير منتظمة"),
-            FinancialClinicOption(value=1, label_en="No savings plan", label_ar="لا توجد خطة ادخار"),
+            FinancialClinicOption(value=5, label_en="I primarily save and invest for long-term goals (over 3 years)", label_ar="أدخر وأستثمر بشكل أساسي لأهداف طويلة الأجل (أكثر من 3 سنوات)"),
+            FinancialClinicOption(value=4, label_en="I save for medium-term goals (1-3 years)", label_ar="أدخر لأهداف متوسطة الأجل (1-3 سنوات)"),
+            FinancialClinicOption(value=3, label_en="I save for both short- and long-term goals", label_ar="أدخر لأهداف قصيرة وطويلة الأجل"),
+            FinancialClinicOption(value=2, label_en="I save for short-term goals (less than 1 year)", label_ar="أدخر لأهداف قصيرة الأجل (أقل من سنة واحدة)"),
+            FinancialClinicOption(value=1, label_en="I usually save only for immediate needs or emergencies", label_ar="عادةً أدخر فقط للاحتياجات الفورية أو حالات الطوارئ"),
         ]
     ),
     FinancialClinicQuestion(
@@ -124,43 +124,43 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="When your income increases, how does your spending behavior change?",
         text_ar="عندما يزداد دخلك، كيف يتغير سلوك الإنفاق لديك؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Save most of it", label_ar="أدخر معظمه"),
-            FinancialClinicOption(value=4, label_en="Balance saving and spending", label_ar="أوازن بين الادخار والإنفاق"),
-            FinancialClinicOption(value=3, label_en="Spend most of it", label_ar="أنفق معظمه"),
-            FinancialClinicOption(value=2, label_en="Spend all of it", label_ar="أنفق كله"),
-            FinancialClinicOption(value=1, label_en="Increase debt", label_ar="أزيد من ديوني"),
+            FinancialClinicOption(value=5, label_en="My spending remains the same", label_ar="إنفاقي يبقى كما هو"),
+            FinancialClinicOption(value=4, label_en="My spending increases slightly", label_ar="إنفاقي يزداد قليلاً"),
+            FinancialClinicOption(value=3, label_en="My spending increase is the same as my income increase", label_ar="زيادة إنفاقي تساوي زيادة دخلي"),
+            FinancialClinicOption(value=2, label_en="My spending increase is slightly higher than my income increase", label_ar="زيادة إنفاقي أعلى قليلاً من زيادة دخلي"),
+            FinancialClinicOption(value=1, label_en="My spending is much higher than my income increase", label_ar="إنفاقي أعلى بكثير من زيادة دخلي"),
         ]
     ),
     
-    # ==================== EMERGENCY SAVINGS (Q6-Q8) - 15% ====================
+    # ==================== EMERGENCY SAVINGS (Q6-Q8) - 20% ====================
     FinancialClinicQuestion(
         id="fc_q6",
         number=6,
         category=FinancialClinicCategory.EMERGENCY_SAVINGS,
         weight=5,  # 5% of total score
-        text_en="Are you actively saving for an emergency fund?",
-        text_ar="هل تدخر بنشاط لصندوق الطوارئ؟",
+        text_en="Are you actively saving in an emergency fund?",
+        text_ar="هل تدخر بنشاط في صندوق الطوارئ؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, regularly", label_ar="نعم، بانتظام"),
-            FinancialClinicOption(value=4, label_en="Yes, occasionally", label_ar="نعم، أحياناً"),
-            FinancialClinicOption(value=3, label_en="Planning to start", label_ar="أخطط للبدء"),
-            FinancialClinicOption(value=2, label_en="Not currently", label_ar="ليس حالياً"),
-            FinancialClinicOption(value=1, label_en="Not needed", label_ar="غير مطلوب"),
+            FinancialClinicOption(value=5, label_en="I already have a sufficient emergency fund", label_ar="لدي بالفعل صندوق طوارئ كافٍ"),
+            FinancialClinicOption(value=4, label_en="I save every month towards my emergency fund", label_ar="أدخر كل شهر لصندوق الطوارئ الخاص بي"),
+            FinancialClinicOption(value=3, label_en="I try to save consistently but not every month", label_ar="أحاول الادخار بانتظام لكن ليس كل شهر"),
+            FinancialClinicOption(value=2, label_en="I save when I can but not consistently", label_ar="أدخر عندما أستطيع ولكن ليس بشكل منتظم"),
+            FinancialClinicOption(value=1, label_en="One day I will start saving", label_ar="يوماً ما سأبدأ في الادخار"),
         ]
     ),
     FinancialClinicQuestion(
         id="fc_q7",
         number=7,
         category=FinancialClinicCategory.EMERGENCY_SAVINGS,
-        weight=5,  # 5% of total score
-        text_en="Do you have enough emergency savings to cover 6 months of expenses?",
-        text_ar="هل لديك مدخرات طوارئ كافية لتغطية نفقات 6 أشهر؟",
+        weight=10,  # 10% of total score (UPDATED from 5%)
+        text_en="Do you have enough emergency savings that can cover your basic expenses?",
+        text_ar="هل لديك مدخرات طوارئ كافية يمكن أن تغطي نفقاتك الأساسية؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, 6+ months", label_ar="نعم، 6+ أشهر"),
-            FinancialClinicOption(value=4, label_en="Yes, 3-6 months", label_ar="نعم، 3-6 أشهر"),
-            FinancialClinicOption(value=3, label_en="Yes, 1-3 months", label_ar="نعم، 1-3 أشهر"),
-            FinancialClinicOption(value=2, label_en="Less than 1 month", label_ar="أقل من شهر"),
-            FinancialClinicOption(value=1, label_en="No emergency fund", label_ar="لا يوجد صندوق طوارئ"),
+            FinancialClinicOption(value=5, label_en="I can cover more than 6 months of my expenses", label_ar="أستطيع تغطية أكثر من 6 أشهر من نفقاتي"),
+            FinancialClinicOption(value=4, label_en="I can cover 5 to 6 months of my expenses", label_ar="أستطيع تغطية 5 إلى 6 أشهر من نفقاتي"),
+            FinancialClinicOption(value=3, label_en="I can cover 3 to 4 months of my expenses", label_ar="أستطيع تغطية 3 إلى 4 أشهر من نفقاتي"),
+            FinancialClinicOption(value=2, label_en="I can cover up to 3 months of my expenses", label_ar="أستطيع تغطية ما يصل إلى 3 أشهر من نفقاتي"),
+            FinancialClinicOption(value=1, label_en="I cannot cover my expenses", label_ar="لا أستطيع تغطية نفقاتي"),
         ]
     ),
     FinancialClinicQuestion(
@@ -171,28 +171,28 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="Where do you keep your emergency savings?",
         text_ar="أين تحتفظ بمدخرات الطوارئ الخاصة بك؟",
         options=[
-            FinancialClinicOption(value=5, label_en="High-yield savings account", label_ar="حساب توفير عالي العائد"),
-            FinancialClinicOption(value=4, label_en="Regular savings account", label_ar="حساب توفير عادي"),
-            FinancialClinicOption(value=3, label_en="Investment account", label_ar="حساب استثماري"),
-            FinancialClinicOption(value=2, label_en="Cash at home", label_ar="نقداً في المنزل"),
-            FinancialClinicOption(value=1, label_en="No emergency fund", label_ar="لا يوجد صندوق طوارئ"),
+            FinancialClinicOption(value=5, label_en="In my savings or current bank account", label_ar="في حساب التوفير أو الحساب الجاري الخاص بي"),
+            FinancialClinicOption(value=4, label_en="In term or fixed deposits", label_ar="في ودائع لأجل أو ثابتة"),
+            FinancialClinicOption(value=3, label_en="In my investment account", label_ar="في حساب الاستثمار الخاص بي"),
+            FinancialClinicOption(value=2, label_en="In the form of assets/commodities (gold/silver etc.)", label_ar="في شكل أصول/سلع (ذهب/فضة إلخ)"),
+            FinancialClinicOption(value=1, label_en="I do not have emergency savings", label_ar="ليس لدي مدخرات طوارئ"),
         ]
     ),
     
-    # ==================== DEBT MANAGEMENT (Q9-Q11) - 20% ====================
+    # ==================== DEBT MANAGEMENT (Q9-Q10) - 15% ====================
     FinancialClinicQuestion(
         id="fc_q9",
         number=9,
         category=FinancialClinicCategory.DEBT_MANAGEMENT,
         weight=10,  # 10% of total score
-        text_en="How often are you able to pay bills on time without difficulty?",
-        text_ar="كم مرة تستطيع دفع الفواتير في الوقت المحدد دون صعوبة؟",
+        text_en="How often are you able to pay your bills and loan installments on time?",
+        text_ar="كم مرة تستطيع دفع فواتيرك وأقساط القروض في الوقت المحدد؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Always", label_ar="دائماً"),
-            FinancialClinicOption(value=4, label_en="Usually", label_ar="عادةً"),
-            FinancialClinicOption(value=3, label_en="Sometimes", label_ar="أحياناً"),
-            FinancialClinicOption(value=2, label_en="Rarely", label_ar="نادراً"),
-            FinancialClinicOption(value=1, label_en="Never", label_ar="أبداً"),
+            FinancialClinicOption(value=5, label_en="I make my payments every month", label_ar="أقوم بدفع مستحقاتي كل شهر"),
+            FinancialClinicOption(value=4, label_en="I make my monthly payments but not consistently", label_ar="أقوم بدفع مستحقاتي الشهرية ولكن ليس بشكل منتظم"),
+            FinancialClinicOption(value=3, label_en="I occasionally make my monthly payments", label_ar="أحياناً أقوم بدفع مستحقاتي الشهرية"),
+            FinancialClinicOption(value=2, label_en="I miss most of my monthly payments", label_ar="أفوت معظم مدفوعاتي الشهرية"),
+            FinancialClinicOption(value=1, label_en="I am not able to make my monthly payments", label_ar="لا أستطيع دفع مستحقاتي الشهرية"),
         ]
     ),
     FinancialClinicQuestion(
@@ -200,46 +200,46 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         number=10,
         category=FinancialClinicCategory.DEBT_MANAGEMENT,
         weight=5,  # 5% of total score
-        text_en="What percentage of your monthly income goes to debt payments?",
-        text_ar="ما هي النسبة المئوية من دخلك الشهري التي تذهب لسداد الديون؟",
+        text_en="What percentage of monthly income goes to debt payments?",
+        text_ar="ما هي النسبة المئوية من الدخل الشهري التي تذهب لسداد الديون؟",
         options=[
-            FinancialClinicOption(value=5, label_en="0%", label_ar="0٪"),
-            FinancialClinicOption(value=4, label_en="Less than 10%", label_ar="أقل من 10٪"),
-            FinancialClinicOption(value=3, label_en="10-20%", label_ar="10-20٪"),
-            FinancialClinicOption(value=2, label_en="20-30%", label_ar="20-30٪"),
-            FinancialClinicOption(value=1, label_en="30% or more", label_ar="30٪ أو أكثر"),
-        ]
-    ),
-    FinancialClinicQuestion(
-        id="fc_q11",
-        number=11,
-        category=FinancialClinicCategory.DEBT_MANAGEMENT,
-        weight=5,  # 5% of total score
-        text_en="How well do you understand your credit score and its impact?",
-        text_ar="ما مدى فهمك لتصنيفك الائتماني وتأثيره؟",
-        options=[
-            FinancialClinicOption(value=5, label_en="Very well", label_ar="جيد جداً"),
-            FinancialClinicOption(value=4, label_en="Well", label_ar="جيد"),
-            FinancialClinicOption(value=3, label_en="Somewhat", label_ar="إلى حد ما"),
-            FinancialClinicOption(value=2, label_en="Not well", label_ar="ليس جيداً"),
-            FinancialClinicOption(value=1, label_en="Not at all", label_ar="لا على الإطلاق"),
+            FinancialClinicOption(value=5, label_en="I have no debt", label_ar="ليس لدي ديون"),
+            FinancialClinicOption(value=4, label_en="Less than 20% of my monthly income", label_ar="أقل من 20٪ من دخلي الشهري"),
+            FinancialClinicOption(value=3, label_en="Less than 35% of my monthly income", label_ar="أقل من 35٪ من دخلي الشهري"),
+            FinancialClinicOption(value=2, label_en="Less than 50% of my monthly income", label_ar="أقل من 50٪ من دخلي الشهري"),
+            FinancialClinicOption(value=1, label_en="More than 50% of my monthly income", label_ar="أكثر من 50٪ من دخلي الشهري"),
         ]
     ),
     
-    # ==================== RETIREMENT PLANNING (Q12-Q13) - 15% ====================
+    # ==================== RETIREMENT PLANNING (Q11-Q13) - 20% ====================
+    FinancialClinicQuestion(
+        id="fc_q11",
+        number=11,
+        category=FinancialClinicCategory.RETIREMENT_PLANNING,
+        weight=5,  # 5% of total score
+        text_en="Are you actively saving or investing for retirement?",
+        text_ar="هل تدخر أو تستثمر بنشاط للتقاعد؟",
+        options=[
+            FinancialClinicOption(value=5, label_en="Yes, contributing regularly for a retirement plan and with a stable plan", label_ar="نعم، أساهم بانتظام في خطة تقاعد ولدي خطة مستقرة"),
+            FinancialClinicOption(value=4, label_en="Yes, I save for retirement occasionally, but my contributions vary depending on my monthly expenses", label_ar="نعم، أدخر للتقاعد أحياناً، لكن مساهماتي تتفاوت حسب نفقاتي الشهرية"),
+            FinancialClinicOption(value=3, label_en="I have started saving or investing for retirement, but I don't have a clear plan or specific goal", label_ar="بدأت في الادخار أو الاستثمار للتقاعد، لكن ليس لدي خطة واضحة أو هدف محدد"),
+            FinancialClinicOption(value=2, label_en="Yes, but I save whenever I can and without a clear plan", label_ar="نعم، لكنني أدخر متى استطعت وبدون خطة واضحة"),
+            FinancialClinicOption(value=1, label_en="No, I have not thought about saving for retirement", label_ar="لا، لم أفكر في الادخار للتقاعد"),
+        ]
+    ),
     FinancialClinicQuestion(
         id="fc_q12",
         number=12,
         category=FinancialClinicCategory.RETIREMENT_PLANNING,
         weight=10,  # 10% of total score
-        text_en="Are you actively saving for retirement?",
-        text_ar="هل تدخر بنشاط للتقاعد؟",
+        text_en="How confident do you feel about maintaining a comfortable lifestyle after retirement?",
+        text_ar="ما مدى ثقتك في الحفاظ على نمط حياة مريح بعد التقاعد؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, actively", label_ar="نعم، بنشاط"),
-            FinancialClinicOption(value=4, label_en="Yes, occasionally", label_ar="نعم، أحياناً"),
-            FinancialClinicOption(value=3, label_en="Planning to start", label_ar="أخطط للبدء"),
-            FinancialClinicOption(value=2, label_en="Not currently", label_ar="ليس حالياً"),
-            FinancialClinicOption(value=1, label_en="Not needed", label_ar="غير مطلوب"),
+            FinancialClinicOption(value=5, label_en="I have already secured a retirement income", label_ar="لقد أمّنت بالفعل دخلاً للتقاعد"),
+            FinancialClinicOption(value=4, label_en="I am highly confident of having a stable income after retirement", label_ar="أنا واثق جداً من الحصول على دخل مستقر بعد التقاعد"),
+            FinancialClinicOption(value=3, label_en="I am somewhat confident of having a stable income after retirement", label_ar="أنا واثق إلى حد ما من الحصول على دخل مستقر بعد التقاعد"),
+            FinancialClinicOption(value=2, label_en="I am not very confident of having a stable income after retirement", label_ar="لست واثقاً جداً من الحصول على دخل مستقر بعد التقاعد"),
+            FinancialClinicOption(value=1, label_en="I am certain I will not have a stable income after retirement", label_ar="أنا متأكد أنني لن أحصل على دخل مستقر بعد التقاعد"),
         ]
     ),
     FinancialClinicQuestion(
@@ -247,31 +247,31 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         number=13,
         category=FinancialClinicCategory.RETIREMENT_PLANNING,
         weight=5,  # 5% of total score
-        text_en="How confident are you about maintaining your desired lifestyle in retirement?",
-        text_ar="ما مدى ثقتك في الحفاظ على نمط الحياة المطلوب في التقاعد؟",
+        text_en="How much of your current income will you be able to cover after your retirement?",
+        text_ar="ما مقدار دخلك الحالي الذي ستتمكن من تغطيته بعد تقاعدك؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Very confident", label_ar="واثق جداً"),
-            FinancialClinicOption(value=4, label_en="Confident", label_ar="واثق"),
-            FinancialClinicOption(value=3, label_en="Somewhat confident", label_ar="واثق إلى حد ما"),
-            FinancialClinicOption(value=2, label_en="Not confident", label_ar="غير واثق"),
-            FinancialClinicOption(value=1, label_en="Very uncertain", label_ar="غير متأكد جداً"),
+            FinancialClinicOption(value=5, label_en="My retirement income will be able to provide more than 80% of my current income", label_ar="سيتمكن دخل التقاعد من توفير أكثر من 80٪ من دخلي الحالي"),
+            FinancialClinicOption(value=4, label_en="My retirement income will be able to provide 50% to 80% of my current income", label_ar="سيتمكن دخل التقاعد من توفير 50٪ إلى 80٪ من دخلي الحالي"),
+            FinancialClinicOption(value=3, label_en="My retirement income will be able to provide 20% to 50% of my current income", label_ar="سيتمكن دخل التقاعد من توفير 20٪ إلى 50٪ من دخلي الحالي"),
+            FinancialClinicOption(value=2, label_en="My retirement income will be able to provide up to 20% of my current income", label_ar="سيتمكن دخل التقاعد من توفير ما يصل إلى 20٪ من دخلي الحالي"),
+            FinancialClinicOption(value=1, label_en="I am certain I will not have a stable income after retirement", label_ar="أنا متأكد أنني لن أحصل على دخل مستقر بعد التقاعد"),
         ]
     ),
     
-    # ==================== PROTECTING YOUR FAMILY (Q14-Q16) - 15% ====================
+    # ==================== PROTECTING YOUR FAMILY (Q14-Q15) - 15% ====================
     FinancialClinicQuestion(
         id="fc_q14",
         number=14,
         category=FinancialClinicCategory.PROTECTING_FAMILY,
         weight=5,  # 5% of total score
-        text_en="Do you have a clear financial plan for the next 3-5 years?",
-        text_ar="هل لديك خطة مالية واضحة للسنوات الثلاث إلى الخمس القادمة؟",
+        text_en="Do you have adequate life Takaful/Insurance coverage?",
+        text_ar="هل لديك تغطية تكافل/تأمين على الحياة كافية؟",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, detailed plan", label_ar="نعم، خطة مفصلة"),
-            FinancialClinicOption(value=4, label_en="Yes, general plan", label_ar="نعم، خطة عامة"),
-            FinancialClinicOption(value=3, label_en="Rough idea", label_ar="فكرة تقريبية"),
-            FinancialClinicOption(value=2, label_en="No plan", label_ar="لا توجد خطة"),
-            FinancialClinicOption(value=1, label_en="Don't think about it", label_ar="لا أفكر في ذلك"),
+            FinancialClinicOption(value=5, label_en="I have sufficient coverage to cover 12 months of my income", label_ar="لدي تغطية كافية لتغطية 12 شهراً من دخلي"),
+            FinancialClinicOption(value=4, label_en="I have sufficient coverage to cover up to 11 months of my income", label_ar="لدي تغطية كافية لتغطية ما يصل إلى 11 شهراً من دخلي"),
+            FinancialClinicOption(value=3, label_en="I have enough coverage to cover up to 5 months of my income", label_ar="لدي تغطية كافية لتغطية ما يصل إلى 5 أشهر من دخلي"),
+            FinancialClinicOption(value=2, label_en="I have enough coverage for up to 3 months of my income", label_ar="لدي تغطية كافية لما يصل إلى 3 أشهر من دخلي"),
+            FinancialClinicOption(value=1, label_en="I do not have any coverage", label_ar="ليس لدي أي تغطية"),
         ]
     ),
     FinancialClinicQuestion(
@@ -279,60 +279,51 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         number=15,
         category=FinancialClinicCategory.PROTECTING_FAMILY,
         weight=5,  # 5% of total score
-        text_en="Do you have adequate Takaful (insurance) coverage for yourself and your family?",
-        text_ar="هل لديك تغطية تكافل (تأمين) كافية لك ولعائلتك؟",
+        text_en="Are you actively saving for education savings for your children? (Only to appear if children>0, otherwise questions to not appear and default score of 5 to be given)",
+        text_ar="هل تدخر بنشاط لمدخرات تعليم أطفالك؟ (يظهر فقط إذا كان الأطفال > 0، وإلا فلن تظهر الأسئلة وسيتم إعطاء درجة افتراضية 5)",
         options=[
-            FinancialClinicOption(value=5, label_en="Yes, comprehensive", label_ar="نعم، شاملة"),
-            FinancialClinicOption(value=4, label_en="Yes, basic", label_ar="نعم، أساسية"),
-            FinancialClinicOption(value=3, label_en="Partial coverage", label_ar="تغطية جزئية"),
-            FinancialClinicOption(value=2, label_en="No coverage", label_ar="لا توجد تغطية"),
-            FinancialClinicOption(value=1, label_en="Not needed", label_ar="غير مطلوب"),
-        ]
-    ),
-    FinancialClinicQuestion(
-        id="fc_q16",
-        number=16,
-        category=FinancialClinicCategory.PROTECTING_FAMILY,
-        weight=5,  # 5% of total score
-        text_en="Are you actively saving for education savings for your children?",
-        text_ar="هل تدخر بنشاط لمدخرات تعليم أطفالك؟",
-        options=[
-            FinancialClinicOption(value=5, label_en="Yes, I have sufficient funds for my children's education", label_ar="نعم، لدي أموال كافية لتعليم أطفالي"),
-            FinancialClinicOption(value=4, label_en="Yes, I am saving towards having a sufficient education fund", label_ar="نعم، أدخر للحصول على صندوق تعليم كافٍ"),
-            FinancialClinicOption(value=3, label_en="Yes, but I am starting to save for an education fund", label_ar="نعم، لكنني بدأت في الادخار لصندوق التعليم"),
-            FinancialClinicOption(value=2, label_en="Yes, but I do not have any education saving for my children", label_ar="نعم، لكن ليس لدي أي مدخرات تعليمية لأطفالي"),
-            FinancialClinicOption(value=1, label_en="No, I do not need any education fund (if children is selected >0)", label_ar="لا، لا أحتاج إلى أي صندوق تعليم (إذا تم اختيار الأطفال > 0)"),
-        ]
-        # Note: No conditional flag - Q16 is shown to everyone
+            FinancialClinicOption(value=5, label_en="I don't have any need to save for my children's education", label_ar="ليس لدي أي حاجة للادخار لتعليم أطفالي"),
+            FinancialClinicOption(value=4, label_en="Yes, I have sufficient funds for my children's education", label_ar="نعم، لدي أموال كافية لتعليم أطفالي"),
+            FinancialClinicOption(value=3, label_en="Yes, I am saving towards having a sufficient education fund", label_ar="نعم، أدخر نحو الحصول على صندوق تعليم كافٍ"),
+            FinancialClinicOption(value=2, label_en="Yes, but I am starting to save for an education fund", label_ar="نعم، لكنني بدأت في الادخار لصندوق تعليم"),
+            FinancialClinicOption(value=1, label_en="Yes, but I do not have any education saving for my children", label_ar="نعم، لكن ليس لدي أي مدخرات تعليمية لأطفالي"),
+        ],
+        conditional=True,
+        condition_field="children",
+        condition_value=1  # Show if children > 0 (any value >= 1 means has children)
     ),
 ]
 
 
 # Category weights (must sum to 100%)
 CATEGORY_WEIGHTS = {
-    FinancialClinicCategory.INCOME_STREAM: 15,
-    FinancialClinicCategory.SAVINGS_HABIT: 20,
-    FinancialClinicCategory.EMERGENCY_SAVINGS: 15,
-    FinancialClinicCategory.DEBT_MANAGEMENT: 20,
-    FinancialClinicCategory.RETIREMENT_PLANNING: 15,
-    FinancialClinicCategory.PROTECTING_FAMILY: 15,
+    FinancialClinicCategory.INCOME_STREAM: 15,      # Q1: 5% + Q2: 10%
+    FinancialClinicCategory.SAVINGS_HABIT: 20,      # Q3: 10% + Q4: 5% + Q5: 5%
+    FinancialClinicCategory.EMERGENCY_SAVINGS: 20,  # Q6: 5% + Q7: 10% + Q8: 5%
+    FinancialClinicCategory.DEBT_MANAGEMENT: 15,    # Q9: 10% + Q10: 5%
+    FinancialClinicCategory.RETIREMENT_PLANNING: 20, # Q11: 5% + Q12: 10% + Q13: 5%
+    FinancialClinicCategory.PROTECTING_FAMILY: 10,  # Q14: 5% + Q15: 5%
 }
 
 
-def get_questions_for_profile(has_children: bool = True) -> List[FinancialClinicQuestion]:
+def get_questions_for_profile(children_count: int = 0) -> List[FinancialClinicQuestion]:
     """
-    Get all Financial Clinic questions.
-    
-    Note: In Financial Clinic v2, ALL 16 questions are always shown.
-    Q16 is NOT conditional - it applies to everyone regardless of children status.
+    Get Financial Clinic questions based on profile.
     
     Args:
-        has_children: Deprecated parameter (kept for API compatibility)
+        children_count: Number of children (0 = no children, >= 1 = has children)
         
     Returns:
-        All 16 Financial Clinic questions
+        14 or 15 questions depending on children status:
+        - If children_count = 0: Returns 14 questions (Q15 excluded)
+        - If children_count > 0: Returns all 15 questions (Q15 included)
     """
-    return FINANCIAL_CLINIC_QUESTIONS
+    if children_count > 0:
+        # Has children: show all 15 questions including Q15
+        return FINANCIAL_CLINIC_QUESTIONS
+    else:
+        # No children: exclude Q15
+        return [q for q in FINANCIAL_CLINIC_QUESTIONS if q.id != "fc_q15"]
 
 
 def get_question_by_id(question_id: str) -> Optional[FinancialClinicQuestion]:

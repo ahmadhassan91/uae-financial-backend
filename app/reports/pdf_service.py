@@ -1068,109 +1068,46 @@ class PDFReportService:
             alignment=alignment
         )
         
-        # Title Section
+        # Title Section - Updated to match new design
         if language == "ar":
-            title_text = process_arabic_text("نتيجة صحتك المالية")
-            subtitle_text = process_arabic_text("بناءً على إجاباتك، إليك تقييمك المالي الشامل")
+            title_text = process_arabic_text("إليك درجة صحتك المالية!")
+            subtitle_text = process_arabic_text("هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم")
         else:
-            title_text = "Your Financial Health Score"
-            subtitle_text = "Based on your responses, here's your comprehensive financial assessment"
+            title_text = "Here's your Financial Health Score!"
+            subtitle_text = "This is your snapshot, a clear view of how healthy your finances are today."
         
         elements.append(Paragraph(title_text, title_style))
         elements.append(Paragraph(subtitle_text, subtitle_style))
-        elements.append(Spacer(1, 0.2*inch))
+        elements.append(Spacer(1, 0.15*inch))
         
-        # Main Score Card - matching the gradient card on the web page
+        # Main Score Display - Clean large display matching new design
         total_score = result.get('total_score', 0)
-        status_band = result.get('status_band', 'Moderate')
         
-        status_translations = {
-            'Excellent': {'en': 'Excellent', 'ar': 'ممتاز'},
-            'Good': {'en': 'Good', 'ar': 'جيد'},
-            'Moderate': {'en': 'Moderate', 'ar': 'معتدل'},
-            'Needs Immediate Attention': {'en': 'Needs Attention', 'ar': 'يحتاج إلى اهتمام'},
-            'At Risk': {'en': 'At Risk', 'ar': 'في خطر'}
-        }
+        # Use consistent green color for score (matching #2e9e42)
+        score_color = colors.HexColor('#2e9e42')
         
-        status_display = status_translations.get(status_band, {'en': status_band, 'ar': status_band})
-        status_text_raw = status_display['ar'] if language == 'ar' else status_display['en']
-        status_text = process_arabic_text(status_text_raw) if language == 'ar' else status_text_raw
-        
-        score_color = self._get_clinic_score_color(total_score)
-        
-        # Create score style with proper spacing
+        # Large score display with simple clean style
         score_style = ParagraphStyle(
             'ScoreStyle', 
-            fontSize=48, 
+            fontSize=72, 
             textColor=score_color, 
             alignment=TA_CENTER, 
             fontName='Helvetica-Bold',
-            leading=50,  # Line height
-            spaceAfter=5
-        )
-        
-        score_label_style = ParagraphStyle(
-            'ScoreLabelStyle', 
-            fontSize=11, 
-            alignment=TA_CENTER, 
-            textColor=colors.HexColor('#6b7280'),
-            spaceAfter=15,
-            fontName=body_font
-        )
-        
-        status_style = ParagraphStyle(
-            'StatusStyle', 
-            fontSize=16, 
-            alignment=TA_CENTER, 
-            textColor=score_color, 
-            fontName=title_font,
+            leading=80,
             spaceAfter=20
         )
         
-        desc_style = ParagraphStyle(
-            'DescStyle', 
-            fontSize=10, 
-            alignment=TA_CENTER, 
-            textColor=colors.HexColor('#6b7280'),
-            leading=14,
-            fontName=body_font
-        )
+        elements.append(Paragraph(f"<b>{round(total_score)}%</b>", score_style))
+        elements.append(Spacer(1, 0.3*inch))
         
-        # Process Arabic text for all labels
-        label_text = process_arabic_text('من 100') if language == 'ar' else 'out of 100'
-        desc_text = process_arabic_text('نتيجتك تعكس صحتك المالية الحالية عبر 6 مجالات رئيسية') if language == 'ar' else 'Your score reflects your current financial wellness across 6 key areas'
-        
-        score_card_data = [
-            [Paragraph(f"<b>{round(total_score)}</b>", score_style)],
-            [Paragraph(label_text, score_label_style)],
-            [Paragraph(f"<b>{status_text}</b>", status_style)],
-            [Paragraph(desc_text, desc_style)]
-        ]
-        
-        score_table = Table(score_card_data, colWidths=[5*inch])
-        score_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
-            ('TOPPADDING', (0, 0), (-1, 0), 25),  # Extra top padding for score
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),  # Bottom padding for score
-            ('TOPPADDING', (0, 1), (-1, 1), 0),   # No top padding for "out of 100"
-            ('BOTTOMPADDING', (0, 1), (-1, 1), 8), # Bottom padding for "out of 100"
-            ('TOPPADDING', (0, 2), (-1, 2), 8),   # Top padding for status
-            ('BOTTOMPADDING', (0, 2), (-1, 2), 8), # Bottom padding for status
-            ('TOPPADDING', (0, 3), (-1, 3), 8),   # Top padding for description
-            ('BOTTOMPADDING', (0, 3), (-1, 3), 25), # Extra bottom padding for description
-            ('LEFTPADDING', (0, 0), (-1, -1), 20),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 20),
-        ]))
-        
-        elements.append(score_table)
-        elements.append(Spacer(1, 0.4*inch))
-        
-        # Category Breakdown - matching the web page structure
-        category_header_text = process_arabic_text("تفصيل الفئات") if language == 'ar' else "Category Breakdown"
+        # Financial Pillar Scores - matching the new clean design
+        category_header_text = process_arabic_text("درجات الركائز المالية") if language == 'ar' else "Financial Pillar Scores"
         elements.append(Paragraph(category_header_text, heading_style))
+        
+        category_subtext_raw = 'أدائك عبر 7 مجالات رئيسية للصحة المالية' if language == 'ar' else 'Your performance across the 7 key areas of financial health'
+        category_subtext = process_arabic_text(category_subtext_raw) if language == 'ar' else category_subtext_raw
+        elements.append(Paragraph(category_subtext, subtitle_style))
+        elements.append(Spacer(1, 0.1*inch))
         
         category_scores = result.get('category_scores', {})
         
@@ -1183,6 +1120,27 @@ class PDFReportService:
             'Retirement Planning': {'en': 'Retirement Planning', 'ar': 'التخطيط للتقاعد'},
             'Protecting Your Family': {'en': 'Protecting Your Family', 'ar': 'حماية عائلتك'}
         }
+        
+        # Status level translations
+        status_translations = {
+            'excellent': {'en': 'Excellent', 'ar': 'ممتاز'},
+            'Excellent': {'en': 'Excellent', 'ar': 'ممتاز'},
+            'good': {'en': 'Good', 'ar': 'جيد'},
+            'Good': {'en': 'Good', 'ar': 'جيد'},
+            'at_risk': {'en': 'At Risk', 'ar': 'في خطر'},
+            'At_risk': {'en': 'At Risk', 'ar': 'في خطر'},
+            'At Risk': {'en': 'At Risk', 'ar': 'في خطر'},
+            'moderate': {'en': 'Moderate', 'ar': 'معتدل'},
+            'Moderate': {'en': 'Moderate', 'ar': 'معتدل'},
+            'needs_improvement': {'en': 'Needs Improvement', 'ar': 'يحتاج تحسين'},
+            'Needs Improvement': {'en': 'Needs Improvement', 'ar': 'يحتاج تحسين'},
+            'Needs_improvement': {'en': 'Needs Improvement', 'ar': 'يحتاج تحسين'}
+        }
+        
+        # Helper function for category translation
+        def getCategoryTranslation(cat_name):
+            cat_data = category_translations.get(cat_name, {'en': cat_name, 'ar': cat_name})
+            return process_arabic_text(cat_data['ar']) if language == 'ar' else cat_data['en']
         
         # Create category table matching the web cards
         # Create header style with proper font
@@ -1257,61 +1215,84 @@ class PDFReportService:
         elements.append(cat_table)
         elements.append(Spacer(1, 0.3*inch))
         
-        # Personalized Insights - matching the web page
+        # Your Personalized Action Plan - matching the new box design
         insights = result.get('insights', [])
         if insights:
-            insights_header_text = process_arabic_text("رؤى مخصصة") if language == 'ar' else "Personalized Insights"
-            elements.append(Paragraph(insights_header_text, heading_style))
+            action_plan_header_text = process_arabic_text("خطة عملك الشخصية") if language == 'ar' else "Your Personalized Action Plan"
+            elements.append(Paragraph(action_plan_header_text, heading_style))
             
-            for insight in insights[:5]:  # Limit to 5 as on web page
-                # Handle both string and dict formats
+            action_plan_subtext_raw = 'التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك كيفية تقوية نتيجتك' if language == 'ar' else "Small changes make big differences. Here's how to strengthen your score."
+            action_plan_subtext = process_arabic_text(action_plan_subtext_raw) if language == 'ar' else action_plan_subtext_raw
+            elements.append(Paragraph(action_plan_subtext, subtitle_style))
+            elements.append(Spacer(1, 0.15*inch))
+            
+            # Create action plan box with numbered list
+            action_plan_data = []
+            
+            # Add category header
+            rec_cat_text_raw = 'فئات التوصيات:' if language == 'ar' else 'Recommendation Categories:'
+            rec_cat_text = process_arabic_text(rec_cat_text_raw) if language == 'ar' else rec_cat_text_raw
+            action_plan_data.append([Paragraph(f"<b>{rec_cat_text}</b>", body_style)])
+            
+            # Add numbered insights with category
+            for idx, insight in enumerate(insights[:5], 1):  # Limit to 5
                 if isinstance(insight, dict):
-                    insight_text_raw = insight.get('text', str(insight))
+                    category = insight.get('category', '')
+                    text = insight.get('text', str(insight))
+                    category_text = getCategoryTranslation(category) if language == 'ar' else category
+                    insight_text_raw = f"{idx}. {category_text}: {text}"
                 else:
-                    insight_text_raw = str(insight)
+                    insight_text_raw = f"{idx}. {str(insight)}"
                 
-                # Process Arabic text if needed
                 insight_text = process_arabic_text(insight_text_raw) if language == 'ar' else insight_text_raw
-                elements.append(Paragraph(f"• {insight_text}", insight_style))
-                elements.append(Spacer(1, 0.05*inch))
+                action_plan_data.append([Paragraph(insight_text, body_style)])
             
-            elements.append(Spacer(1, 0.2*inch))
+            action_plan_table = Table(action_plan_data, colWidths=[5*inch])
+            action_plan_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT' if language != 'ar' else 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafc')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 15),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 15),
+                ('TOPPADDING', (0, 0), (0, 0), 12),  # Extra padding for header
+                ('BOTTOMPADDING', (0, 0), (0, 0), 8),
+                ('TOPPADDING', (0, 1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 12),  # Extra padding for last item
+            ]))
+            
+            elements.append(action_plan_table)
+            elements.append(Spacer(1, 0.3*inch))
         
-        # Understanding Your Score section
+        # Understanding Your Score section - 4 bands layout
         understanding_header_text = process_arabic_text("فهم نتيجتك") if language == 'ar' else "Understanding Your Score"
         elements.append(Paragraph(understanding_header_text, heading_style))
-        
-        understanding_text_raw = 'تتراوح درجة الصحة المالية من 0 إلى 100 نقطة:' if language == 'ar' else 'Financial Health Score ranges from 0 to 100 points:'
-        understanding_text = process_arabic_text(understanding_text_raw) if language == 'ar' else understanding_text_raw
-        elements.append(Paragraph(understanding_text, body_style))
         elements.append(Spacer(1, 0.15*inch))
         
-        # Score bands table - create with Paragraph objects for proper font support
+        # 4 Score bands with colors matching the new design
         bands_data = []
         if language == 'ar':
-            # Create a table style for Arabic content
             table_cell_style = ParagraphStyle(
                 'TableCellArabic',
                 parent=body_style,
                 fontSize=9,
                 fontName=body_font,
-                alignment=alignment
+                alignment=TA_CENTER
             )
             
             bands_raw = [
-                ['0-20', 'في خطر', 'ثغرات مالية عالية. يلزم اتخاذ إجراءات فورية'],
-                ['21-40', 'يحتاج إلى اهتمام', 'صحة مالية غير مستقرة'],
-                ['41-60', 'معتدل', 'أساس لائق مع مجال للتحسين'],
-                ['61-80', 'جيد', 'على المسار الصحيح'],
-                ['81-100', 'ممتاز', 'عادات مالية قوية جداً']
+                ['1-29', 'في خطر', 'ركز على بناء عادات مالية أساسية', '#ee3b37'],
+                ['30-59', 'يحتاج إلى تحسين', 'أساس جيد، مجال للنمو', '#fead2a'],
+                ['60-79', 'جيد', 'صحة مالية قوية', '#e7e229'],
+                ['80-100', 'ممتاز', 'رفاهية مالية متميزة', '#57b957']
             ]
             
-            # Process each cell
             for row in bands_raw:
                 processed_row = [
-                    Paragraph(row[0], table_cell_style),  # Range doesn't need processing
-                    Paragraph(process_arabic_text(row[1]), table_cell_style),  # Status
-                    Paragraph(process_arabic_text(row[2]), table_cell_style)   # Description
+                    Paragraph(f"<b>{row[0]}</b>", table_cell_style),
+                    Paragraph(f"<b>{process_arabic_text(row[1])}</b>", table_cell_style),
+                    Paragraph(process_arabic_text(row[2]), table_cell_style)
                 ]
                 bands_data.append(processed_row)
         else:
@@ -1319,32 +1300,45 @@ class PDFReportService:
                 'TableCellEnglish',
                 parent=body_style,
                 fontSize=9,
-                fontName='Helvetica'
+                fontName='Helvetica',
+                alignment=TA_CENTER
             )
             
             bands_raw = [
-                ['0-20', 'At Risk', 'High financial vulnerability. Immediate action needed'],
-                ['21-40', 'Needs Attention', 'Unstable financial health'],
-                ['41-60', 'Moderate', 'Decent foundation with room for improvement'],
-                ['61-80', 'Good', 'On the right track'],
-                ['81-100', 'Excellent', 'Very strong financial habits']
+                ['1-29', 'At Risk', 'Focus on building basic financial habits', '#ee3b37'],
+                ['30-59', 'Needs Improvement', 'Good foundation, room for growth', '#fead2a'],
+                ['60-79', 'Good', 'Strong financial health', '#e7e229'],
+                ['80-100', 'Excellent', 'Outstanding financial wellness', '#57b957']
             ]
             
             for row in bands_raw:
                 processed_row = [
-                    Paragraph(row[0], table_cell_style),
-                    Paragraph(row[1], table_cell_style),
+                    Paragraph(f"<b>{row[0]}</b>", table_cell_style),
+                    Paragraph(f"<b>{row[1]}</b>", table_cell_style),
                     Paragraph(row[2], table_cell_style)
                 ]
                 bands_data.append(processed_row)
         
-        bands_table = Table(bands_data, colWidths=[0.8*inch, 1.5*inch, 3.2*inch])
+        # Create colored cells table
+        bands_table = Table(bands_data, colWidths=[1.3*inch, 1.3*inch, 2.9*inch])
         bands_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT' if language != 'ar' else 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            # Red - At Risk
+            ('BACKGROUND', (0, 0), (2, 0), colors.HexColor('#ee3b37')),
+            ('TEXTCOLOR', (0, 0), (2, 0), colors.white),
+            # Orange - Needs Improvement
+            ('BACKGROUND', (0, 1), (2, 1), colors.HexColor('#fead2a')),
+            ('TEXTCOLOR', (0, 1), (2, 1), colors.white),
+            # Yellow - Good
+            ('BACKGROUND', (0, 2), (2, 2), colors.HexColor('#e7e229')),
+            ('TEXTCOLOR', (0, 2), (2, 2), colors.HexColor('#374151')),
+            # Green - Excellent
+            ('BACKGROUND', (0, 3), (2, 3), colors.HexColor('#57b957')),
+            ('TEXTCOLOR', (0, 3), (2, 3), colors.white),
+            ('GRID', (0, 0), (-1, -1), 1, colors.white),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
             ('LEFTPADDING', (0, 0), (-1, -1), 10),
             ('RIGHTPADDING', (0, 0), (-1, -1), 10),
         ]))

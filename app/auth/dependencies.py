@@ -28,8 +28,14 @@ async def get_current_user(
         raise credentials_exception
     
     # Extract user info from token
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    user_id_str = payload.get("sub")
+    if user_id_str is None:
+        raise credentials_exception
+    
+    # Convert to int (JWT sub is stored as string)
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
     
     # Get user from database

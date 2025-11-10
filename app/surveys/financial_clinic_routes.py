@@ -10,7 +10,7 @@ Endpoints for the Financial Clinic survey system:
 - POST /financial-clinic/report/pdf - Generate PDF report
 - POST /financial-clinic/report/email - Send email report
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -84,7 +84,6 @@ class FinancialClinicResultResponse(BaseModel):
     insights: List[Dict]
     products: List[Dict]
     questions_answered: int
-    total_questions: Optional[int] = None
     total_questions: int
 
 
@@ -92,24 +91,23 @@ class FinancialClinicResultResponse(BaseModel):
 
 @router.get("/questions", response_model=List[QuestionResponse])
 async def get_financial_clinic_questions(
-    has_children: bool = False,  # Deprecated - kept for API compatibility
+    children: int = 0,
     language: str = "en"
 ):
     """
-    Get all Financial Clinic questions.
-    
-    Note: Financial Clinic v2 always returns all 16 questions.
-    Q16 is NOT conditional - shown to everyone regardless of children status.
+    Get Financial Clinic questions based on profile.
     
     Args:
-        has_children: Deprecated parameter (kept for backwards compatibility)
+        children: Number of children (0 = no children, >= 1 = has children)
         language: "en" or "ar"
         
     Returns:
-        All 16 Financial Clinic questions
+        14 or 15 questions depending on children count:
+        - If children = 0: Returns 14 questions (Q15 excluded)
+        - If children > 0: Returns all 15 questions (Q15 included)
     """
-    # Always get all questions - has_children parameter is ignored
-    questions = get_questions_for_profile(has_children=True)
+    # Get questions based on children count
+    questions = get_questions_for_profile(children_count=children)
     
     return [
         {
@@ -153,25 +151,38 @@ async def calculate_financial_clinic_result(
     Returns:
         Complete results with score, insights, and products
     """
-    # Validate responses
+    # Get children count from profile
+    children_count = request.profile.children
+    
+    # Validate responses count based on children status
+    expected_count = 15 if children_count > 0 else 14
+    if len(request.answers) != expected_count:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Must provide responses for {expected_count} questions. Received {len(request.answers)} responses."
+        )
+    
     scorer = FinancialClinicScorer()
-    is_valid, errors = scorer.validate_responses(
-        request.answers,
-        request.profile.children > 0
-    )
+    is_valid, errors = scorer.validate_responses(request.answers)
     
     if not is_valid:
         raise HTTPException(status_code=400, detail={"errors": errors})
     
-    # Calculate score
+    # Calculate score with children count for conditional Q15 logic
     score_result = calculate_financial_clinic_score(
         responses=request.answers,
-        has_children=request.profile.children > 0
+        children_count=children_count
     )
     
-    # Generate insights
+    # Generate insights with profile data for conditional logic
     insights = generate_insights(
         category_scores=score_result["category_scores"],
+        profile={
+            'income_range': request.profile.income_range,
+            'nationality': request.profile.nationality,
+            'gender': request.profile.gender,
+            'children': request.profile.children
+        },
         max_insights=5
     )
     
@@ -269,7 +280,7 @@ async def submit_financial_clinic_survey(
             insights=result_dict.get('insights', []),
             product_recommendations=result_dict.get('products', []),
             questions_answered=result_dict.get('questions_answered', len(request.answers)),
-            total_questions=result_dict.get('total_questions', 16)
+            total_questions=result_dict.get('total_questions', 15)
         )
         db.add(survey_response)
         db.commit()
@@ -316,19 +327,69 @@ async def get_financial_clinic_stats(db: Session = Depends(get_db)):
 class PDFReportRequest(BaseModel):
     """Request for PDF report generation."""
     survey_response_id: Optional[int] = None
-    result: Optional[FinancialClinicResultResponse] = None
-    profile: Optional[ProfileData] = None
+    result: Optional[Dict[str, Any]] = None  # Changed from FinancialClinicResultResponse for flexibility
+    profile: Optional[Dict[str, Any]] = None  # Changed from ProfileData for flexibility
     language: str = "en"
 
 
 class EmailReportRequest(BaseModel):
     """Request for email report."""
     survey_response_id: Optional[int] = None
-    result: Optional[FinancialClinicResultResponse] = None
-    profile: Optional[ProfileData] = None
+    result: Optional[Dict[str, Any]] = None  # Changed from FinancialClinicResultResponse for flexibility
+    profile: Optional[Dict[str, Any]] = None  # Changed from ProfileData for flexibility
     email: str
     language: str = "en"
 
+
+# ==================== Helper Functions ====================
+
+def convert_response_to_survey_data(response):
+    """Convert FinancialClinicResponse to survey_data format for PDF/Email."""
+    # Calculate status_level from status_band
+    status_level_map = {
+        'At Risk': 1,
+        'Needs Improvement': 2,
+        'Moderate': 3,
+        'Good': 4,
+        'Excellent': 5
+    }
+    status_level = status_level_map.get(response.status_band, 3)
+    
+    # Serialize profile properly (exclude SQLAlchemy internal keys)
+    profile_data = {}
+    if response.profile:
+        for key in ['name', 'date_of_birth', 'gender', 'nationality', 'children', 
+                   'employment_status', 'income_range', 'emirate', 'email', 'mobile_number']:
+            if hasattr(response.profile, key):
+                profile_data[key] = getattr(response.profile, key)
+    
+    # Convert category_scores dict to list format for email template
+    category_scores_list = []
+    if response.category_scores:
+        for cat_name, cat_data in response.category_scores.items():
+            category_scores_list.append({
+                'category': cat_name,
+                'category_ar': cat_name,  # TODO: Add Arabic translations
+                'score': cat_data.get('score', 0),
+                'max_possible': cat_data.get('max_possible', 0),
+                'percentage': cat_data.get('percentage', 0),
+                'status_level': cat_data.get('status_level', 'moderate')
+            })
+    
+    return {
+        'profile': profile_data,
+        'result': {
+            'total_score': response.total_score,
+            'status_band': response.status_band,
+            'status_level': status_level,
+            'category_scores': category_scores_list,
+            'insights': response.insights,
+            'products': response.product_recommendations,
+        }
+    }
+
+
+# ==================== PDF & Email Routes ====================
 
 @router.post("/report/pdf")
 async def generate_pdf_report(
@@ -372,23 +433,32 @@ async def generate_pdf_report(
             if not response:
                 raise HTTPException(status_code=404, detail="Survey response not found")
             
-            # Convert Financial Clinic response to format expected by PDF service
-            survey_data = {
-                'profile': response.profile.__dict__ if response.profile else {},
-                'result': {
-                    'total_score': response.total_score,
-                    'status_band': response.status_band,
-                    'status_level': response.status_level,
-                    'category_scores': response.category_scores,
-                    'insights': response.insights,
-                    'products': response.recommended_products,
-                }
-            }
+            # Use helper function to convert response to survey_data format
+            survey_data = convert_response_to_survey_data(response)
         elif request.result:
             # Use provided result data
+            # Handle result - could be dict or Pydantic model
+            if isinstance(request.result, dict):
+                result_data = request.result
+            elif hasattr(request.result, 'dict'):
+                result_data = request.result.dict()
+            else:
+                result_data = request.result
+            
+            # Handle profile - could be dict or Pydantic model
+            if request.profile:
+                if isinstance(request.profile, dict):
+                    profile_data = request.profile
+                elif hasattr(request.profile, 'dict'):
+                    profile_data = request.profile.dict()
+                else:
+                    profile_data = request.profile
+            else:
+                profile_data = {}
+            
             survey_data = {
-                'profile': request.profile.dict() if request.profile and hasattr(request.profile, 'dict') else (request.profile or {}),
-                'result': request.result.dict() if hasattr(request.result, 'dict') else request.result
+                'profile': profile_data,
+                'result': result_data
             }
         else:
             raise HTTPException(
@@ -494,23 +564,46 @@ async def send_email_report(
             if not response:
                 raise HTTPException(status_code=404, detail="Survey response not found")
             
-            # Convert Financial Clinic response to format expected by services
-            survey_data = {
-                'profile': response.profile.__dict__ if response.profile else {},
-                'result': {
-                    'total_score': response.total_score,
-                    'status_band': response.status_band,
-                    'status_level': response.status_level,
-                    'category_scores': response.category_scores,
-                    'insights': response.insights,
-                    'products': response.recommended_products,
-                }
-            }
+            # Use helper function to convert response to survey_data format
+            survey_data = convert_response_to_survey_data(response)
         elif request.result:
-            # Use provided result data
+            # Use provided result data  
+            logger.info(f"📧 EMAIL - request.result type: {type(request.result)}")
+            
+            # Handle result - could be dict, string (JSON), or Pydantic model
+            if isinstance(request.result, str):
+                import json
+                try:
+                    result_data = json.loads(request.result)
+                    logger.info("📧 Parsed result from JSON string")
+                except Exception as e:
+                    logger.error(f"📧 Failed to parse result JSON: {e}")
+                    result_data = {}
+            elif isinstance(request.result, dict):
+                result_data = request.result
+                logger.info("📧 Using result as dict directly")
+            else:
+                logger.warning(f"📧 Unexpected result type: {type(request.result)}")
+                result_data = {}
+            
+            # Handle profile
+            if request.profile:
+                if isinstance(request.profile, str):
+                    import json
+                    try:
+                        profile_data = json.loads(request.profile)
+                    except:
+                        profile_data = {}
+                elif isinstance(request.profile, dict):
+                    profile_data = request.profile
+                else:
+                    profile_data = {}
+            else:
+                profile_data = {}
+            
             survey_data = {
-                'profile': request.profile.dict() if request.profile and hasattr(request.profile, 'dict') else (request.profile or {}),
-                'result': request.result.dict() if hasattr(request.result, 'dict') else request.result
+                'profile': profile_data,
+                'result': result_data
             }
         else:
             raise HTTPException(
@@ -592,17 +685,21 @@ async def get_financial_clinic_history(
     Returns:
         List of user's Financial Clinic assessments
     """
-    from app.models import FinancialClinicResponse
+    from app.models import FinancialClinicResponse, FinancialClinicProfile
     
-    responses = db.query(FinancialClinicResponse).filter(
-        FinancialClinicResponse.user_id == current_user.id
+    # Query responses by joining through profile and matching user's email
+    responses = db.query(FinancialClinicResponse).join(
+        FinancialClinicProfile,
+        FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+    ).filter(
+        FinancialClinicProfile.email == current_user.email
     ).order_by(FinancialClinicResponse.created_at.desc()).offset(skip).limit(limit).all()
     
     return [{
         "id": r.id,
         "total_score": r.total_score,
         "status_band": r.status_band,
-        "status_level": r.status_level,
+        "status_level": getattr(r, 'status_level', 0),  # Use getattr with default
         "created_at": r.created_at.isoformat(),
         "category_scores": r.category_scores,
         "questions_answered": r.questions_answered

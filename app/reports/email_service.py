@@ -18,12 +18,12 @@ class EmailReportService:
     
     def __init__(self):
         """Initialize the email service."""
-        self.smtp_server = getattr(settings, 'SMTP_SERVER', 'smtp.gmail.com')
+        self.smtp_server = getattr(settings, 'SMTP_HOST', 'smtp.gmail.com')
         self.smtp_port = getattr(settings, 'SMTP_PORT', 587)
         self.smtp_username = getattr(settings, 'SMTP_USERNAME', '')
         self.smtp_password = getattr(settings, 'SMTP_PASSWORD', '')
         self.from_email = getattr(settings, 'FROM_EMAIL', 'noreply@nationalbonds.ae')
-        self.from_name = getattr(settings, 'FROM_NAME', 'National Bonds Financial Health')
+        self.from_name = getattr(settings, 'FROM_NAME', 'National Bonds')
         
         # Set up Jinja2 environment for email templates
         template_dir = os.path.join(os.path.dirname(__file__), 'templates')
@@ -472,6 +472,16 @@ National Bonds Team
             Dictionary with delivery status
         """
         try:
+            # Debug logging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"🔍 Email - result type: {type(result)}, profile type: {type(profile)}")
+            
+            # Ensure profile is None or dict
+            if profile is not None and not isinstance(profile, dict):
+                logger.warning(f"⚠️ Profile is not a dict! Type: {type(profile)}, Value: {profile}")
+                profile = None
+            
             # Create email message
             msg = MIMEMultipart('alternative')
             
@@ -486,12 +496,15 @@ National Bonds Team
                 msg['Subject'] = "Your Financial Clinic Assessment Report"
             
             # Generate email content
+            logger.info("📧 Generating HTML content...")
             html_content = self._generate_financial_clinic_email_html(
                 result, profile, language
             )
+            logger.info("📧 Generating text content...")
             text_content = self._generate_financial_clinic_email_text(
                 result, profile, language
             )
+            logger.info("📧 Email content generated successfully")
             
             # Attach HTML and text versions
             msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
@@ -534,36 +547,39 @@ National Bonds Team
         profile: Optional[Dict[str, Any]],
         language: str
     ) -> str:
-        """Generate HTML email content for Financial Clinic report."""
+        """Generate HTML email content for Financial Clinic report - Updated to match new design."""
+        # Handle case where result might be a string (shouldn't happen but defensive programming)
+        if isinstance(result, str):
+            import json
+            try:
+                result = json.loads(result)
+            except:
+                result = {}
+        
+        # Ensure result is a dictionary
+        if not isinstance(result, dict):
+            result = {}
+        
         # Use total_score from Financial Clinic (not overall_score)
         score = result.get('total_score', result.get('overall_score', 0))
         categories = result.get('category_scores', [])
-        status_band = result.get('status_band', 'Moderate')
+        insights = result.get('insights', [])
         
-        # Get primary color
-        primary_color = "#1e3a8a"  # National Bonds blue
-        secondary_color = "#059669"  # Green
-        
-        # Determine score color based on score ranges
-        if score >= 81:
-            score_color = "#059669"  # Green - Excellent
-        elif score >= 61:
-            score_color = "#3b82f6"  # Blue - Good  
-        elif score >= 41:
-            score_color = "#f59e0b"  # Amber - Moderate
-        elif score >= 21:
-            score_color = "#ef4444"  # Red - Needs Attention
-        else:
-            score_color = "#991b1b"  # Dark Red - At Risk
+        # Updated colors to match new design
+        primary_color = "#2e9e42"  # Main green
+        score_color = "#2e9e42"  # Consistent green for score
+        gradient_start = "#57b957"
+        gradient_end = "#2e9e42"
         
         # Get user name
-        user_name = ""
-        if profile:
-            user_name = profile.get('name', '')
+        user_name = profile.get('name', '') if profile else ''
         
         # Build category HTML for Arabic
         categories_html_ar = ""
         for cat in categories:
+            # Defensive: ensure cat is a dict
+            if not isinstance(cat, dict):
+                continue
             cat_name_ar = cat.get('category_ar', cat.get('category', ''))
             cat_score = cat.get('score', 0)
             cat_color = self._get_category_color(cat.get('status_level', 'moderate'))
@@ -578,6 +594,9 @@ National Bonds Team
         # Build category HTML for English
         categories_html_en = ""
         for cat in categories:
+            # Defensive: ensure cat is a dict
+            if not isinstance(cat, dict):
+                continue
             cat_name = cat.get('category', '')
             cat_score = cat.get('score', 0)
             cat_color = self._get_category_color(cat.get('status_level', 'moderate'))
@@ -587,9 +606,22 @@ National Bonds Team
                     <span class="category-score" style="color: {cat_color};">{cat_score:.1f}</span>
                 </div>
             """
-        user_name = ""
-        if profile:
-            user_name = profile.get('name', '')
+        
+        # Get user name safely (avoid None.get() error)
+        user_name = profile.get('name', '') if profile else ''
+        
+        # Build insights HTML
+        insights_html_ar = ""
+        insights_html_en = ""
+        for idx, insight in enumerate(insights[:5], 1):
+            if isinstance(insight, dict):
+                category = insight.get('category', '')
+                text = insight.get('text', str(insight))
+                insights_html_ar += f"<li><strong>{idx}. {category}:</strong> {text}</li>"
+                insights_html_en += f"<li><strong>{idx}. {category}:</strong> {text}</li>"
+            else:
+                insights_html_ar += f"<li>{idx}. {str(insight)}</li>"
+                insights_html_en += f"<li>{idx}. {str(insight)}</li>"
         
         if language == "ar":
             return f"""
@@ -600,67 +632,99 @@ National Bonds Team
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تقرير العيادة المالية</title>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: {primary_color}; color: white; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .score-box {{ background-color: #f8f9fa; border: 3px solid {score_color}; border-radius: 15px; padding: 30px; margin: 20px 0; text-align: center; }}
-        .score {{ font-size: 64px; font-weight: bold; color: {score_color}; margin: 10px 0; }}
-        .score-label {{ font-size: 18px; color: #666; }}
-        .content {{ padding: 30px 20px; background: white; }}
-        .category {{ background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-right: 4px solid {secondary_color}; }}
-        .category-name {{ font-weight: bold; color: {primary_color}; }}
-        .category-score {{ float: left; font-size: 20px; font-weight: bold; color: {secondary_color}; }}
-        .footer {{ background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px; }}
-        .highlight {{ background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-        ul {{ line-height: 2; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; background: white; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; background: white; }}
+        .header {{ background-color: white; padding: 30px 20px; text-align: center; }}
+        .header h1 {{ color: #374151; font-size: 28px; margin: 0 0 10px 0; }}
+        .header p {{ color: #9ca3af; font-size: 14px; margin: 5px 0; }}
+        .score-display {{ text-align: center; padding: 30px 0; }}
+        .score {{ font-size: 72px; font-weight: bold; color: {score_color}; margin: 20px 0; }}
+        .progress-bar {{ width: 100%; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin: 20px 0; }}
+        .progress-fill {{ height: 100%; background: linear-gradient(to right, {gradient_start}, {gradient_end}); border-radius: 10px; }}
+        .content {{ padding: 20px; background: white; }}
+        .section-title {{ font-size: 24px; font-weight: bold; color: #374151; text-align: center; margin: 30px 0 15px 0; }}
+        .section-subtitle {{ font-size: 14px; color: #9ca3af; text-align: center; margin-bottom: 20px; }}
+        .category {{ display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 10px 0; border-bottom: 1px solid #e5e7eb; }}
+        .category-name {{ font-weight: 600; color: #374151; }}
+        .category-score {{ font-size: 16px; color: #6b7280; }}
+        .action-plan-box {{ background: #f9fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+        .action-plan-box ul {{ list-style: none; padding: 0; margin: 15px 0 0 0; }}
+        .action-plan-box li {{ padding: 10px 0; border-right: 3px solid {primary_color}; padding-right: 12px; margin-bottom: 10px; color: #374151; }}
+        .score-bands {{ display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }}
+        .band {{ flex: 1; min-width: 120px; padding: 15px; border-radius: 8px; text-align: center; color: white; }}
+        .band-red {{ background: #ee3b37; }}
+        .band-orange {{ background: #fead2a; }}
+        .band-yellow {{ background: #e7e229; color: #374151; }}
+        .band-green {{ background: #57b957; }}
+        .band-range {{ font-size: 18px; font-weight: bold; margin-bottom: 5px; }}
+        .band-label {{ font-size: 13px; font-weight: 600; margin-bottom: 5px; }}
+        .band-desc {{ font-size: 11px; opacity: 0.9; }}
+        .footer {{ background-color: #f9fafb; padding: 20px; text-align: center; font-size: 14px; border-radius: 8px; margin-top: 30px; }}
+        .cta-button {{ display: inline-block; background: {primary_color}; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px 5px; }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="margin: 0;">العيادة المالية</h1>
-            <p style="margin: 10px 0; font-size: 18px;">تقرير التقييم الشخصي</p>
+            <h1>إليك درجة صحتك المالية!</h1>
+            <p>هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم</p>
+        </div>
+        
+        <div class="score-display">
+            <div class="score">{round(score)}%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {score}%;"></div>
+            </div>
         </div>
         
         <div class="content">
-            <h2>مرحباً {user_name}،</h2>
-            
-            <p>شكراً لك على إكمال تقييم العيادة المالية! نحن متحمسون لمساعدتك في تحسين صحتك المالية.</p>
-            
-            <div class="score-box">
-                <div class="score-label">نتيجتك الإجمالية</div>
-                <div class="score">{score:.1f}</div>
-                <div class="score-label">من 100</div>
+            <div class="section-title">فهم نتيجتك</div>
+            <div class="score-bands">
+                <div class="band band-red">
+                    <div class="band-range">1-29</div>
+                    <div class="band-label">في خطر</div>
+                    <div class="band-desc">ركز على بناء عادات مالية أساسية</div>
+                </div>
+                <div class="band band-orange">
+                    <div class="band-range">30-59</div>
+                    <div class="band-label">يحتاج إلى تحسين</div>
+                    <div class="band-desc">أساس جيد، مجال للنمو</div>
+                </div>
+                <div class="band band-yellow">
+                    <div class="band-range">60-79</div>
+                    <div class="band-label">جيد</div>
+                    <div class="band-desc">صحة مالية قوية</div>
+                </div>
+                <div class="band band-green">
+                    <div class="band-range">80-100</div>
+                    <div class="band-label">ممتاز</div>
+                    <div class="band-desc">رفاهية مالية متميزة</div>
+                </div>
             </div>
             
-            <div class="highlight">
-                <h3 style="margin-top: 0;">📊 تفصيل النتائج حسب الفئة</h3>
-                {categories_html_ar}
+            <div class="section-title">درجات الركائز المالية</div>
+            <div class="section-subtitle">أدائك عبر 7 مجالات رئيسية للصحة المالية</div>
+            {categories_html_ar}
+            
+            <div class="section-title">خطة عملك الشخصية</div>
+            <div class="section-subtitle">التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك كيفية تقوية نتيجتك</div>
+            <div class="action-plan-box">
+                <div style="font-weight: 600; margin-bottom: 10px;">فئات التوصيات:</div>
+                <ul>{insights_html_ar}</ul>
             </div>
             
-            <h3>📄 التقرير المرفق يتضمن:</h3>
-            <ul>
-                <li>تحليل تفصيلي لجميع جوانب صحتك المالية</li>
-                <li>توصيات شخصية مبنية على إجاباتك</li>
-                <li>خطوات عملية لتحسين وضعك المالي</li>
-                <li>موارد تعليمية مفيدة</li>
-            </ul>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://www.nationalbonds.ae/ar/contact-us" class="cta-button">احجز استشارة مجانية</a>
+                <a href="https://www.nationalbonds.ae" class="cta-button">ابدأ الادخار مع السندات الوطنية</a>
+            </div>
             
-            <h3>🎯 الخطوات التالية:</h3>
-            <ul>
-                <li>راجع التقرير المفصل المرفق بعناية</li>
-                <li>حدد أولوياتك المالية</li>
-                <li>ابدأ بتطبيق التوصيات الأكثر تأثيراً</li>
-                <li>احفظ هذا التقرير للرجوع إليه مستقبلاً</li>
-            </ul>
-            
-            <p><strong>تذكر:</strong> تحسين صحتك المالية رحلة تتطلب الصبر والمثابرة. نحن معك في كل خطوة!</p>
+            <p style="text-align: center; color: #6b7280;"><strong>تذكر:</strong> تحسين صحتك المالية رحلة تتطلب الصبر والمثابرة. نحن معك في كل خطوة!</p>
         </div>
         
         <div class="footer">
-            <p style="margin: 5px 0;">هذا التقرير لأغراض إعلامية فقط</p>
-            <p style="margin: 5px 0; font-weight: bold;">السندات الوطنية</p>
-            <p style="margin: 5px 0;">www.nationalbonds.ae</p>
+            <p style="margin: 5px 0; color: #6b7280;">هذا التقرير لأغراض إعلامية فقط</p>
+            <p style="margin: 5px 0; font-weight: bold; color: #374151;">السندات الوطنية</p>
+            <p style="margin: 5px 0; color: #6b7280;">www.nationalbonds.ae</p>
         </div>
     </div>
 </body>
@@ -675,67 +739,99 @@ National Bonds Team
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Financial Clinic Report</title>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: {primary_color}; color: white; padding: 30px 20px; text-align: center; border-radius: 10px 10px 0 0; }}
-        .score-box {{ background-color: #f8f9fa; border: 3px solid {score_color}; border-radius: 15px; padding: 30px; margin: 20px 0; text-align: center; }}
-        .score {{ font-size: 64px; font-weight: bold; color: {score_color}; margin: 10px 0; }}
-        .score-label {{ font-size: 18px; color: #666; }}
-        .content {{ padding: 30px 20px; background: white; }}
-        .category {{ background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid {secondary_color}; display: flex; justify-content: space-between; align-items: center; }}
-        .category-name {{ font-weight: bold; color: {primary_color}; }}
-        .category-score {{ font-size: 20px; font-weight: bold; color: {secondary_color}; }}
-        .footer {{ background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px; }}
-        .highlight {{ background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-        ul {{ line-height: 2; }}
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: white; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; background: white; }}
+        .header {{ background-color: white; padding: 30px 20px; text-align: center; }}
+        .header h1 {{ color: #374151; font-size: 28px; margin: 0 0 10px 0; }}
+        .header p {{ color: #9ca3af; font-size: 14px; margin: 5px 0; }}
+        .score-display {{ text-align: center; padding: 30px 0; }}
+        .score {{ font-size: 72px; font-weight: bold; color: {score_color}; margin: 20px 0; }}
+        .progress-bar {{ width: 100%; height: 20px; background: #e5e7eb; border-radius: 10px; overflow: hidden; margin: 20px 0; }}
+        .progress-fill {{ height: 100%; background: linear-gradient(to right, {gradient_start}, {gradient_end}); border-radius: 10px; }}
+        .content {{ padding: 20px; background: white; }}
+        .section-title {{ font-size: 24px; font-weight: bold; color: #374151; text-align: center; margin: 30px 0 15px 0; }}
+        .section-subtitle {{ font-size: 14px; color: #9ca3af; text-align: center; margin-bottom: 20px; }}
+        .category {{ display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 10px 0; border-bottom: 1px solid #e5e7eb; }}
+        .category-name {{ font-weight: 600; color: #374151; }}
+        .category-score {{ font-size: 16px; color: #6b7280; }}
+        .action-plan-box {{ background: #f9fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+        .action-plan-box ul {{ list-style: none; padding: 0; margin: 15px 0 0 0; }}
+        .action-plan-box li {{ padding: 10px 0; border-left: 3px solid {primary_color}; padding-left: 12px; margin-bottom: 10px; color: #374151; }}
+        .score-bands {{ display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }}
+        .band {{ flex: 1; min-width: 120px; padding: 15px; border-radius: 8px; text-align: center; color: white; }}
+        .band-red {{ background: #ee3b37; }}
+        .band-orange {{ background: #fead2a; }}
+        .band-yellow {{ background: #e7e229; color: #374151; }}
+        .band-green {{ background: #57b957; }}
+        .band-range {{ font-size: 18px; font-weight: bold; margin-bottom: 5px; }}
+        .band-label {{ font-size: 13px; font-weight: 600; margin-bottom: 5px; }}
+        .band-desc {{ font-size: 11px; opacity: 0.9; }}
+        .footer {{ background-color: #f9fafb; padding: 20px; text-align: center; font-size: 14px; border-radius: 8px; margin-top: 30px; }}
+        .cta-button {{ display: inline-block; background: {primary_color}; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px 5px; }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1 style="margin: 0;">Financial Clinic</h1>
-            <p style="margin: 10px 0; font-size: 18px;">Your Personal Assessment Report</p>
+            <h1>Here's your Financial Health Score!</h1>
+            <p>This is your snapshot, a clear view of how healthy your finances are today.</p>
+        </div>
+        
+        <div class="score-display">
+            <div class="score">{round(score)}%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {score}%;"></div>
+            </div>
         </div>
         
         <div class="content">
-            <h2>Hello {user_name},</h2>
-            
-            <p>Thank you for completing the Financial Clinic assessment! We're excited to help you improve your financial health.</p>
-            
-            <div class="score-box">
-                <div class="score-label">Your Overall Score</div>
-                <div class="score">{score:.1f}</div>
-                <div class="score-label">out of 100</div>
+            <div class="section-title">Understanding Your Score</div>
+            <div class="score-bands">
+                <div class="band band-red">
+                    <div class="band-range">1-29</div>
+                    <div class="band-label">At Risk</div>
+                    <div class="band-desc">Focus on building basic financial habits</div>
+                </div>
+                <div class="band band-orange">
+                    <div class="band-range">30-59</div>
+                    <div class="band-label">Needs Improvement</div>
+                    <div class="band-desc">Good foundation, room for growth</div>
+                </div>
+                <div class="band band-yellow">
+                    <div class="band-range">60-79</div>
+                    <div class="band-label">Good</div>
+                    <div class="band-desc">Strong financial health</div>
+                </div>
+                <div class="band band-green">
+                    <div class="band-range">80-100</div>
+                    <div class="band-label">Excellent</div>
+                    <div class="band-desc">Outstanding financial wellness</div>
+                </div>
             </div>
             
-            <div class="highlight">
-                <h3 style="margin-top: 0;">📊 Category Breakdown</h3>
-                {categories_html_en}
+            <div class="section-title">Financial Pillar Scores</div>
+            <div class="section-subtitle">Your performance across the 7 key areas of financial health</div>
+            {categories_html_en}
+            
+            <div class="section-title">Your Personalized Action Plan</div>
+            <div class="section-subtitle">Small changes make big differences. Here's how to strengthen your score.</div>
+            <div class="action-plan-box">
+                <div style="font-weight: 600; margin-bottom: 10px;">Recommendation Categories:</div>
+                <ul>{insights_html_en}</ul>
             </div>
             
-            <h3>📄 Your Attached Report Includes:</h3>
-            <ul>
-                <li>Detailed analysis of all aspects of your financial health</li>
-                <li>Personalized recommendations based on your responses</li>
-                <li>Actionable steps to improve your financial situation</li>
-                <li>Helpful educational resources</li>
-            </ul>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://www.nationalbonds.ae/en/contact-us" class="cta-button">BOOK A FREE CONSULTATION</a>
+                <a href="https://www.nationalbonds.ae" class="cta-button">START SAVING WITH NATIONAL BONDS</a>
+            </div>
             
-            <h3>🎯 Next Steps:</h3>
-            <ul>
-                <li>Review your detailed report attached carefully</li>
-                <li>Identify your financial priorities</li>
-                <li>Start implementing the most impactful recommendations</li>
-                <li>Save this report for future reference</li>
-            </ul>
-            
-            <p><strong>Remember:</strong> Improving your financial health is a journey that requires patience and persistence. We're with you every step of the way!</p>
+            <p style="text-align: center; color: #6b7280;"><strong>Remember:</strong> Improving your financial health is a journey that requires patience and persistence. We're with you every step of the way!</p>
         </div>
         
         <div class="footer">
-            <p style="margin: 5px 0;">This report is for informational purposes only</p>
-            <p style="margin: 5px 0; font-weight: bold;">National Bonds</p>
-            <p style="margin: 5px 0;">www.nationalbonds.ae</p>
+            <p style="margin: 5px 0; color: #6b7280;">This report is for informational purposes only</p>
+            <p style="margin: 5px 0; font-weight: bold; color: #374151;">National Bonds</p>
+            <p style="margin: 5px 0; color: #6b7280;">www.nationalbonds.ae</p>
         </div>
     </div>
 </body>
@@ -811,3 +907,130 @@ National Bonds Team
             'at_risk': '#991b1b'     # Dark Red
         }
         return color_map.get(status_level.lower(), '#6b7280')  # Gray as default
+    
+    async def send_otp_email(
+        self,
+        recipient_email: str,
+        otp_code: str,
+        language: str = "en"
+    ) -> Dict[str, Any]:
+        """
+        Send OTP verification code via email.
+        
+        Args:
+            recipient_email: Recipient's email address
+            otp_code: 6-digit OTP code
+            language: Email language ('en' or 'ar')
+            
+        Returns:
+            Dict with success status and message
+        """
+        try:
+            # Create email message
+            msg = MIMEMultipart('alternative')
+            
+            # Set email headers
+            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['To'] = recipient_email
+            
+            # Set subject based on language
+            if language == "ar":
+                msg['Subject'] = "رمز التحقق الخاص بك - صكوك الوطنية"
+            else:
+                msg['Subject'] = "Your Verification Code - National Bonds"
+            
+            # Load and render template
+            if self.jinja_env:
+                try:
+                    template = self.jinja_env.get_template(f'otp_email_{language}.html')
+                    html_content = template.render(otp_code=otp_code)
+                except Exception as e:
+                    # Fallback to simple HTML if template not found
+                    html_content = self._generate_simple_otp_html(otp_code, language)
+            else:
+                html_content = self._generate_simple_otp_html(otp_code, language)
+            
+            # Create plain text version
+            if language == "ar":
+                text_content = f"""
+صكوك الوطنية - فحص الصحة المالية
+
+رمز التحقق الخاص بك: {otp_code}
+
+ينتهي هذا الرمز خلال 5 دقائق.
+لا تشارك هذا الرمز مع أي شخص.
+
+إذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
+"""
+            else:
+                text_content = f"""
+National Bonds - Financial Health Check
+
+Your Verification Code: {otp_code}
+
+This code expires in 5 minutes.
+Never share this code with anyone.
+
+If you didn't request this code, please ignore this email.
+"""
+            
+            # Attach both versions
+            msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+            
+            # Send email
+            delivery_result = self._send_email(msg)
+            
+            return {
+                'success': delivery_result['success'],
+                'message': 'OTP sent successfully' if delivery_result['success'] else 'Failed to send OTP',
+                'recipient': recipient_email,
+                'code_length': len(otp_code)
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f"Failed to send OTP email: {str(e)}",
+                'recipient': recipient_email,
+                'error': str(e)
+            }
+    
+    def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
+        """Generate simple OTP HTML email when template is not available."""
+        if language == "ar":
+            return f"""
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; padding: 20px; direction: rtl;">
+    <div style="max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
+        <h1 style="color: #00529B;">صكوك الوطنية</h1>
+        <h2>رمز التحقق الخاص بك</h2>
+        <div style="background: white; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #00529B; border: 2px solid #00529B; border-radius: 8px;">
+            {otp_code}
+        </div>
+        <p style="color: #dc3545; margin-top: 15px;">ينتهي خلال 5 دقائق</p>
+        <p style="color: #666; margin-top: 20px;">لا تشارك هذا الرمز مع أي شخص.</p>
+    </div>
+</body>
+</html>
+"""
+        else:
+            return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
+        <h1 style="color: #00529B;">National Bonds</h1>
+        <h2>Your Verification Code</h2>
+        <div style="background: white; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #00529B; border: 2px solid #00529B; border-radius: 8px;">
+            {otp_code}
+        </div>
+        <p style="color: #dc3545; margin-top: 15px;">Expires in 5 minutes</p>
+        <p style="color: #666; margin-top: 20px;">Never share this code with anyone.</p>
+    </div>
+</body>
+</html>
+"""

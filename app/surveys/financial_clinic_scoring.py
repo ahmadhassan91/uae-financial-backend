@@ -5,8 +5,8 @@ Calculates 0-100 scores with 6-category breakdown
 This module implements the Financial Clinic scoring methodology with:
 - 0-100 score range (not 15-75)
 - Weighted calculation based on question importance
-- 6-category breakdown
-- Conditional Q16 handling
+- 6-category breakdown (15 questions total)
+- 4 status bands: Excellent, Good, Needs Improvement, At Risk
 - Status band determination
 """
 from typing import Dict, List, Tuple, Optional
@@ -42,20 +42,23 @@ class FinancialClinicScore:
 class FinancialClinicScorer:
     """Calculate Financial Clinic scores using weighted methodology."""
     
-    # Score band thresholds
+    # Score band thresholds (aligned with design document)
+    # 80%-100%: Excellent
+    # >= 60% - 79%: Good
+    # <= 30% < 59%: Needs Improvement (30-59)
+    # <= 29%: At Risk
     SCORE_BANDS = {
-        "Excellent": (81, 100),
-        "Good": (61, 80),
-        "Moderate": (41, 60),
-        "Needs Immediate Attention": (21, 40),
-        "At Risk": (0, 20),
+        "Excellent": (80, 100),
+        "Good": (60, 79),
+        "Needs Improvement": (30, 59),
+        "At Risk": (0, 29),
     }
     
-    # Category status levels (used for insights and products)
+    # Category status levels (percentage-based)
     CATEGORY_STATUS_THRESHOLDS = {
-        "excellent": 81,  # 81-100%
-        "good": 41,       # 41-80%
-        "at_risk": 0,     # 0-40%
+        "excellent": 80,   # 80-100% = excellent
+        "good": 40,        # 40-79% = good  
+        "at_risk": 0,      # 0-39% = at_risk
     }
     
     def __init__(self):
@@ -65,14 +68,15 @@ class FinancialClinicScorer:
     def calculate_score(
         self,
         responses: Dict[str, int],
-        has_children: bool = False
+        children_count: int = 0
     ) -> FinancialClinicScore:
         """
         Calculate complete Financial Clinic score.
         
         Args:
             responses: Dict of question_id -> answer_value (1-5)
-            has_children: Whether customer has children (affects Q16)
+                      Can contain 14 or 15 responses depending on children_count
+            children_count: Number of children (0 = no children, >= 1 = has children)
             
         Returns:
             FinancialClinicScore with all calculations
@@ -82,10 +86,17 @@ class FinancialClinicScorer:
                 "fc_q1": 4,  # "Well" = 4 points
                 "fc_q2": 5,  # "Yes, multiple sources" = 5 points
                 ...
+                "fc_q15": 3,  # Only if has children
             }
         """
-        # Get applicable questions
-        applicable_questions = get_questions_for_profile(has_children)
+        # Get applicable questions based on children status
+        applicable_questions = get_questions_for_profile(children_count=children_count)
+        
+        # If no children, add default score of 5 for Q15
+        working_responses = responses.copy()
+        if children_count == 0 and "fc_q15" not in working_responses:
+            # Default score of 5 for Q15 when user has no children
+            working_responses["fc_q15"] = 5
         
         # Calculate category scores
         category_scores = {}
@@ -94,8 +105,8 @@ class FinancialClinicScorer:
         for category in FinancialClinicCategory:
             category_score = self._calculate_category_score(
                 category,
-                responses,
-                applicable_questions
+                working_responses,
+                children_count
             )
             category_scores[category.value] = category_score
             total_score += category_score.score
@@ -108,14 +119,14 @@ class FinancialClinicScorer:
             category_scores=category_scores,
             status_band=status_band,
             questions_answered=len(responses),
-            total_questions=len(applicable_questions)
+            total_questions=15  # Always 15 questions (Q15 auto-scored if no children)
         )
     
     def _calculate_category_score(
         self,
         category: FinancialClinicCategory,
         responses: Dict[str, int],
-        applicable_questions: List
+        children_count: int = 0
     ) -> CategoryScore:
         """
         Calculate score for a single category.
@@ -129,9 +140,10 @@ class FinancialClinicScorer:
         - Total: 20 + 50 = 70 points out of 75 possible (93.3%)
         - But category is only 15% of total, so: 93.3% × 15% = 14.0 points
         """
-        # Get questions for this category
+        # Get ALL questions for this category (including conditional ones)
+        # We need to calculate using all questions to maintain proper weighting
         category_questions = [
-            q for q in applicable_questions
+            q for q in FINANCIAL_CLINIC_QUESTIONS
             if q.category == category
         ]
         
@@ -207,20 +219,20 @@ class FinancialClinicScorer:
     def validate_responses(
         self,
         responses: Dict[str, int],
-        has_children: bool = False
+        children_count: int = 0
     ) -> Tuple[bool, List[str]]:
         """
         Validate survey responses.
         
         Args:
             responses: Survey responses to validate
-            has_children: Whether customer has children
+            children_count: Number of children (0 = no children, >= 1 = has children)
             
         Returns:
             (is_valid, error_messages)
         """
         errors = []
-        applicable_questions = get_questions_for_profile(has_children)
+        applicable_questions = get_questions_for_profile(children_count=children_count)
         
         # Check all required questions answered
         for question in applicable_questions:
@@ -240,20 +252,21 @@ class FinancialClinicScorer:
 
 def calculate_financial_clinic_score(
     responses: Dict[str, int],
-    has_children: bool = False
+    children_count: int = 0
 ) -> Dict:
     """
     Convenience function to calculate score and return as dict.
     
     Args:
         responses: Question responses (question_id -> answer_value)
-        has_children: Whether customer has children
+                  Can contain 14 or 15 responses depending on children_count
+        children_count: Number of children (0 = no children, >= 1 = has children)
         
     Returns:
         Dictionary with score breakdown
     """
     scorer = FinancialClinicScorer()
-    score_result = scorer.calculate_score(responses, has_children)
+    score_result = scorer.calculate_score(responses, children_count=children_count)
     
     return {
         "total_score": score_result.total_score,

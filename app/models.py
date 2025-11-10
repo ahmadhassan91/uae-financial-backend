@@ -15,7 +15,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    date_of_birth = Column(DateTime, nullable=True)  # For simple authentication
+    date_of_birth = Column(DateTime, nullable=True)  # For profile data (not auth)
+    email_verified = Column(Boolean, default=False)  # For OTP verification
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -598,3 +600,17 @@ class FinancialClinicResponse(Base):
     
     # Relationships
     profile = relationship("FinancialClinicProfile", back_populates="survey_responses")
+
+
+class OTPCode(Base):
+    """OTP codes for email verification and authentication."""
+    __tablename__ = "otp_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempt_count = Column(Integer, default=0, nullable=False)
+    is_used = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    used_at = Column(DateTime(timezone=True), nullable=True)
