@@ -279,8 +279,8 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         number=15,
         category=FinancialClinicCategory.PROTECTING_FAMILY,
         weight=5,  # 5% of total score
-        text_en="Are you actively saving for education savings for your children? (Only to appear if children>0, otherwise questions to not appear and default score of 5 to be given)",
-        text_ar="هل تدخر بنشاط لمدخرات تعليم أطفالك؟ (يظهر فقط إذا كان الأطفال > 0، وإلا فلن تظهر الأسئلة وسيتم إعطاء درجة افتراضية 5)",
+        text_en="Are you actively saving for education savings for your children?",
+        text_ar="هل تدخر بنشاط لمدخرات تعليم أطفالك؟",
         options=[
             FinancialClinicOption(value=5, label_en="I don't have any need to save for my children's education", label_ar="ليس لدي أي حاجة للادخار لتعليم أطفالي"),
             FinancialClinicOption(value=4, label_en="Yes, I have sufficient funds for my children's education", label_ar="نعم، لدي أموال كافية لتعليم أطفالي"),

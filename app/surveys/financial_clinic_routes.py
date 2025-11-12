@@ -14,6 +14,7 @@ from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pydantic import BaseModel
 import logging
 import io
@@ -21,7 +22,7 @@ from datetime import datetime
 
 from ..database import get_db
 from ..models import User, CustomerProfile, SurveyResponse, Product
-from ..auth.dependencies import get_current_user
+from ..auth.dependencies import get_current_user, get_current_admin_user
 from .financial_clinic_questions import get_questions_for_profile, FINANCIAL_CLINIC_QUESTIONS
 from .financial_clinic_scoring import calculate_financial_clinic_score, FinancialClinicScorer
 from .financial_clinic_insights import generate_insights
@@ -62,6 +63,7 @@ class FinancialClinicCalculateRequest(BaseModel):
     """Request for score calculation."""
     answers: Dict[str, int]
     profile: ProfileData
+    company_url: Optional[str] = None  # Company unique URL for tracking
 
 
 class QuestionResponse(BaseModel):
@@ -92,22 +94,69 @@ class FinancialClinicResultResponse(BaseModel):
 @router.get("/questions", response_model=List[QuestionResponse])
 async def get_financial_clinic_questions(
     children: int = 0,
-    language: str = "en"
+    language: str = "en",
+    company_url: Optional[str] = None,
+    db: Session = Depends(get_db)
 ):
     """
-    Get Financial Clinic questions based on profile.
+    Get Financial Clinic questions based on profile and optional company variations.
     
     Args:
         children: Number of children (0 = no children, >= 1 = has children)
         language: "en" or "ar"
+        company_url: Optional company unique URL for custom question variations
         
     Returns:
         14 or 15 questions depending on children count:
         - If children = 0: Returns 14 questions (Q15 excluded)
         - If children > 0: Returns all 15 questions (Q15 included)
+        - If company_url provided: Questions may include custom variations
     """
-    # Get questions based on children count
+    # Get base questions
     questions = get_questions_for_profile(children_count=children)
+    
+    # If company URL provided, check for variations
+    if company_url:
+        from ..models import CompanyTracker, QuestionVariation
+        from .financial_clinic_questions import FinancialClinicQuestion, FinancialClinicOption
+        
+        company = db.query(CompanyTracker).filter(
+            CompanyTracker.unique_url == company_url,
+            CompanyTracker.is_active == True
+        ).first()
+        
+        if company and company.question_variation_mapping:
+            # Replace questions with variations
+            for base_q_id, variation_id in company.question_variation_mapping.items():
+                variation = db.query(QuestionVariation).filter(
+                    QuestionVariation.id == variation_id,
+                    QuestionVariation.is_active == True
+                ).first()
+                
+                if variation:
+                    # Find and replace the question
+                    for i, q in enumerate(questions):
+                        if q.id == base_q_id:
+                            # Replace with variation text/options
+                            questions[i] = FinancialClinicQuestion(
+                                id=q.id,  # Keep same ID for scoring
+                                number=q.number,
+                                category=q.category,
+                                weight=q.weight,
+                                text_en=variation.text if language == 'en' else q.text_en,
+                                text_ar=variation.text if language == 'ar' else q.text_ar,
+                                options=[
+                                    FinancialClinicOption(
+                                        value=opt['value'],
+                                        label_en=opt['label'] if language == 'en' else f"[Option {opt['value']}]",
+                                        label_ar=opt['label'] if language == 'ar' else f"[خيار {opt['value']}]"
+                                    )
+                                    for opt in variation.options
+                                ],
+                                conditional=q.conditional,
+                                condition_field=q.condition_field,
+                                condition_value=q.condition_value
+                            )
     
     return [
         {
@@ -237,7 +286,19 @@ async def submit_financial_clinic_survey(
     
     # Save to database
     try:
-        # 1. Create or get profile
+        # 1. Check for company tracking
+        company_tracker_id = None
+        if request.company_url:
+            from app.models import CompanyTracker
+            company = db.query(CompanyTracker).filter(
+                CompanyTracker.unique_url == request.company_url,
+                CompanyTracker.is_active == True
+            ).first()
+            if company:
+                company_tracker_id = company.id
+                logger.info(f"Survey linked to company: {company.company_name}")
+        
+        # 2. Create or get profile
         profile_data = request.profile.dict() if request.profile else {}
         
         # Check if profile exists by email
@@ -270,9 +331,10 @@ async def submit_financial_clinic_survey(
             db.add(profile)
             db.flush()  # Get profile.id
         
-        # 2. Create survey response
+        # 3. Create survey response
         survey_response = FinancialClinicResponse(
             profile_id=profile.id,
+            company_tracker_id=company_tracker_id,
             answers=request.answers,
             total_score=result_dict['total_score'],
             status_band=result_dict['status_band'],
@@ -286,11 +348,31 @@ async def submit_financial_clinic_survey(
         db.commit()
         db.refresh(survey_response)
         
-        # 3. Return results with survey_response_id
+        # 4. Update company statistics if linked
+        if company_tracker_id:
+            from app.models import CompanyTracker
+            company = db.query(CompanyTracker).filter(CompanyTracker.id == company_tracker_id).first()
+            if company:
+                # Recalculate company statistics
+                total_assessments = db.query(FinancialClinicResponse).filter(
+                    FinancialClinicResponse.company_tracker_id == company_tracker_id
+                ).count()
+                
+                avg_score = db.query(func.avg(FinancialClinicResponse.total_score)).filter(
+                    FinancialClinicResponse.company_tracker_id == company_tracker_id
+                ).scalar()
+                
+                company.total_assessments = total_assessments
+                company.average_score = float(avg_score) if avg_score else None
+                db.commit()
+                logger.info(f"Updated company stats: {total_assessments} assessments, avg score: {avg_score}")
+        
+        # 5. Return results with survey_response_id
         return {
             **result_dict,
             "survey_response_id": survey_response.id,
-            "saved_at": survey_response.created_at.isoformat() if survey_response.created_at else None
+            "saved_at": survey_response.created_at.isoformat() if survey_response.created_at else None,
+            "company_tracked": company_tracker_id is not None
         }
         
     except Exception as e:
@@ -755,4 +837,211 @@ async def get_financial_clinic_result(
             "emirate": response.profile.emirate,
             "email": response.profile.email
         } if response.profile else None
+    }
+
+
+# ==================== Company Analytics Endpoints ====================
+
+@router.get("/company/{company_url}/analytics")
+async def get_company_financial_clinic_analytics(
+    company_url: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Get Financial Clinic analytics for a specific company.
+    Admin only.
+    
+    Returns aggregated statistics, score distributions, and demographic breakdowns
+    for all Financial Clinic assessments completed through the company's unique URL.
+    """
+    from app.models import CompanyTracker, FinancialClinicResponse, FinancialClinicProfile
+    
+    # Get company
+    company = db.query(CompanyTracker).filter(
+        CompanyTracker.unique_url == company_url
+    ).first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Get all responses for this company
+    responses = db.query(FinancialClinicResponse).filter(
+        FinancialClinicResponse.company_tracker_id == company.id
+    ).all()
+    
+    if not responses:
+        return {
+            "company_name": company.company_name,
+            "company_url": company_url,
+            "total_assessments": 0,
+            "average_score": None,
+            "status_distribution": {},
+            "category_averages": {},
+            "demographic_breakdown": {}
+        }
+    
+    # Calculate statistics
+    total_assessments = len(responses)
+    total_score = sum(r.total_score for r in responses)
+    average_score = total_score / total_assessments
+    
+    # Status band distribution
+    status_distribution = {}
+    for response in responses:
+        status = response.status_band
+        status_distribution[status] = status_distribution.get(status, 0) + 1
+    
+    # Category averages
+    category_totals = {}
+    for response in responses:
+        for category, data in response.category_scores.items():
+            if category not in category_totals:
+                category_totals[category] = []
+            
+            # Handle both dict and numeric values
+            if isinstance(data, dict):
+                score = data.get('score', 0)
+            else:
+                score = data
+            category_totals[category].append(score)
+    
+    category_averages = {
+        cat: sum(scores) / len(scores) if scores else 0
+        for cat, scores in category_totals.items()
+    }
+    
+    # Demographic breakdown
+    demographics = {
+        "by_gender": {},
+        "by_nationality": {},
+        "by_employment": {},
+        "by_income_range": {},
+        "by_emirate": {}
+    }
+    
+    for response in responses:
+        profile = db.query(FinancialClinicProfile).filter(
+            FinancialClinicProfile.id == response.profile_id
+        ).first()
+        
+        if profile:
+            # Gender breakdown
+            gender = profile.gender
+            if gender not in demographics["by_gender"]:
+                demographics["by_gender"][gender] = {"count": 0, "avg_score": []}
+            demographics["by_gender"][gender]["count"] += 1
+            demographics["by_gender"][gender]["avg_score"].append(response.total_score)
+            
+            # Nationality breakdown
+            nationality = profile.nationality
+            if nationality not in demographics["by_nationality"]:
+                demographics["by_nationality"][nationality] = {"count": 0, "avg_score": []}
+            demographics["by_nationality"][nationality]["count"] += 1
+            demographics["by_nationality"][nationality]["avg_score"].append(response.total_score)
+            
+            # Employment breakdown
+            employment = profile.employment_status
+            if employment not in demographics["by_employment"]:
+                demographics["by_employment"][employment] = {"count": 0, "avg_score": []}
+            demographics["by_employment"][employment]["count"] += 1
+            demographics["by_employment"][employment]["avg_score"].append(response.total_score)
+            
+            # Income range breakdown
+            income = profile.income_range
+            if income not in demographics["by_income_range"]:
+                demographics["by_income_range"][income] = {"count": 0, "avg_score": []}
+            demographics["by_income_range"][income]["count"] += 1
+            demographics["by_income_range"][income]["avg_score"].append(response.total_score)
+            
+            # Emirate breakdown
+            emirate = profile.emirate
+            if emirate not in demographics["by_emirate"]:
+                demographics["by_emirate"][emirate] = {"count": 0, "avg_score": []}
+            demographics["by_emirate"][emirate]["count"] += 1
+            demographics["by_emirate"][emirate]["avg_score"].append(response.total_score)
+    
+    # Calculate averages for demographics
+    for category in demographics:
+        for key in demographics[category]:
+            scores = demographics[category][key]["avg_score"]
+            demographics[category][key]["avg_score"] = sum(scores) / len(scores) if scores else 0
+    
+    return {
+        "company_name": company.company_name,
+        "company_url": company_url,
+        "total_assessments": total_assessments,
+        "average_score": round(average_score, 2),
+        "status_distribution": status_distribution,
+        "category_averages": {k: round(v, 2) for k, v in category_averages.items()},
+        "demographic_breakdown": demographics,
+        "created_at": company.created_at.isoformat() if company.created_at else None
+    }
+
+
+@router.get("/company/{company_url}/submissions")
+async def get_company_financial_clinic_submissions(
+    company_url: str,
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Get paginated list of Financial Clinic submissions for a company.
+    Admin only.
+    
+    Returns individual submission details (anonymized) for analysis.
+    """
+    from app.models import CompanyTracker, FinancialClinicResponse, FinancialClinicProfile
+    
+    # Get company
+    company = db.query(CompanyTracker).filter(
+        CompanyTracker.unique_url == company_url
+    ).first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    # Get responses with pagination
+    responses = db.query(FinancialClinicResponse).filter(
+        FinancialClinicResponse.company_tracker_id == company.id
+    ).order_by(FinancialClinicResponse.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Get total count
+    total_count = db.query(FinancialClinicResponse).filter(
+        FinancialClinicResponse.company_tracker_id == company.id
+    ).count()
+    
+    submissions = []
+    for response in responses:
+        profile = db.query(FinancialClinicProfile).filter(
+            FinancialClinicProfile.id == response.profile_id
+        ).first()
+        
+        submissions.append({
+            "id": response.id,
+            "total_score": response.total_score,
+            "status_band": response.status_band,
+            "category_scores": response.category_scores,
+            "questions_answered": response.questions_answered,
+            "created_at": response.created_at.isoformat() if response.created_at else None,
+            # Anonymized profile data (no email/name)
+            "demographics": {
+                "gender": profile.gender if profile else None,
+                "nationality": profile.nationality if profile else None,
+                "employment_status": profile.employment_status if profile else None,
+                "income_range": profile.income_range if profile else None,
+                "emirate": profile.emirate if profile else None,
+                "children": profile.children if profile else 0
+            }
+        })
+    
+    return {
+        "company_name": company.company_name,
+        "company_url": company_url,
+        "total_count": total_count,
+        "skip": skip,
+        "limit": limit,
+        "submissions": submissions
     }

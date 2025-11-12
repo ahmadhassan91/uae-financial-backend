@@ -581,6 +581,9 @@ class FinancialClinicResponse(Base):
     id = Column(Integer, primary_key=True, index=True)
     profile_id = Column(Integer, ForeignKey("financial_clinic_profiles.id"), nullable=False, index=True)
     
+    # Company Tracking (optional - for corporate assessments)
+    company_tracker_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=True, index=True)
+    
     # Survey Data
     answers = Column(JSON, nullable=False)  # {question_id: answer_value}
     
@@ -600,6 +603,7 @@ class FinancialClinicResponse(Base):
     
     # Relationships
     profile = relationship("FinancialClinicProfile", back_populates="survey_responses")
+    company_tracker = relationship("CompanyTracker")
 
 
 class OTPCode(Base):

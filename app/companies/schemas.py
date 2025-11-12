@@ -11,6 +11,7 @@ class CompanyBase(BaseModel):
     phone_number: Optional[str] = None
     custom_branding: Optional[Dict[str, Any]] = None
     notification_settings: Optional[Dict[str, Any]] = None
+    question_variation_mapping: Optional[Dict[str, int]] = None  # {"fc_q3": 123, "fc_q11": 456}
 
 
 class CompanyCreate(CompanyBase):
@@ -26,6 +27,7 @@ class CompanyUpdate(BaseModel):
     phone_number: Optional[str] = None
     custom_branding: Optional[Dict[str, Any]] = None
     notification_settings: Optional[Dict[str, Any]] = None
+    question_variation_mapping: Optional[Dict[str, int]] = None
     is_active: Optional[bool] = None
 
 
@@ -36,6 +38,7 @@ class CompanyResponse(CompanyBase):
     is_active: bool
     total_assessments: int
     average_score: Optional[float]
+    question_variation_mapping: Optional[Dict[str, int]] = None
     created_at: datetime
     updated_at: Optional[datetime]
 

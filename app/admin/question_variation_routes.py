@@ -30,7 +30,7 @@ from app.admin.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/question-variations", tags=["admin", "question-variations"])
+router = APIRouter(prefix="/admin/question-variations", tags=["admin", "question-variations"])
 
 
 @router.get("/", response_model=QuestionVariationListResponse)
