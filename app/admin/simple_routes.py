@@ -1,12 +1,36 @@
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth.dependencies import get_current_admin_user
 from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
+from sqlalchemy import func, and_, or_
+from typing import Optional
 
-simple_admin_router = APIRouter(prefix="/api/admin/simple", tags=["admin-simple"])
+simple_admin_router = APIRouter(prefix="/admin/simple", tags=["admin-simple"])
+
+
+def filter_unique_users(responses):
+    """
+    Filter responses to show only the most recent submission per unique email.
+    
+    Args:
+        responses: List of FinancialClinicResponse objects
+        
+    Returns:
+        List of FinancialClinicResponse objects with only the latest submission per email
+    """
+    email_to_latest = {}
+    
+    for response in responses:
+        if response.profile and response.profile.email:
+            email = response.profile.email
+            if email not in email_to_latest or response.created_at > email_to_latest[email].created_at:
+                email_to_latest[email] = response
+    
+    return list(email_to_latest.values())
+
 
 @simple_admin_router.get("/localized-content")
 async def get_simple_localized_content(
@@ -98,190 +122,806 @@ async def get_survey_submissions(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    survey_type: str = "all"  # "all", "old", "financial_clinic"
 ):
-    """Get survey submissions for admin dashboard."""
+    """Get survey submissions for admin dashboard - supports BOTH old surveys and Financial Clinic."""
     try:
-        # Get survey responses with basic info
-        submissions = db.query(SurveyResponse).order_by(
-            SurveyResponse.created_at.desc()
-        ).offset(offset).limit(limit).all()
+        from app.models import FinancialClinicProfile, FinancialClinicResponse
         
-        # Get total count
-        total_submissions = db.query(SurveyResponse).count()
-        
-        # Convert to simple format
         result = []
-        for submission in submissions:
-            # Get user info if available
-            user_info = None
-            if submission.user_id:
-                user = db.query(User).filter(User.id == submission.user_id).first()
-                if user:
-                    user_info = {
-                        "id": user.id,
-                        "email": user.email,
-                        "is_admin": user.is_admin
-                    }
+        
+        # Fetch Financial Clinic submissions (NEW SYSTEM)
+        if survey_type in ["all", "financial_clinic"]:
+            fc_submissions = db.query(FinancialClinicResponse).join(
+                FinancialClinicProfile,
+                FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+            ).order_by(
+                FinancialClinicResponse.created_at.desc()
+            ).limit(limit if survey_type == "financial_clinic" else limit // 2).all()
             
-            # Get profile info if available
-            profile_info = None
-            if submission.customer_profile_id:
-                profile = db.query(CustomerProfile).filter(
-                    CustomerProfile.id == submission.customer_profile_id
-                ).first()
-                if profile:
-                    profile_info = {
-                        "age": profile.age,
+            for submission in fc_submissions:
+                profile = submission.profile
+                
+                # Parse age from DOB (format: DD/MM/YYYY)
+                age = None
+                if profile.date_of_birth:
+                    try:
+                        from datetime import datetime
+                        # Split DD/MM/YYYY
+                        parts = profile.date_of_birth.strip().split('/')
+                        if len(parts) == 3:
+                            day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+                            
+                            # Handle invalid dates (like Feb 29 on non-leap years)
+                            # For invalid dates, just use Jan 1 of that year to get approximate age
+                            try:
+                                birth_date = datetime(year, month, day)
+                            except ValueError:
+                                # Invalid date, use Jan 1 as approximation
+                                birth_date = datetime(year, 1, 1)
+                            
+                            today = datetime.now()
+                            age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                    except Exception as e:
+                        # Log the error for debugging
+                        print(f"Error parsing DOB '{profile.date_of_birth}': {e}")
+                        age = None
+                
+                result.append({
+                    "id": f"fc_{submission.id}",
+                    "survey_type": "financial_clinic",
+                    "user_id": None,
+                    "user_type": "financial_clinic",
+                    "user_info": None,
+                    "profile_info": {
+                        "name": profile.name,
+                        "age": age,
                         "gender": profile.gender,
+                        "nationality": profile.nationality,
+                        "emirate": profile.emirate,
                         "children": profile.children,
                         "employment": profile.employment_status,
-                        "income": profile.income_range
-                    }
+                        "income": profile.income_range,
+                        "email": profile.email
+                    },
+                    "overall_score": submission.total_score,
+                    "status_band": submission.status_band,
+                    "category_scores": submission.category_scores,
+                    "budgeting_score": submission.category_scores.get('income_stream', 0) if submission.category_scores else 0,
+                    "savings_score": submission.category_scores.get('savings_habit', 0) if submission.category_scores else 0,
+                    "debt_management_score": submission.category_scores.get('debt_management', 0) if submission.category_scores else 0,
+                    "financial_planning_score": submission.category_scores.get('retirement_planning', 0) if submission.category_scores else 0,
+                    "investment_knowledge_score": 0,
+                    "risk_tolerance": None,
+                    "financial_goals": None,
+                    "completion_time": None,
+                    "survey_version": "financial_clinic_v1",
+                    "created_at": submission.created_at.isoformat() if submission.created_at else None,
+                    "response_count": submission.questions_answered,
+                    "company_tracker_id": submission.company_tracker_id
+                })
+        
+        # Fetch OLD survey submissions (if requested)
+        if survey_type in ["all", "old"]:
+            old_submissions = db.query(SurveyResponse).order_by(
+                SurveyResponse.created_at.desc()
+            ).limit(limit if survey_type == "old" else limit // 2).all()
             
-            result.append({
-                "id": submission.id,
-                "user_id": submission.user_id,
-                "user_type": "authenticated" if submission.user_id else "guest",
-                "user_info": user_info,
-                "profile_info": profile_info,
-                "overall_score": submission.overall_score,
-                "budgeting_score": submission.budgeting_score,
-                "savings_score": submission.savings_score,
-                "debt_management_score": submission.debt_management_score,
-                "financial_planning_score": submission.financial_planning_score,
-                "investment_knowledge_score": submission.investment_knowledge_score,
-                "risk_tolerance": submission.risk_tolerance,
-                "financial_goals": submission.financial_goals,
-                "completion_time": submission.completion_time,
-                "survey_version": submission.survey_version,
-                "created_at": submission.created_at.isoformat() if submission.created_at else None,
-                "response_count": len(submission.responses) if submission.responses else 0
-            })
+            for submission in old_submissions:
+                # Get user info if available
+                user_info = None
+                if submission.user_id:
+                    user = db.query(User).filter(User.id == submission.user_id).first()
+                    if user:
+                        user_info = {
+                            "id": user.id,
+                            "email": user.email,
+                            "is_admin": user.is_admin
+                        }
+                
+                # Get profile info if available
+                profile_info = None
+                if submission.customer_profile_id:
+                    profile = db.query(CustomerProfile).filter(
+                        CustomerProfile.id == submission.customer_profile_id
+                    ).first()
+                    if profile:
+                        profile_info = {
+                            "age": profile.age,
+                            "gender": profile.gender,
+                            "children": profile.children,
+                            "employment": profile.employment_status,
+                            "income": profile.monthly_income
+                        }
+                
+                result.append({
+                    "id": f"old_{submission.id}",
+                    "survey_type": "old_survey",
+                    "user_id": submission.user_id,
+                    "user_type": "authenticated" if submission.user_id else "guest",
+                    "user_info": user_info,
+                    "profile_info": profile_info,
+                    "overall_score": submission.overall_score,
+                    "status_band": None,
+                    "category_scores": None,
+                    "budgeting_score": submission.budgeting_score,
+                    "savings_score": submission.savings_score,
+                    "debt_management_score": submission.debt_management_score,
+                    "financial_planning_score": submission.financial_planning_score,
+                    "investment_knowledge_score": submission.investment_knowledge_score,
+                    "risk_tolerance": submission.risk_tolerance,
+                    "financial_goals": submission.financial_goals,
+                    "completion_time": submission.completion_time,
+                    "survey_version": submission.survey_version,
+                    "created_at": submission.created_at.isoformat() if submission.created_at else None,
+                    "response_count": len(submission.responses) if submission.responses else 0,
+                    "company_tracker_id": None
+                })
+        
+        # Sort all results by created_at
+        result.sort(key=lambda x: x['created_at'] if x['created_at'] else '', reverse=True)
+        
+        # Apply pagination
+        paginated_result = result[offset:offset+limit]
+        
+        # Get total counts
+        total_fc = db.query(FinancialClinicResponse).count() if survey_type in ["all", "financial_clinic"] else 0
+        total_old = db.query(SurveyResponse).count() if survey_type in ["all", "old"] else 0
+        total_submissions = total_fc + total_old if survey_type == "all" else (total_fc if survey_type == "financial_clinic" else total_old)
         
         return {
-            "submissions": result,
+            "submissions": paginated_result,
             "total": total_submissions,
+            "financial_clinic_count": total_fc,
+            "old_survey_count": total_old,
             "page_size": limit,
             "offset": offset,
-            "message": f"Found {len(result)} submissions"
+            "survey_type": survey_type,
+            "message": f"Found {len(paginated_result)} submissions ({total_fc} Financial Clinic, {total_old} Old Surveys)"
         }
         
     except Exception as e:
+        import traceback
         return {
             "error": str(e),
+            "traceback": traceback.format_exc(),
             "submissions": [],
             "total": 0
         }
 
-@simple_admin_router.get("/survey-analytics")
-async def get_survey_analytics(
+@simple_admin_router.get("/question-variations-simple")
+async def get_variations_for_companies(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user)
 ):
-    """Get survey analytics for admin dashboard."""
+    """
+    Get question variations formatted for company assignment.
+    Returns active variations grouped by base question for easy selection.
+    """
     try:
-        from datetime import datetime, timedelta
-        from sqlalchemy import func
+        from app.models import QuestionVariation
         
-        # Basic counts
-        total_submissions = db.query(SurveyResponse).count()
-        guest_submissions = db.query(SurveyResponse).filter(
-            (SurveyResponse.user_id.is_(None)) | (SurveyResponse.user_id == 0)
-        ).count()
-        auth_submissions = db.query(SurveyResponse).filter(
-            SurveyResponse.user_id.isnot(None), SurveyResponse.user_id != 0
-        ).count()
+        # Get all active question variations
+        variations = db.query(QuestionVariation).filter(
+            QuestionVariation.is_active == True
+        ).order_by(
+            QuestionVariation.base_question_id,
+            QuestionVariation.language
+        ).all()
         
-        # Recent submissions (last 30 days)
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-        recent_submissions = db.query(SurveyResponse).filter(
-            SurveyResponse.created_at >= thirty_days_ago
-        ).count()
-        
-        # Average scores
-        avg_scores = db.query(
-            func.avg(SurveyResponse.overall_score).label('avg_overall'),
-            func.avg(SurveyResponse.budgeting_score).label('avg_budgeting'),
-            func.avg(SurveyResponse.savings_score).label('avg_savings'),
-            func.avg(SurveyResponse.debt_management_score).label('avg_debt'),
-            func.avg(SurveyResponse.financial_planning_score).label('avg_planning'),
-            func.avg(SurveyResponse.investment_knowledge_score).label('avg_investment')
-        ).first()
-        
-        # Score distribution
-        score_ranges = {
-            "excellent": db.query(SurveyResponse).filter(SurveyResponse.overall_score >= 65).count(),
-            "good": db.query(SurveyResponse).filter(
-                SurveyResponse.overall_score >= 50, SurveyResponse.overall_score < 65
-            ).count(),
-            "fair": db.query(SurveyResponse).filter(
-                SurveyResponse.overall_score >= 35, SurveyResponse.overall_score < 50
-            ).count(),
-            "needs_improvement": db.query(SurveyResponse).filter(SurveyResponse.overall_score < 35).count()
-        }
+        # Group by base question for easy selection
+        by_question = {}
+        for v in variations:
+            if v.base_question_id not in by_question:
+                by_question[v.base_question_id] = []
+            by_question[v.base_question_id].append({
+                "id": v.id,
+                "name": v.variation_name,
+                "language": v.language,
+                "preview": v.text[:100] + "..." if len(v.text) > 100 else v.text
+            })
         
         return {
-            "total_submissions": total_submissions,
-            "guest_submissions": guest_submissions,
-            "authenticated_submissions": auth_submissions,
-            "recent_submissions_30d": recent_submissions,
-            "average_scores": {
-                "overall": float(avg_scores.avg_overall) if avg_scores.avg_overall else 0,
-                "budgeting": float(avg_scores.avg_budgeting) if avg_scores.avg_budgeting else 0,
-                "savings": float(avg_scores.avg_savings) if avg_scores.avg_savings else 0,
-                "debt_management": float(avg_scores.avg_debt) if avg_scores.avg_debt else 0,
-                "financial_planning": float(avg_scores.avg_planning) if avg_scores.avg_planning else 0,
-                "investment_knowledge": float(avg_scores.avg_investment) if avg_scores.avg_investment else 0
-            },
-            "score_distribution": score_ranges,
-            "completion_rate": 100.0,  # Assuming all submissions are complete
-            "message": "Survey analytics retrieved successfully"
+            "variations_by_question": by_question,
+            "total_variations": len(variations),
+            "questions_with_variations": len(by_question)
         }
         
     except Exception as e:
+        import traceback
         return {
             "error": str(e),
-            "total_submissions": 0
+            "traceback": traceback.format_exc(),
+            "variations_by_question": {}
         }
 
-@simple_admin_router.get("/translation-workflows")
-async def get_simple_workflows(
+@simple_admin_router.get("/filter-options")
+async def get_filter_options(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user)
 ):
-    """Simple translation workflows endpoint."""
+    """
+    Get all available filter options for Financial Clinic dashboard.
+    Returns ALL possible options exactly as they appear in the survey form,
+    not just values that exist in the database.
+    """
     try:
-        # Mock workflow data for now
-        workflows = [
+        from app.models import CompanyTracker
+        
+        # Return ALL possible options from the survey form
+        # These match exactly what users can select in /financial-clinic/page.tsx
+        all_age_groups = ["<18", "18-25", "25-35", "35-45", "45-60", "65+"]
+        all_genders = ["Male", "Female"]
+        all_nationalities = ["Emirati", "Non-Emirati"]
+        all_emirates = [
+            "Dubai",
+            "Abu Dhabi", 
+            "Sharjah",
+            "Ajman",
+            "Al Ain",
+            "Ras Al Khaimah / Fujairah / UAQ / Outside UAE"
+        ]
+        all_employment_statuses = ["Employed", "Self-Employed", "Unemployed"]
+        all_income_ranges = [
+            "Below 5,000",
+            "5,000 to 10,000",
+            "10,000 to 20,000",
+            "20,000 to 30,000",
+            "30,000 to 40,000",
+            "40,000 to 50,000",
+            "50,000 to 100,000",
+            "Above 100,000"
+        ]
+        all_children_options = ["0", "1", "2", "3", "4", "5+"]
+        
+        # Get companies (these are dynamic)
+        companies = db.query(CompanyTracker).filter(
+            CompanyTracker.is_active == True
+        ).order_by(CompanyTracker.company_name).all()
+        
+        company_list = [
             {
-                "workflow_id": "wf-001",
-                "status": "completed",
-                "content_items": [
-                    {"content_id": "q1", "content_type": "question", "status": "completed"},
-                    {"content_id": "q2", "content_type": "question", "status": "completed"}
-                ],
-                "created_at": "2025-10-06T10:00:00Z"
-            },
-            {
-                "workflow_id": "wf-002", 
-                "status": "in_progress",
-                "content_items": [
-                    {"content_id": "rec1", "content_type": "recommendation", "status": "in_progress"}
-                ],
-                "created_at": "2025-10-06T12:00:00Z"
+                "id": c.id,
+                "name": c.company_name,
+                "unique_url": c.unique_url
             }
+            for c in companies
         ]
         
         return {
-            "workflows": workflows,
-            "total": len(workflows),
-            "message": "Simple workflows working"
+            "age_groups": all_age_groups,
+            "genders": all_genders,
+            "nationalities": all_nationalities,
+            "emirates": all_emirates,
+            "employment_statuses": all_employment_statuses,
+            "income_ranges": all_income_ranges,
+            "children_options": all_children_options,
+            "companies": company_list
         }
         
     except Exception as e:
+        import traceback
         return {
             "error": str(e),
-            "workflows": [],
-            "total": 0
+            "traceback": traceback.format_exc(),
+            "age_groups": ["<18", "18-25", "25-35", "35-45", "45-60", "65+"],
+            "genders": ["Male", "Female"],
+            "nationalities": ["Emirati", "Non-Emirati"],
+            "emirates": ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Al Ain", "Ras Al Khaimah / Fujairah / UAQ / Outside UAE"],
+            "employment_statuses": ["Employed", "Self-Employed", "Unemployed"],
+            "income_ranges": ["Below 5,000", "5,000 to 10,000", "10,000 to 20,000", "20,000 to 30,000", "30,000 to 40,000", "40,000 to 50,000", "50,000 to 100,000", "Above 100,000"],
+            "children_options": ["0", "1", "2", "3", "4", "5+"],
+            "companies": []
+        }
+
+
+@simple_admin_router.get("/overview-metrics")
+async def get_overview_metrics(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get overview metrics (KPIs) for the admin dashboard."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        # Get all responses
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        # Apply unique user filter
+        unique_responses = filter_unique_users(responses)
+        
+        total_responses = len(unique_responses)
+        
+        if total_responses == 0:
+            return {
+                "total_responses": 0,
+                "average_score": 0,
+                "excellent_count": 0,
+                "good_count": 0,
+                "needs_improvement_count": 0,
+                "at_risk_count": 0
+            }
+        
+        # Calculate metrics
+        total_score = sum(r.total_score for r in unique_responses)
+        average_score = total_score / total_responses if total_responses > 0 else 0
+        
+        # Count by status band
+        excellent_count = sum(1 for r in unique_responses if r.status_band == "Excellent")
+        good_count = sum(1 for r in unique_responses if r.status_band == "Good")
+        needs_improvement_count = sum(1 for r in unique_responses if r.status_band == "Needs Improvement")
+        at_risk_count = sum(1 for r in unique_responses if r.status_band == "At Risk")
+        
+        return {
+            "total_responses": total_responses,
+            "average_score": round(average_score, 2),
+            "excellent_count": excellent_count,
+            "good_count": good_count,
+            "needs_improvement_count": needs_improvement_count,
+            "at_risk_count": at_risk_count
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/score-distribution")
+async def get_score_distribution(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get score distribution by status bands."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Count by status band
+        distribution = {}
+        for response in unique_responses:
+            status = response.status_band
+            distribution[status] = distribution.get(status, 0) + 1
+        
+        return {
+            "total": len(unique_responses),
+            "distribution": [
+                {"status_band": status, "count": count}
+                for status, count in distribution.items()
+            ]
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/category-performance")
+async def get_category_performance(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get category performance (6 categories)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Categories mapping: database name -> API name
+        # Database stores: "Income Stream", "Savings Habit", etc.
+        # API returns: "income_stream", "savings_habit", etc.
+        category_mapping = {
+            "Income Stream": "income_stream",
+            "Savings Habit": "savings_habit",
+            "Emergency Savings": "emergency_savings",
+            "Debt Management": "debt_management",
+            "Retirement Planning": "retirement_planning",
+            "Protecting Your Family": "financial_protection",
+            "Financial Knowledge": "financial_knowledge"
+        }
+        
+        # Calculate average score per category
+        category_totals = {}
+        category_counts = {}
+        category_max_possible = {}
+        
+        for response in unique_responses:
+            if response.category_scores and isinstance(response.category_scores, dict):
+                for db_category, api_category in category_mapping.items():
+                    if db_category in response.category_scores:
+                        cat_data = response.category_scores[db_category]
+                        
+                        # Initialize if not exists
+                        if api_category not in category_totals:
+                            category_totals[api_category] = 0
+                            category_counts[api_category] = 0
+                            category_max_possible[api_category] = 0
+                        
+                        # Handle both dict and numeric values
+                        if isinstance(cat_data, dict):
+                            score = cat_data.get('score', 0)
+                            max_poss = cat_data.get('max_possible', 100)
+                            category_totals[api_category] += score
+                            if category_max_possible[api_category] == 0:
+                                category_max_possible[api_category] = max_poss
+                        else:
+                            category_totals[api_category] += cat_data
+                            if category_max_possible[api_category] == 0:
+                                category_max_possible[api_category] = 100
+                        
+                        category_counts[api_category] += 1
+        
+        # Build response
+        categories = []
+        for api_category in category_mapping.values():
+            count = category_counts.get(api_category, 0)
+            total = category_totals.get(api_category, 0)
+            max_poss = category_max_possible.get(api_category, 100)
+            
+            avg_score = round(total / count, 2) if count > 0 else 0
+            percentage = round((total / (max_poss * count)) * 100, 2) if count > 0 and max_poss > 0 else 0
+            
+            categories.append({
+                "category": api_category,
+                "average_score": avg_score,
+                "max_possible": max_poss,
+                "percentage": percentage,
+                "response_count": count
+            })
+        
+        return {"categories": categories}
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/nationality-breakdown")
+async def get_nationality_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get nationality breakdown (Emirati vs Non-Emirati)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        emirati_scores = []
+        non_emirati_scores = []
+        
+        for response in unique_responses:
+            if response.profile.nationality == "Emirati":
+                emirati_scores.append(response.total_score)
+            else:
+                non_emirati_scores.append(response.total_score)
+        
+        return {
+            "emirati": {
+                "count": len(emirati_scores),
+                "avg_score": round(sum(emirati_scores) / len(emirati_scores), 2) if emirati_scores else 0
+            },
+            "non_emirati": {
+                "count": len(non_emirati_scores),
+                "avg_score": round(sum(non_emirati_scores) / len(non_emirati_scores), 2) if non_emirati_scores else 0
+            }
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/age-breakdown")
+async def get_age_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get age breakdown."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Calculate age groups
+        age_group_data = {}
+        
+        for response in unique_responses:
+            profile = response.profile
+            if profile.date_of_birth:
+                try:
+                    parts = profile.date_of_birth.strip().split('/')
+                    if len(parts) == 3:
+                        day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+                        try:
+                            birth_date = datetime(year, month, day)
+                        except ValueError:
+                            birth_date = datetime(year, 1, 1)
+                        
+                        today = datetime.now()
+                        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                        
+                        # Categorize into age groups
+                        if age < 25:
+                            age_group = "18-24"
+                        elif age < 35:
+                            age_group = "25-34"
+                        elif age < 45:
+                            age_group = "35-44"
+                        elif age < 55:
+                            age_group = "45-54"
+                        elif age < 65:
+                            age_group = "55-64"
+                        else:
+                            age_group = "65+"
+                        
+                        if age_group not in age_group_data:
+                            age_group_data[age_group] = {"scores": [], "count": 0}
+                        
+                        age_group_data[age_group]["scores"].append(response.total_score)
+                        age_group_data[age_group]["count"] += 1
+                except:
+                    pass
+        
+        # Format response
+        age_groups = []
+        for age_group, data in age_group_data.items():
+            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+            age_groups.append({
+                "age_group": age_group,
+                "count": data["count"],
+                "avg_score": round(avg_score, 2)
+            })
+        
+        # Sort by age group
+        age_order = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+        age_groups.sort(key=lambda x: age_order.index(x["age_group"]) if x["age_group"] in age_order else 999)
+        
+        return {
+            "age_groups": age_groups,
+            "total": sum(data["count"] for data in age_group_data.values())
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/time-series")
+async def get_time_series(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    group_by: str = "day"
+):
+    """Get time series data (submissions over time)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Group by period
+        time_data = {}
+        
+        for response in unique_responses:
+            if response.created_at:
+                if group_by == "day":
+                    period = response.created_at.strftime("%Y-%m-%d")
+                elif group_by == "week":
+                    period = response.created_at.strftime("%Y-W%W")
+                elif group_by == "month":
+                    period = response.created_at.strftime("%Y-%m")
+                else:
+                    period = response.created_at.strftime("%Y")
+                
+                if period not in time_data:
+                    time_data[period] = {"count": 0, "scores": []}
+                
+                time_data[period]["count"] += 1
+                time_data[period]["scores"].append(response.total_score)
+        
+        # Format response
+        time_series = []
+        for period, data in sorted(time_data.items()):
+            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+            time_series.append({
+                "period": period,
+                "count": data["count"],
+                "avg_score": round(avg_score, 2)
+            })
+        
+        return {"time_series": time_series}
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/companies-analytics")
+async def get_companies_analytics(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get companies analytics."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Group by company
+        company_data = {}
+        
+        for response in unique_responses:
+            if response.company_tracker_id:
+                company_id = response.company_tracker_id
+                
+                if company_id not in company_data:
+                    company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
+                    company_data[company_id] = {
+                        "company_name": company.company_name if company else f"Company {company_id}",
+                        "scores": [],
+                        "status_bands": []
+                    }
+                
+                company_data[company_id]["scores"].append(response.total_score)
+                company_data[company_id]["status_bands"].append(response.status_band)
+        
+        # Format response
+        companies = []
+        for company_id, data in company_data.items():
+            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+            
+            # Count by status band
+            excellent_count = data["status_bands"].count("Excellent")
+            good_count = data["status_bands"].count("Good")
+            needs_improvement_count = data["status_bands"].count("Needs Improvement")
+            at_risk_count = data["status_bands"].count("At Risk")
+            
+            companies.append({
+                "company_name": data["company_name"],
+                "total_responses": len(data["scores"]),
+                "avg_score": round(avg_score, 2),
+                "excellent_count": excellent_count,
+                "good_count": good_count,
+                "needs_improvement_count": needs_improvement_count,
+                "at_risk_count": at_risk_count
+            })
+        
+        return {"companies": companies}
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@simple_admin_router.get("/score-analytics-table")
+async def get_score_analytics_table(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d"
+):
+    """Get score analytics table (question-level breakdown by nationality)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from app.surveys.financial_clinic_questions import FINANCIAL_CLINIC_QUESTIONS
+        
+        responses = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        ).all()
+        
+        unique_responses = filter_unique_users(responses)
+        
+        # Build question analytics with nationality breakdown
+        question_analytics = []
+        
+        for question in FINANCIAL_CLINIC_QUESTIONS:
+            question_id = question.id
+            question_number = question.number
+            question_text = question.text_en
+            category = question.category.value  # Get the string value like "Income Stream"
+            
+            # Collect scores by nationality
+            emirati_scores = []
+            non_emirati_scores = []
+            
+            for response in unique_responses:
+                # Get profile
+                profile = db.query(FinancialClinicProfile).filter(
+                    FinancialClinicProfile.id == response.profile_id
+                ).first()
+                
+                # Get answer for this question
+                if response.answers and question_id in response.answers:
+                    answer_value = response.answers[question_id]
+                    
+                    if profile:
+                        if profile.nationality == "Emirati":
+                            emirati_scores.append(answer_value)
+                        else:
+                            non_emirati_scores.append(answer_value)
+            
+            # Calculate averages
+            emirati_avg = sum(emirati_scores) / len(emirati_scores) if emirati_scores else None
+            non_emirati_avg = sum(non_emirati_scores) / len(non_emirati_scores) if non_emirati_scores else None
+            
+            question_analytics.append({
+                "question_number": question_number,
+                "question_text": question_text,
+                "category": category,
+                "emirati_avg": round(emirati_avg, 2) if emirati_avg is not None else None,
+                "emirati_count": len(emirati_scores),
+                "non_emirati_avg": round(non_emirati_avg, 2) if non_emirati_avg is not None else None,
+                "non_emirati_count": len(non_emirati_scores)
+            })
+        
+        return question_analytics
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "questions": []
         }
