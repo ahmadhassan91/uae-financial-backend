@@ -195,11 +195,15 @@ class CompanyTracker(Base):
     report_branding = Column(JSON, nullable=True)  # Custom report branding
     admin_users = Column(JSON, nullable=True)  # Company admin user IDs
     
+    # Variation Set Assignment
+    variation_set_id = Column(Integer, ForeignKey("variation_sets.id"), nullable=True, index=True)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     company_assessments = relationship("CompanyAssessment", back_populates="company_tracker")
+    variation_set = relationship("VariationSet")
 
 
 class CompanyAssessment(Base):
@@ -335,6 +339,55 @@ class QuestionVariation(Base):
     is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class VariationSet(Base):
+    """Bundles of question variations that can be assigned to companies."""
+    __tablename__ = "variation_sets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    set_type = Column(String(50), nullable=False, index=True)  # 'industry', 'demographic', 'language', 'custom'
+    is_template = Column(Boolean, default=False, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Foreign keys for all 15 Financial Clinic questions
+    q1_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q2_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q3_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q4_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q5_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q6_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q7_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q8_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q9_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q10_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q11_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q12_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q13_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q14_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q15_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    q1_variation = relationship("QuestionVariation", foreign_keys=[q1_variation_id])
+    q2_variation = relationship("QuestionVariation", foreign_keys=[q2_variation_id])
+    q3_variation = relationship("QuestionVariation", foreign_keys=[q3_variation_id])
+    q4_variation = relationship("QuestionVariation", foreign_keys=[q4_variation_id])
+    q5_variation = relationship("QuestionVariation", foreign_keys=[q5_variation_id])
+    q6_variation = relationship("QuestionVariation", foreign_keys=[q6_variation_id])
+    q7_variation = relationship("QuestionVariation", foreign_keys=[q7_variation_id])
+    q8_variation = relationship("QuestionVariation", foreign_keys=[q8_variation_id])
+    q9_variation = relationship("QuestionVariation", foreign_keys=[q9_variation_id])
+    q10_variation = relationship("QuestionVariation", foreign_keys=[q10_variation_id])
+    q11_variation = relationship("QuestionVariation", foreign_keys=[q11_variation_id])
+    q12_variation = relationship("QuestionVariation", foreign_keys=[q12_variation_id])
+    q13_variation = relationship("QuestionVariation", foreign_keys=[q13_variation_id])
+    q14_variation = relationship("QuestionVariation", foreign_keys=[q14_variation_id])
+    q15_variation = relationship("QuestionVariation", foreign_keys=[q15_variation_id])
 
 
 class DemographicRule(Base):

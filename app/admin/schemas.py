@@ -365,3 +365,120 @@ class ExportResponse(BaseModel):
     record_count: Optional[int]
     created_at: datetime
     expires_at: Optional[datetime]
+
+
+# Variation Set Schemas
+class VariationSetCreate(BaseModel):
+    """Schema for creating a new variation set."""
+    name: str = Field(..., min_length=1, max_length=255, description="Set name")
+    description: Optional[str] = Field(None, description="Set description")
+    set_type: str = Field(..., pattern="^(industry|demographic|language|custom)$", description="Set type")
+    is_template: bool = Field(False, description="Whether this is a template set")
+    is_active: bool = Field(True, description="Whether this set is active")
+    
+    # All 15 question variation IDs
+    q1_variation_id: int = Field(..., gt=0, description="Question 1 variation ID")
+    q2_variation_id: int = Field(..., gt=0, description="Question 2 variation ID")
+    q3_variation_id: int = Field(..., gt=0, description="Question 3 variation ID")
+    q4_variation_id: int = Field(..., gt=0, description="Question 4 variation ID")
+    q5_variation_id: int = Field(..., gt=0, description="Question 5 variation ID")
+    q6_variation_id: int = Field(..., gt=0, description="Question 6 variation ID")
+    q7_variation_id: int = Field(..., gt=0, description="Question 7 variation ID")
+    q8_variation_id: int = Field(..., gt=0, description="Question 8 variation ID")
+    q9_variation_id: int = Field(..., gt=0, description="Question 9 variation ID")
+    q10_variation_id: int = Field(..., gt=0, description="Question 10 variation ID")
+    q11_variation_id: int = Field(..., gt=0, description="Question 11 variation ID")
+    q12_variation_id: int = Field(..., gt=0, description="Question 12 variation ID")
+    q13_variation_id: int = Field(..., gt=0, description="Question 13 variation ID")
+    q14_variation_id: int = Field(..., gt=0, description="Question 14 variation ID")
+    q15_variation_id: int = Field(..., gt=0, description="Question 15 variation ID")
+
+
+class VariationSetUpdate(BaseModel):
+    """Schema for updating an existing variation set."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Set name")
+    description: Optional[str] = Field(None, description="Set description")
+    set_type: Optional[str] = Field(None, pattern="^(industry|demographic|language|custom)$", description="Set type")
+    is_template: Optional[bool] = Field(None, description="Whether this is a template set")
+    is_active: Optional[bool] = Field(None, description="Whether this set is active")
+    
+    # All 15 question variation IDs (optional for partial updates)
+    q1_variation_id: Optional[int] = Field(None, gt=0, description="Question 1 variation ID")
+    q2_variation_id: Optional[int] = Field(None, gt=0, description="Question 2 variation ID")
+    q3_variation_id: Optional[int] = Field(None, gt=0, description="Question 3 variation ID")
+    q4_variation_id: Optional[int] = Field(None, gt=0, description="Question 4 variation ID")
+    q5_variation_id: Optional[int] = Field(None, gt=0, description="Question 5 variation ID")
+    q6_variation_id: Optional[int] = Field(None, gt=0, description="Question 6 variation ID")
+    q7_variation_id: Optional[int] = Field(None, gt=0, description="Question 7 variation ID")
+    q8_variation_id: Optional[int] = Field(None, gt=0, description="Question 8 variation ID")
+    q9_variation_id: Optional[int] = Field(None, gt=0, description="Question 9 variation ID")
+    q10_variation_id: Optional[int] = Field(None, gt=0, description="Question 10 variation ID")
+    q11_variation_id: Optional[int] = Field(None, gt=0, description="Question 11 variation ID")
+    q12_variation_id: Optional[int] = Field(None, gt=0, description="Question 12 variation ID")
+    q13_variation_id: Optional[int] = Field(None, gt=0, description="Question 13 variation ID")
+    q14_variation_id: Optional[int] = Field(None, gt=0, description="Question 14 variation ID")
+    q15_variation_id: Optional[int] = Field(None, gt=0, description="Question 15 variation ID")
+
+
+class VariationSetResponse(BaseModel):
+    """Schema for variation set response."""
+    id: int
+    name: str
+    description: Optional[str]
+    set_type: str
+    is_template: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    # All 15 question variation IDs
+    q1_variation_id: int
+    q2_variation_id: int
+    q3_variation_id: int
+    q4_variation_id: int
+    q5_variation_id: int
+    q6_variation_id: int
+    q7_variation_id: int
+    q8_variation_id: int
+    q9_variation_id: int
+    q10_variation_id: int
+    q11_variation_id: int
+    q12_variation_id: int
+    q13_variation_id: int
+    q14_variation_id: int
+    q15_variation_id: int
+    
+    # Statistics (optional)
+    companies_using_count: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class VariationSetListResponse(BaseModel):
+    """Schema for paginated variation set list."""
+    variation_sets: List[VariationSetResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class VariationSetCloneRequest(BaseModel):
+    """Schema for cloning a variation set."""
+    new_name: str = Field(..., min_length=1, max_length=255, description="New set name")
+    new_description: Optional[str] = Field(None, description="New set description")
+
+
+class CompanySetAssignmentRequest(BaseModel):
+    """Schema for assigning a variation set to a company."""
+    variation_set_id: int = Field(..., gt=0, description="Variation set ID to assign")
+
+
+class CompanySetAssignmentResponse(BaseModel):
+    """Schema for company set assignment response."""
+    company_id: int
+    company_name: str
+    variation_set_id: Optional[int]
+    variation_set_name: Optional[str]
+    updated_at: datetime

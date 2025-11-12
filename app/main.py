@@ -19,6 +19,7 @@ from app.companies.url_config_routes import router as url_config_router
 from app.reports.routes import router as reports_router
 from app.localization.routes import router as localization_router
 from app.admin.question_variation_routes import router as admin_question_variation_router
+from app.admin.variation_set_routes import router as admin_variation_set_router
 from app.admin.demographic_rule_routes import router as admin_demographic_rule_router
 from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
@@ -142,6 +143,7 @@ app.include_router(url_config_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(localization_router)  # Already has /api prefix
 app.include_router(admin_question_variation_router, prefix="/api/v1")
+app.include_router(admin_variation_set_router, prefix="/api/v1")
 app.include_router(admin_demographic_rule_router, prefix="/api/v1")
 app.include_router(admin_localization_router, prefix="/api/v1")
 app.include_router(simple_admin_router, prefix="/api/v1")
