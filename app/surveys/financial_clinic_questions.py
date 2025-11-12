@@ -327,7 +327,15 @@ def get_questions_for_profile(children_count: int = 0) -> List[FinancialClinicQu
 
 
 def get_question_by_id(question_id: str) -> Optional[FinancialClinicQuestion]:
-    """Get a specific question by ID."""
+    """
+    Get a specific question by ID.
+    
+    Args:
+        question_id: Question ID (e.g., 'fc_q1', 'fc_q2', etc.)
+        
+    Returns:
+        FinancialClinicQuestion object or None if not found
+    """
     for question in FINANCIAL_CLINIC_QUESTIONS:
         if question.id == question_id:
             return question

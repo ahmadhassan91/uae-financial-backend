@@ -312,13 +312,18 @@ class QuestionVariation(Base):
     __tablename__ = "question_variations"
     
     id = Column(Integer, primary_key=True, index=True)
-    base_question_id = Column(String(50), nullable=False, index=True)  # e.g., "q1_income_stability"
+    base_question_id = Column(String(50), nullable=False, index=True)  # e.g., "fc_q1"
     variation_name = Column(String(100), nullable=False)  # e.g., "uae_citizen_version"
-    language = Column(String(5), nullable=False, default="en", index=True)
+    language = Column(String(5), nullable=False, default="en", index=True)  # DEPRECATED: kept for compatibility
     
-    # Question content
-    text = Column(Text, nullable=False)
-    options = Column(JSON, nullable=False)  # Array of {value, label}
+    # Question content - BILINGUAL (new structure)
+    text_en = Column(Text, nullable=True)  # English text
+    text_ar = Column(Text, nullable=True)  # Arabic text
+    text = Column(Text, nullable=True)  # DEPRECATED: old single-language field
+    
+    # Options - BILINGUAL (new structure)
+    # Format: [{"value": 1, "label_en": "...", "label_ar": "..."}]
+    options = Column(JSON, nullable=False)  # Array of {value, label_en, label_ar}
     
     # Targeting rules
     demographic_rules = Column(JSON, nullable=True)  # Conditions for when to use

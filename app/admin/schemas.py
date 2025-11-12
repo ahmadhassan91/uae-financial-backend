@@ -11,38 +11,66 @@ from pydantic import BaseModel, Field, validator
 
 # Question Variation Schemas
 class QuestionVariationCreate(BaseModel):
-    """Schema for creating a new question variation."""
+    """Schema for creating a new bilingual question variation."""
     base_question_id: str = Field(..., description="Base question ID")
     variation_name: str = Field(..., min_length=1, max_length=100, description="Variation name")
-    language: str = Field("en", pattern="^(en|ar)$", description="Language code")
-    text: str = Field(..., min_length=1, description="Question text")
-    options: List[Dict[str, Any]] = Field(..., description="Question options")
+    language: str = Field("en", pattern="^(en|ar|both)$", description="Language code (deprecated, use both)")
+    
+    # Bilingual text fields
+    text_en: str = Field(..., min_length=1, description="Question text in English")
+    text_ar: str = Field(..., min_length=1, description="Question text in Arabic")
+    
+    # Legacy single text field (optional for backward compatibility)
+    text: Optional[str] = Field(None, min_length=1, description="Question text (deprecated)")
+    
+    # Bilingual options: [{"value": 1, "label_en": "...", "label_ar": "..."}]
+    options: List[Dict[str, Any]] = Field(..., description="Question options (bilingual)")
     demographic_rules: Optional[Dict[str, Any]] = Field(None, description="Demographic targeting rules")
     company_ids: Optional[List[int]] = Field(None, description="Company IDs this applies to")
     
     @validator('options')
     def validate_options(cls, v):
-        """Validate options structure."""
+        """Validate bilingual options structure."""
         if not isinstance(v, list) or len(v) == 0:
             raise ValueError("Options must be a non-empty list")
         
         for i, option in enumerate(v):
             if not isinstance(option, dict):
                 raise ValueError(f"Option {i} must be a dictionary")
-            if 'value' not in option or 'label' not in option:
-                raise ValueError(f"Option {i} must have 'value' and 'label' fields")
+            
+            # Check for required fields
+            if 'value' not in option:
+                raise ValueError(f"Option {i} must have 'value' field")
+            
+            # Support both legacy (label) and new bilingual (label_en, label_ar) formats
+            has_legacy = 'label' in option
+            has_bilingual = 'label_en' in option and 'label_ar' in option
+            
+            if not has_legacy and not has_bilingual:
+                raise ValueError(f"Option {i} must have either 'label' or both 'label_en' and 'label_ar' fields")
+            
             if not isinstance(option['value'], int):
                 raise ValueError(f"Option {i} value must be an integer")
-            if not isinstance(option['label'], str) or not option['label'].strip():
-                raise ValueError(f"Option {i} label must be a non-empty string")
+            
+            # Validate labels
+            if has_bilingual:
+                if not isinstance(option['label_en'], str) or not option['label_en'].strip():
+                    raise ValueError(f"Option {i} label_en must be a non-empty string")
+                if not isinstance(option['label_ar'], str) or not option['label_ar'].strip():
+                    raise ValueError(f"Option {i} label_ar must be a non-empty string")
+            elif has_legacy:
+                if not isinstance(option['label'], str) or not option['label'].strip():
+                    raise ValueError(f"Option {i} label must be a non-empty string")
         
         return v
 
 
 class QuestionVariationUpdate(BaseModel):
-    """Schema for updating a question variation."""
+    """Schema for updating a bilingual question variation."""
     variation_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    text: Optional[str] = Field(None, min_length=1)
+    text_en: Optional[str] = Field(None, min_length=1, description="Question text in English")
+    text_ar: Optional[str] = Field(None, min_length=1, description="Question text in Arabic")
+    text: Optional[str] = Field(None, min_length=1, description="Question text (deprecated)")
     options: Optional[List[Dict[str, Any]]] = None
     demographic_rules: Optional[Dict[str, Any]] = None
     company_ids: Optional[List[int]] = None
@@ -57,12 +85,14 @@ class QuestionVariationUpdate(BaseModel):
 
 
 class QuestionVariationResponse(BaseModel):
-    """Schema for question variation response."""
+    """Schema for bilingual question variation response."""
     id: int
     base_question_id: str
     variation_name: str
     language: str
-    text: str
+    text_en: Optional[str] = None
+    text_ar: Optional[str] = None
+    text: Optional[str] = None  # Backward compatibility
     options: List[Dict[str, Any]]
     demographic_rules: Optional[Dict[str, Any]]
     company_ids: Optional[List[int]]
