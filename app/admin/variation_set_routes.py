@@ -19,7 +19,7 @@ from app.admin.schemas import (
     CompanySetAssignmentRequest,
     CompanySetAssignmentResponse
 )
-from app.auth import require_admin
+from app.auth.dependencies import get_current_admin_user as get_admin_user
 
 router = APIRouter(prefix="/admin/variation-sets", tags=["Admin - Variation Sets"])
 
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/admin/variation-sets", tags=["Admin - Variation Sets
 async def create_variation_set(
     variation_set: VariationSetCreate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     Create a new variation set with all 15 question variations.
@@ -89,7 +89,7 @@ async def list_variation_sets(
     is_active: Optional[bool] = Query(None, description="Filter active sets"),
     search: Optional[str] = Query(None, description="Search by name or description"),
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     List all variation sets with pagination and filtering.
@@ -166,7 +166,7 @@ async def list_variation_sets(
 async def get_variation_set(
     set_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """Get a specific variation set by ID with company usage count."""
     variation_set = db.query(VariationSet).filter(VariationSet.id == set_id).first()
@@ -213,7 +213,7 @@ async def update_variation_set(
     set_id: int,
     variation_set_update: VariationSetUpdate,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """Update an existing variation set."""
     db_variation_set = db.query(VariationSet).filter(VariationSet.id == set_id).first()
@@ -268,7 +268,7 @@ async def update_variation_set(
 async def delete_variation_set(
     set_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     Delete a variation set.
@@ -301,7 +301,7 @@ async def clone_variation_set(
     set_id: int,
     clone_request: VariationSetCloneRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     Clone an existing variation set.
@@ -359,7 +359,7 @@ async def assign_set_to_company(
     company_id: int,
     assignment: CompanySetAssignmentRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """
     Assign a variation set to a company.
@@ -403,7 +403,7 @@ async def assign_set_to_company(
 async def unassign_set_from_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """Remove variation set assignment from a company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
@@ -420,7 +420,7 @@ async def unassign_set_from_company(
 async def get_company_assigned_set(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(require_admin)
+    current_user: dict = Depends(get_admin_user)
 ):
     """Get the variation set assigned to a company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
