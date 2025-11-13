@@ -57,7 +57,8 @@ async def create_company(
         unique_url=unique_url,
         custom_branding=company.custom_branding,
         notification_settings=company.notification_settings,
-        question_variation_mapping=company.question_variation_mapping
+        question_variation_mapping=company.question_variation_mapping,
+        variation_set_id=company.variation_set_id
     )
     
     db.add(db_company)
