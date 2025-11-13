@@ -40,7 +40,7 @@ async def list_question_variations(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user),
     base_question_id: Optional[str] = Query(None, description="Filter by base question ID"),
-    language: str = Query("en", description="Filter by language"),
+    language: Optional[str] = Query(None, description="Filter by language (en, ar, both)"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
     active_only: bool = Query(True, description="Only return active variations"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -78,9 +78,11 @@ async def list_question_variations(
         variation_responses = []
         for variation in variations:
             # Get usage statistics
-            usage_count = db.query(SurveyResponse).filter(
-                SurveyResponse.question_variations_used.contains({variation.base_question_id: variation.id})
-            ).count()
+            # TODO: Fix JSON query for PostgreSQL - currently disabled due to JSON type mismatch
+            usage_count = 0
+            # usage_count = db.query(SurveyResponse).filter(
+            #     SurveyResponse.question_variations_used.contains({variation.base_question_id: variation.id})
+            # ).count()
             
             variation_response = QuestionVariationResponse(
                 id=variation.id,

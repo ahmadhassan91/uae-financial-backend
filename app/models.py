@@ -370,7 +370,7 @@ class VariationSet(Base):
     q15_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     q1_variation = relationship("QuestionVariation", foreign_keys=[q1_variation_id])
