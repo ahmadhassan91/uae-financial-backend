@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth.dependencies import get_current_admin_user
-from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile
+from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile, CompanyTracker
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
@@ -30,6 +30,128 @@ def filter_unique_users(responses):
                 email_to_latest[email] = response
     
     return list(email_to_latest.values())
+
+
+def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session):
+    """
+    Apply demographic filters to a SQLAlchemy query.
+    
+    Args:
+        query: SQLAlchemy query object (already joined with FinancialClinicProfile)
+        filters: Dictionary of filter parameters
+        db: Database session
+        
+    Returns:
+        Filtered query
+    """
+    from app.models import FinancialClinicProfile, CompanyTracker
+    
+    # Age groups filter
+    if filters.get('age_groups'):
+        age_conditions = []
+        for age_group in filters['age_groups']:
+            if age_group == '<18':
+                age_conditions.append(FinancialClinicProfile.age < 18)
+            elif age_group == '18-25':
+                age_conditions.append(and_(FinancialClinicProfile.age >= 18, FinancialClinicProfile.age <= 25))
+            elif age_group == '25-35':
+                age_conditions.append(and_(FinancialClinicProfile.age >= 25, FinancialClinicProfile.age <= 35))
+            elif age_group == '35-45':
+                age_conditions.append(and_(FinancialClinicProfile.age >= 35, FinancialClinicProfile.age <= 45))
+            elif age_group == '45-60':
+                age_conditions.append(and_(FinancialClinicProfile.age >= 45, FinancialClinicProfile.age <= 60))
+            elif age_group == '65+':
+                age_conditions.append(FinancialClinicProfile.age >= 65)
+        if age_conditions:
+            query = query.filter(or_(*age_conditions))
+    
+    # Gender filter
+    if filters.get('genders'):
+        query = query.filter(FinancialClinicProfile.gender.in_(filters['genders']))
+    
+    # Nationality filter
+    if filters.get('nationalities'):
+        query = query.filter(FinancialClinicProfile.nationality.in_(filters['nationalities']))
+    
+    # Emirate filter
+    if filters.get('emirates'):
+        query = query.filter(FinancialClinicProfile.emirate.in_(filters['emirates']))
+    
+    # Employment status filter
+    if filters.get('employment_statuses'):
+        query = query.filter(FinancialClinicProfile.employment_status.in_(filters['employment_statuses']))
+    
+    # Income range filter
+    if filters.get('income_ranges'):
+        query = query.filter(FinancialClinicProfile.income_range.in_(filters['income_ranges']))
+    
+    # Children filter
+    if filters.get('children'):
+        children_conditions = []
+        for child_option in filters['children']:
+            if child_option == '0':
+                children_conditions.append(FinancialClinicProfile.children == 0)
+            elif child_option == '1':
+                children_conditions.append(FinancialClinicProfile.children == 1)
+            elif child_option == '2':
+                children_conditions.append(FinancialClinicProfile.children == 2)
+            elif child_option == '3':
+                children_conditions.append(FinancialClinicProfile.children == 3)
+            elif child_option == '4':
+                children_conditions.append(FinancialClinicProfile.children == 4)
+            elif child_option == '5+':
+                children_conditions.append(FinancialClinicProfile.children >= 5)
+        if children_conditions:
+            query = query.filter(or_(*children_conditions))
+    
+    # Company filter
+    if filters.get('companies'):
+        # Get company IDs from company names or URLs
+        company_trackers = db.query(CompanyTracker).filter(
+            or_(
+                CompanyTracker.company_name.in_(filters['companies']),
+                CompanyTracker.unique_url.in_(filters['companies'])
+            )
+        ).all()
+        company_ids = [c.id for c in company_trackers]
+        if company_ids:
+            from app.models import FinancialClinicResponse
+            query = query.filter(FinancialClinicResponse.company_tracker_id.in_(company_ids))
+    
+    return query
+
+
+def parse_filter_params(
+    age_groups: Optional[str] = None,
+    genders: Optional[str] = None,
+    nationalities: Optional[str] = None,
+    emirates: Optional[str] = None,
+    employment_statuses: Optional[str] = None,
+    income_ranges: Optional[str] = None,
+    children: Optional[str] = None,
+    companies: Optional[str] = None
+) -> Dict[str, List[str]]:
+    """Parse comma-separated filter parameters into lists."""
+    filters = {}
+    
+    if age_groups:
+        filters['age_groups'] = [ag.strip() for ag in age_groups.split(',')]
+    if genders:
+        filters['genders'] = [g.strip() for g in genders.split(',')]
+    if nationalities:
+        filters['nationalities'] = [n.strip() for n in nationalities.split(',')]
+    if emirates:
+        filters['emirates'] = [e.strip() for e in emirates.split(',')]
+    if employment_statuses:
+        filters['employment_statuses'] = [es.strip() for es in employment_statuses.split(',')]
+    if income_ranges:
+        filters['income_ranges'] = [ir.strip() for ir in income_ranges.split(',')]
+    if children:
+        filters['children'] = [c.strip() for c in children.split(',')]
+    if companies:
+        filters['companies'] = [c.strip() for c in companies.split(',')]
+    
+    return filters
 
 
 @simple_admin_router.get("/localized-content")
@@ -420,17 +542,36 @@ async def get_filter_options(
 async def get_overview_metrics(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get overview metrics (KPIs) for the admin dashboard."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        # Get all responses
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         # Apply unique user filter
         unique_responses = filter_unique_users(responses)
@@ -478,16 +619,36 @@ async def get_overview_metrics(
 async def get_score_distribution(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get score distribution by status bands."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -517,16 +678,36 @@ async def get_score_distribution(
 async def get_category_performance(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get category performance (6 categories)."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -606,16 +787,36 @@ async def get_category_performance(
 async def get_nationality_breakdown(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get nationality breakdown (Emirati vs Non-Emirati)."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -651,16 +852,36 @@ async def get_nationality_breakdown(
 async def get_age_breakdown(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get age breakdown."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -736,16 +957,36 @@ async def get_time_series(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
-    group_by: str = "day"
+    group_by: str = "day",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get time series data (submissions over time)."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -793,16 +1034,36 @@ async def get_time_series(
 async def get_companies_analytics(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get companies analytics."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
@@ -859,17 +1120,37 @@ async def get_companies_analytics(
 async def get_score_analytics_table(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
-    date_range: str = "30d"
+    date_range: str = "30d",
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None)
 ):
     """Get score analytics table (question-level breakdown by nationality)."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         from app.surveys.financial_clinic_questions import FINANCIAL_CLINIC_QUESTIONS
         
-        responses = db.query(FinancialClinicResponse).join(
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
-        ).all()
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        responses = query.all()
         
         unique_responses = filter_unique_users(responses)
         
