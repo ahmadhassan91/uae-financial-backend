@@ -573,6 +573,9 @@ async def get_overview_metrics(
         
         responses = query.all()
         
+        # Get total responses (before unique filter)
+        all_responses_count = len(responses)
+        
         # Apply unique user filter
         unique_responses = filter_unique_users(responses)
         
@@ -581,6 +584,10 @@ async def get_overview_metrics(
         if total_responses == 0:
             return {
                 "total_responses": 0,
+                "total_submissions": 0,
+                "unique_completions": 0,
+                "cases_completed_percentage": 0.0,
+                "unique_completion_percentage": 0.0,
                 "average_score": 0,
                 "excellent_count": 0,
                 "good_count": 0,
@@ -598,8 +605,17 @@ async def get_overview_metrics(
         needs_improvement_count = sum(1 for r in unique_responses if r.status_band == "Needs Improvement")
         at_risk_count = sum(1 for r in unique_responses if r.status_band == "At Risk")
         
+        # Calculate completion percentages
+        # For "cases completed" we use unique responses as the success metric
+        cases_completed_percentage = 100.0  # All retrieved responses are considered "completed" in Financial Clinic
+        unique_completion_percentage = (total_responses / all_responses_count * 100) if all_responses_count > 0 else 0.0
+        
         return {
-            "total_responses": total_responses,
+            "total_responses": total_responses,  # Keep for backward compatibility
+            "total_submissions": all_responses_count,  # Total including duplicates
+            "unique_completions": total_responses,  # Unique users who completed
+            "cases_completed_percentage": round(cases_completed_percentage, 2),
+            "unique_completion_percentage": round(unique_completion_percentage, 2),
             "average_score": round(average_score, 2),
             "excellent_count": excellent_count,
             "good_count": good_count,
@@ -1130,9 +1146,13 @@ async def get_score_analytics_table(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None)
 ):
-    """Get score analytics table (question-level breakdown by nationality)."""
+    """Get score analytics table (question-level breakdown by nationality).
+    
+    If a company filter is applied, this will show questions from that company's
+    variation set. Otherwise, it shows the default Financial Clinic questions.
+    """
     try:
-        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, VariationSet, QuestionVariation
         from app.surveys.financial_clinic_questions import FINANCIAL_CLINIC_QUESTIONS
         
         # Parse filters
@@ -1154,10 +1174,68 @@ async def get_score_analytics_table(
         
         unique_responses = filter_unique_users(responses)
         
+        # Determine which questions to analyze based on company filter
+        questions_to_analyze = FINANCIAL_CLINIC_QUESTIONS  # Default
+        company_variation_set_name = None
+        
+        # If company filter is applied, get the company's variation set questions
+        if filters.get('companies') and len(filters['companies']) == 1:
+            company_identifier = filters['companies'][0]
+            
+            # Get company and its variation set
+            company = db.query(CompanyTracker).filter(
+                or_(
+                    CompanyTracker.company_name == company_identifier,
+                    CompanyTracker.unique_url == company_identifier
+                )
+            ).first()
+            
+            if company and company.variation_set_id:
+                # Get the variation set
+                variation_set = db.query(VariationSet).filter(
+                    VariationSet.id == company.variation_set_id
+                ).first()
+                
+                if variation_set:
+                    company_variation_set_name = variation_set.name
+                    # Get all 15 question variations from the set
+                    variation_ids = [
+                        variation_set.q1_variation_id, variation_set.q2_variation_id,
+                        variation_set.q3_variation_id, variation_set.q4_variation_id,
+                        variation_set.q5_variation_id, variation_set.q6_variation_id,
+                        variation_set.q7_variation_id, variation_set.q8_variation_id,
+                        variation_set.q9_variation_id, variation_set.q10_variation_id,
+                        variation_set.q11_variation_id, variation_set.q12_variation_id,
+                        variation_set.q13_variation_id, variation_set.q14_variation_id,
+                        variation_set.q15_variation_id
+                    ]
+                    
+                    # Get all variations
+                    variations = db.query(QuestionVariation).filter(
+                        QuestionVariation.id.in_(variation_ids),
+                        QuestionVariation.is_active == True
+                    ).all()
+                    
+                    if variations:
+                        # Convert variations to question-like objects for analysis
+                        questions_to_analyze = []
+                        for i, var in enumerate(variations, start=1):
+                            # Create a simple object with the needed attributes
+                            class VariationQuestion:
+                                def __init__(self, variation, question_number):
+                                    self.id = variation.base_question_id
+                                    self.number = question_number
+                                    self.text_en = variation.text_en or variation.text  # Use bilingual field or fallback
+                                    self.category = type('obj', (object,), {
+                                        'value': variation.factor or "General"  # Use factor as category
+                                    })()
+                            
+                            questions_to_analyze.append(VariationQuestion(var, i))
+        
         # Build question analytics with nationality breakdown
         question_analytics = []
         
-        for question in FINANCIAL_CLINIC_QUESTIONS:
+        for question in questions_to_analyze:
             question_id = question.id
             question_number = question.number
             question_text = question.text_en
@@ -1197,12 +1275,20 @@ async def get_score_analytics_table(
                 "non_emirati_count": len(non_emirati_scores)
             })
         
-        return question_analytics
+        # Return with metadata about which question set is being used
+        return {
+            "questions": question_analytics,
+            "total_questions": len(question_analytics),
+            "question_set_type": "company_variation" if company_variation_set_name else "default",
+            "variation_set_name": company_variation_set_name,
+            "filtered": bool(filters.get('companies'))
+        }
         
     except Exception as e:
         import traceback
         return {
             "error": str(e),
             "traceback": traceback.format_exc(),
-            "questions": []
+            "questions": [],
+            "total_questions": 0
         }
