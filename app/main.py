@@ -24,6 +24,7 @@ from app.admin.demographic_rule_routes import router as admin_demographic_rule_r
 from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
 from app.surveys.financial_clinic_routes import router as financial_clinic_router
+from app.consent.routes import router as consent_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -141,7 +142,8 @@ app.include_router(companies_router, prefix="/api/v1")
 app.include_router(company_questions_router, prefix="/api/v1")
 app.include_router(url_config_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
-app.include_router(localization_router)  # Already has /api prefix
+app.include_router(localization_router, prefix="/api/v1")
+app.include_router(consent_router, prefix="/api/v1")  # PDPL-compliant consent management
 app.include_router(admin_question_variation_router, prefix="/api/v1")
 app.include_router(admin_variation_set_router, prefix="/api/v1")
 app.include_router(admin_demographic_rule_router, prefix="/api/v1")

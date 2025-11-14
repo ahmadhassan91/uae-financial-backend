@@ -10,7 +10,7 @@ from app.auth.dependencies import get_current_admin_user
 from app.models import User, LocalizedContent
 from app.localization.service import LocalizationService
 
-router = APIRouter(prefix="/api/localization", tags=["localization"])
+router = APIRouter(prefix="/localization", tags=["localization"])
 
 
 class LocalizedContentCreate(BaseModel):

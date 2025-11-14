@@ -6,6 +6,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
+# Import PDPL-compliant consent models
+from app.models_consent import (
+    UserConsent,
+    ConsentAuditLog,
+    DataProcessingActivity,
+    DataSubjectRequest
+)
+
 
 class User(Base):
     """User model for authentication and basic user information."""
@@ -370,7 +378,7 @@ class VariationSet(Base):
     q15_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
     q1_variation = relationship("QuestionVariation", foreign_keys=[q1_variation_id])
