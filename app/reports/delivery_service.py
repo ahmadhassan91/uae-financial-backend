@@ -92,13 +92,17 @@ class ReportDeliveryService:
                 email_address = delivery_options.get('email_address') or user.email
                 
                 if email_address:
+                    # Generate download URL for the PDF
+                    download_url = self._generate_download_url(survey_response.id, pdf_filename)
+                    
                     email_result = await self.email_service.send_report_email(
                         recipient_email=email_address,
                         survey_response=survey_response,
                         customer_profile=customer_profile,
                         pdf_content=pdf_content,
                         language=language,
-                        branding_config=branding_config
+                        branding_config=branding_config,
+                        download_url=download_url
                     )
                     
                     results['email_sent'] = email_result['success']
@@ -169,6 +173,17 @@ class ReportDeliveryService:
             return delivery.file_path
         
         return None
+    
+    def _generate_download_url(self, survey_response_id: int, pdf_filename: str) -> str:
+        """Generate a download URL for the PDF report."""
+        # Get the base URL from settings
+        from app.config import settings
+        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        
+        # Generate download URL - this will be handled by the API endpoint
+        download_url = f"{base_url}/api/reports/download/{survey_response_id}"
+        
+        return download_url
     
     async def resend_report_email(
         self,

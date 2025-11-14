@@ -39,9 +39,10 @@ class EmailReportService:
         customer_profile: CustomerProfile,
         pdf_content: bytes,
         language: str = "en",
-        branding_config: Optional[Dict[str, Any]] = None
+        branding_config: Optional[Dict[str, Any]] = None,
+        download_url: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Send a financial health report via email."""
+        """Send a financial health report via email with download link."""
         try:
             # Create email message
             msg = MIMEMultipart('alternative')
@@ -52,33 +53,24 @@ class EmailReportService:
             
             # Set subject based on language
             if language == "ar":
-                msg['Subject'] = "تقرير تقييم الصحة المالية الخاص بك"
+                msg['Subject'] = "تقرير الصحة المالية الخاص بك جاهز!"
             else:
-                msg['Subject'] = "Your Financial Health Assessment Report"
+                msg['Subject'] = "Your Financial Health Report is Ready!"
             
-            # Generate email content
+            # Generate email content with download URL
             html_content = self._generate_email_html(
-                survey_response, customer_profile, language, branding_config
+                survey_response, customer_profile, language, branding_config, download_url
             )
             text_content = self._generate_email_text(
-                survey_response, customer_profile, language
+                survey_response, customer_profile, language, download_url
             )
             
             # Attach HTML and text versions
             msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_content, 'html', 'utf-8'))
             
-            # Attach PDF report
-            pdf_attachment = MIMEBase('application', 'pdf')
-            pdf_attachment.set_payload(pdf_content)
-            encoders.encode_base64(pdf_attachment)
-            
-            filename = f"financial_health_report_{datetime.now().strftime('%Y%m%d')}.pdf"
-            pdf_attachment.add_header(
-                'Content-Disposition',
-                f'attachment; filename="{filename}"'
-            )
-            msg.attach(pdf_attachment)
+            # Note: PDF is NOT attached - user downloads from link
+            # This reduces email size and improves deliverability
             
             # Send email
             delivery_result = self._send_email(msg)
@@ -88,7 +80,7 @@ class EmailReportService:
                 'message': delivery_result['message'],
                 'recipient': recipient_email,
                 'subject': msg['Subject'],
-                'attachment_size': len(pdf_content)
+                'download_url': download_url
             }
             
         except Exception as e:
@@ -131,43 +123,61 @@ class EmailReportService:
         survey_response: SurveyResponse,
         customer_profile: CustomerProfile,
         language: str,
-        branding_config: Optional[Dict[str, Any]] = None
+        branding_config: Optional[Dict[str, Any]] = None,
+        download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content."""
-        # Try to use Jinja2 template if available
+        # Get base URL for assets (frontend URL)
+        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        
+        # Try to use the new Financial Clinic email template
         if self.jinja_env:
             try:
-                template_name = f"report_email_{language}.html"
-                template = self.jinja_env.get_template(template_name)
+                template = self.jinja_env.get_template('financial_clinic_email_template.html')
+                
+                # Prepare products list (can be customized based on score)
+                products = self._get_recommended_products(survey_response, language)
+                
                 return template.render(
-                    survey_response=survey_response,
-                    customer_profile=customer_profile,
+                    language=language,
+                    customer_name=customer_profile.first_name if customer_profile else "Valued Customer",
+                    overall_score=int(survey_response.overall_score) if survey_response.overall_score else 0,
+                    download_url=download_url or "#",
+                    products=products,
+                    base_url=base_url,
+                    current_year=datetime.now().year,
                     branding_config=branding_config or {}
                 )
-            except:
+            except Exception as e:
+                print(f"Template error: {e}")
                 pass  # Fall back to inline template
         
         # Fallback to inline HTML template
-        return self._get_inline_html_template(survey_response, customer_profile, language, branding_config)
+        return self._get_inline_html_template(survey_response, customer_profile, language, branding_config, download_url)
     
     def _generate_email_text(
         self,
         survey_response: SurveyResponse,
         customer_profile: CustomerProfile,
-        language: str
+        language: str,
+        download_url: Optional[str] = None
     ) -> str:
         """Generate plain text email content."""
+        download_text = f"\n\nDownload your report: {download_url}\n" if download_url else ""
+        
         if language == "ar":
             return f"""
 مرحباً {customer_profile.first_name if customer_profile else ""},
 
-شكراً لك على إكمال تقييم الصحة المالية. نتيجتك الإجمالية هي {survey_response.overall_score}/100.
+تهانينا! لقد أكملت للتو فحص صحتك المالية!
 
-تجد مرفقاً تقريراً مفصلاً يتضمن:
-• تحليل مفصل لنتائجك
-• توصيات شخصية لتحسين وضعك المالي
-• خطة عمل لـ 90 يوماً
+نتيجتك الإجمالية: {int(survey_response.overall_score) if survey_response.overall_score else 0}/100
 
+تقريرك الشخصي للصحة المالية جاهز، ويتضمن:
+✓ نتيجة الصحة المالية: تفصيل شفاف لأدائك في المجالات الرئيسية
+✓ توصيات شخصية: طرق بسيطة وقابلة للتنفيذ لتحسين نتيجتك
+✓ خطة عمل 90 يوماً: خطوات واضحة لبناء مستقبل مالي أقوى
+{download_text if download_url else ""}
 لأي استفسارات، يرجى زيارة موقعنا: www.nationalbonds.ae
 
 مع أطيب التحيات,
@@ -177,30 +187,80 @@ class EmailReportService:
             return f"""
 Hello {customer_profile.first_name if customer_profile else ""},
 
-Thank you for completing the Financial Health Assessment. Your overall score is {survey_response.overall_score}/100.
+Congratulations—you've just completed your Financial Checkup!
 
-Please find attached your detailed report including:
-• Comprehensive analysis of your results
-• Personalized recommendations for improvement
-• 90-day action plan
+Your Overall Score: {int(survey_response.overall_score) if survey_response.overall_score else 0}/100
 
+Your personalized Financial Health Report is ready, including:
+✓ Your Financial Health Score: a transparent breakdown of your performance
+✓ Personalized Recommendations: simple, actionable ways to improve
+✓ 90-Day Action Plan: clear steps to build a stronger financial future
+{download_text if download_url else ""}
 For any questions, please visit: www.nationalbonds.ae
 
 Best regards,
 National Bonds Team
 """
     
+    def _get_recommended_products(self, survey_response: SurveyResponse, language: str) -> List[Dict[str, str]]:
+        """Get recommended products based on financial health score."""
+        # Sample products - can be customized based on score ranges
+        products_en = [
+            {
+                'title': 'SAVING BONDS',
+                'description': 'A saving plan with a clear path to achieve your goals, and build a better financial future.',
+                'image_url': 'https://images.pexels.com/photos/235615/pexels-photo-235615.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/products/saving-bonds'
+            },
+            {
+                'title': 'SECOND SALARY',
+                'description': 'Receive a future monthly income with competitive accumulated returns in the UAE.',
+                'image_url': 'https://images.pexels.com/photos/1438072/pexels-photo-1438072.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/products/second-salary'
+            },
+            {
+                'title': 'MY MILLION',
+                'description': 'The journey to a million is smooth with this plan.',
+                'image_url': 'https://images.pexels.com/photos/618613/pexels-photo-618613.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/products/my-million'
+            }
+        ]
+        
+        products_ar = [
+            {
+                'title': 'سندات الادخار',
+                'description': 'خطة ادخار مع مسار واضح لتحقيق أهدافك وبناء مستقبل مالي أفضل.',
+                'image_url': 'https://images.pexels.com/photos/235615/pexels-photo-235615.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/ar/products/saving-bonds'
+            },
+            {
+                'title': 'الراتب الثاني',
+                'description': 'احصل على دخل شهري مستقبلي مع عوائد تراكمية تنافسية في الإمارات.',
+                'image_url': 'https://images.pexels.com/photos/1438072/pexels-photo-1438072.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/ar/products/second-salary'
+            },
+            {
+                'title': 'مليوني',
+                'description': 'الرحلة إلى المليون سلسة مع هذه الخطة.',
+                'image_url': 'https://images.pexels.com/photos/618613/pexels-photo-618613.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'link': 'https://nationalbonds.ae/ar/products/my-million'
+            }
+        ]
+        
+        return products_ar if language == 'ar' else products_en
+    
     def _get_inline_html_template(
         self,
         survey_response: SurveyResponse,
         customer_profile: CustomerProfile,
         language: str,
-        branding_config: Optional[Dict[str, Any]] = None
+        branding_config: Optional[Dict[str, Any]] = None,
+        download_url: Optional[str] = None
     ) -> str:
         """Generate inline HTML template for email."""
         # Get branding colors
-        primary_color = "#1e3a8a"  # National Bonds blue
-        secondary_color = "#059669"  # Green for scores
+        primary_color = "#437749"  # Financial Clinic green
+        secondary_color = "#3fab4c"  # Button green
         
         if branding_config:
             primary_color = branding_config.get('primary_color', primary_color)
@@ -209,6 +269,8 @@ National Bonds Team
         # Generate score summary
         score_summary = self._generate_score_summary_html(survey_response, language)
         
+        download_button = f'<div style="text-align: center; margin: 30px 0;"><a href="{download_url or "#"}" style="display: inline-block; background-color: {secondary_color}; color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600;">{"تحميل تقرير الصحة المالية" if language == "ar" else "Download My Financial Health Report"}</a></div>'
+        
         if language == "ar":
             html_content = f"""
 <!DOCTYPE html>
@@ -216,51 +278,57 @@ National Bonds Team
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقرير الصحة المالية</title>
+    <title>تقرير الصحة المالية جاهز</title>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: {primary_color}; color: white; padding: 20px; text-align: center; }}
-        .score-box {{ background-color: #f8f9fa; border: 2px solid {secondary_color}; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; }}
-        .score {{ font-size: 48px; font-weight: bold; color: {secondary_color}; }}
-        .content {{ padding: 20px; }}
-        .footer {{ background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; }}
-        .btn {{ background-color: {primary_color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }}
+        body {{ font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; }}
+        .container {{ max-width: 720px; margin: 0 auto; background-color: #ffffff; }}
+        .hero {{ background: linear-gradient(to left, rgba(0,0,0,0.5), transparent), url('https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg'); background-size: cover; background-position: center; padding: 60px 40px; text-align: left; }}
+        .hero h1 {{ color: #ffffff; font-size: 32px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }}
+        .content {{ padding: 40px; }}
+        .greeting {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; }}
+        .paragraph {{ font-size: 16px; margin-bottom: 20px; line-height: 1.6; }}
+        .score-box {{ background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0; }}
+        .score-box .score {{ font-size: 72px; font-weight: bold; color: #ffffff; margin: 0; }}
+        .score-box .label {{ font-size: 18px; color: #ffffff; margin-top: 10px; }}
+        .benefits {{ background-color: #f8fbfd; border: 1px solid #bdcdd6; border-radius: 8px; padding: 24px; margin: 30px 0; }}
+        .benefits h3 {{ color: {primary_color}; margin-bottom: 16px; }}
+        .benefits ul {{ list-style: none; padding: 0; }}
+        .benefits li {{ padding-right: 24px; position: relative; margin-bottom: 12px; color: #767f87; }}
+        .benefits li::before {{ content: '✓'; position: absolute; right: 0; color: {secondary_color}; font-weight: bold; }}
+        .footer {{ background-color: #f8fbfd; border-top: 1px solid #bdcdd6; padding: 40px; text-align: center; }}
+        .footer-text {{ font-size: 11px; color: #a1aeb7; margin-top: 20px; }}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>تقرير تقييم الصحة المالية</h1>
-            <p>السندات الوطنية</p>
+        <div class="hero">
+            <h1>تقرير الصحة المالية<br>الخاص بك جاهز!</h1>
         </div>
-        
         <div class="content">
-            <h2>مرحباً {customer_profile.first_name if customer_profile else ""}،</h2>
-            
-            <p>شكراً لك على إكمال تقييم الصحة المالية. إليك ملخص نتائجك:</p>
+            <p class="greeting">عزيزي {customer_profile.first_name if customer_profile else ""},</p>
+            <p class="paragraph">تهانينا، لقد أكملت للتو فحص صحتك المالية!</p>
+            <p class="paragraph">تقريرك الشخصي للصحة المالية جاهز، مما يمنحك لمحة واضحة عن وضعك المالي الحالي وخطوات عملية لتعزيزه.</p>
             
             <div class="score-box">
-                <div class="score">{survey_response.overall_score}</div>
-                <p><strong>نتيجة الصحة المالية الإجمالية من 100</strong></p>
+                <div class="score">{int(survey_response.overall_score) if survey_response.overall_score else 0}</div>
+                <div class="label">نتيجة الصحة المالية الإجمالية من 100</div>
             </div>
             
-            {score_summary}
+            <div class="benefits">
+                <h3>داخل تقريرك، ستجد:</h3>
+                <ul>
+                    <li><strong>نتيجة الصحة المالية:</strong> تفصيل شفاف لأدائك في المجالات الرئيسية</li>
+                    <li><strong>توصيات شخصية:</strong> طرق بسيطة وقابلة للتنفيذ لتحسين نتيجتك</li>
+                    <li><strong>خطة عمل 90 يوماً:</strong> خطوات واضحة لبناء مستقبل مالي أقوى</li>
+                </ul>
+            </div>
             
-            <h3>ما التالي؟</h3>
-            <ul>
-                <li>راجع التقرير المفصل المرفق</li>
-                <li>اتبع التوصيات الشخصية</li>
-                <li>ابدأ بخطة العمل لـ 90 يوماً</li>
-                <li>تابع تقدمك شهرياً</li>
-            </ul>
+            <p class="paragraph">خذ بضع دقائق لمراجعة نتائجك—إنها الخطوة الأولى نحو مستقبل مالي أقوى وأكثر ثقة.</p>
             
-            <p>لأي استفسارات أو للحصول على مشورة مالية شخصية، لا تتردد في التواصل معنا.</p>
+            {download_button}
         </div>
-        
         <div class="footer">
-            <p>هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية.</p>
-            <p>السندات الوطنية | www.nationalbonds.ae</p>
+            <p class="footer-text">هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية.<br>© {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.</p>
         </div>
     </div>
 </body>
@@ -273,51 +341,57 @@ National Bonds Team
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Health Report</title>
+    <title>Your Financial Health Report is Ready</title>
     <style>
-        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-        .header {{ background-color: {primary_color}; color: white; padding: 20px; text-align: center; }}
-        .score-box {{ background-color: #f8f9fa; border: 2px solid {secondary_color}; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center; }}
-        .score {{ font-size: 48px; font-weight: bold; color: {secondary_color}; }}
-        .content {{ padding: 20px; }}
-        .footer {{ background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; }}
-        .btn {{ background-color: {primary_color}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }}
+        body {{ font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
+        .container {{ max-width: 720px; margin: 0 auto; background-color: #ffffff; }}
+        .hero {{ background: linear-gradient(to right, rgba(0,0,0,0.5), transparent), url('https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg'); background-size: cover; background-position: center; padding: 60px 40px; text-align: right; }}
+        .hero h1 {{ color: #ffffff; font-size: 32px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }}
+        .content {{ padding: 40px; }}
+        .greeting {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; }}
+        .paragraph {{ font-size: 16px; margin-bottom: 20px; line-height: 1.6; }}
+        .score-box {{ background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0; }}
+        .score-box .score {{ font-size: 72px; font-weight: bold; color: #ffffff; margin: 0; }}
+        .score-box .label {{ font-size: 18px; color: #ffffff; margin-top: 10px; }}
+        .benefits {{ background-color: #f8fbfd; border: 1px solid #bdcdd6; border-radius: 8px; padding: 24px; margin: 30px 0; }}
+        .benefits h3 {{ color: {primary_color}; margin-bottom: 16px; }}
+        .benefits ul {{ list-style: none; padding: 0; }}
+        .benefits li {{ padding-left: 24px; position: relative; margin-bottom: 12px; color: #767f87; }}
+        .benefits li::before {{ content: '✓'; position: absolute; left: 0; color: {secondary_color}; font-weight: bold; }}
+        .footer {{ background-color: #f8fbfd; border-top: 1px solid #bdcdd6; padding: 40px; text-align: center; }}
+        .footer-text {{ font-size: 11px; color: #a1aeb7; margin-top: 20px; }}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Financial Health Assessment Report</h1>
-            <p>National Bonds</p>
+        <div class="hero">
+            <h1>Your Financial Health<br>Report is Ready!</h1>
         </div>
-        
         <div class="content">
-            <h2>Hello {customer_profile.first_name if customer_profile else ""},</h2>
-            
-            <p>Thank you for completing the Financial Health Assessment. Here's a summary of your results:</p>
+            <p class="greeting">Dear {customer_profile.first_name if customer_profile else "Valued Customer"},</p>
+            <p class="paragraph">Congratulations—you've just completed your Financial Checkup!</p>
+            <p class="paragraph">Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.</p>
             
             <div class="score-box">
-                <div class="score">{survey_response.overall_score}</div>
-                <p><strong>Overall Financial Health Score out of 100</strong></p>
+                <div class="score">{int(survey_response.overall_score) if survey_response.overall_score else 0}</div>
+                <div class="label">Overall Financial Health Score out of 100</div>
             </div>
             
-            {score_summary}
+            <div class="benefits">
+                <h3>Inside your report, you'll find:</h3>
+                <ul>
+                    <li><strong>Your Financial Health Score:</strong> a transparent breakdown of your performance across key areas</li>
+                    <li><strong>Personalized Recommendations:</strong> simple, actionable ways to improve your score</li>
+                    <li><strong>90-Day Action Plan:</strong> clear steps to build a stronger financial future</li>
+                </ul>
+            </div>
             
-            <h3>What's Next?</h3>
-            <ul>
-                <li>Review your detailed report attached</li>
-                <li>Follow the personalized recommendations</li>
-                <li>Start with the 90-day action plan</li>
-                <li>Track your progress monthly</li>
-            </ul>
+            <p class="paragraph">Take a few minutes to review your results—it's the first step toward a stronger, more confident financial future.</p>
             
-            <p>For any questions or personalized financial guidance, don't hesitate to reach out to us.</p>
+            {download_button}
         </div>
-        
         <div class="footer">
-            <p>This report is for informational purposes only and does not constitute financial advice.</p>
-            <p>National Bonds | www.nationalbonds.ae</p>
+            <p class="footer-text">This report is for informational purposes only and does not constitute financial advice.<br>© {datetime.now().year} National Bonds. All rights reserved.</p>
         </div>
     </div>
 </body>

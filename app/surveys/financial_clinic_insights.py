@@ -21,10 +21,12 @@ class Insight:
     category: str
     status_level: str
     text: str
+    text_ar: str  # Arabic translation
     priority: int  # Lower number = higher priority
 
 
-# 18 Insights Matrix (6 categories × 3 status levels)
+# Bilingual Insights Matrix (6 categories × 3 status levels)
+# Each insight now contains both English (en) and Arabic (ar) translations
 # Conditional logic based on design specifications:
 # - Income > 30K: income ranges "30,000 to 40,000", "40,000 to 50,000", "50,000 to 100,000", "Above 100,000"
 # - Income < 30K: income ranges "Below 5,000", "5,000 to 10,000", "10,000 to 20,000", "20,000 to 30,000"
@@ -32,156 +34,309 @@ class Insight:
 # - Children > 0: has children (1, 2, 3, 4, 5+)
 # - Emirati & Woman: nationality = "Emirati" AND gender = "Female"
 # - "Else": general fallback
-INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, str]]] = {
+INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
     FinancialClinicCategory.INCOME_STREAM.value: {
         "at_risk": {
-            "default": (
-                "Your income sources seem limited or inconsistent. Focus on creating stability by building "
-                "a consistent income stream and a small safety buffer with our regular saving plans starting "
-                "with AED 100"
-            ),
+            "default": {
+                "en": (
+                    "Your income sources seem limited or inconsistent. Focus on creating stability by building "
+                    "a consistent income stream and a small safety buffer with our regular saving plans starting "
+                    "with AED 100"
+                ),
+                "ar": (
+                    "يبدو أن مصادر دخلك محدودة أو غير مستقرة. ركز على خلق الاستقرار من خلال بناء تدفق دخل ثابت "
+                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة التي تبدأ من 100 درهم إماراتي"
+                ),
+            },
         },
         "good": {
-            "default": (
-                "Your income is steady but could be diversified. Explore additional or passive income sources "
-                "such as our Second Salary Plan, to strengthen financial resilience."
-            ),
+            "default": {
+                "en": (
+                    "Your income is steady but could be diversified. Explore additional or passive income sources "
+                    "such as our Second Salary Plan, to strengthen financial resilience."
+                ),
+                "ar": (
+                    "دخلك ثابت ولكن يمكن تنويعه. استكشف مصادر دخل إضافية أو سلبية مثل خطة الراتب الثاني "
+                    "لتعزيز المرونة المالية."
+                ),
+            },
         },
         "excellent": {
-            "income_above_30k": (
-                "You have a stable, consistent income. Now focus on long-term growth and wealth accumulation "
-                "through My Million plan"
-            ),
-            "default": (
-                "You have a stable, consistent income. Now focus on long-term growth and wealth-building opportunities."
-            ),
+            "income_above_30k": {
+                "en": (
+                    "You have a stable, consistent income. Now focus on long-term growth and wealth accumulation "
+                    "through My Million plan"
+                ),
+                "ar": (
+                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وتراكم الثروة من خلال خطة مليوني"
+                ),
+            },
+            "default": {
+                "en": (
+                    "You have a stable, consistent income. Now focus on long-term growth and wealth-building opportunities."
+                ),
+                "ar": (
+                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وفرص بناء الثروة."
+                ),
+            },
         },
     },
     FinancialClinicCategory.SAVINGS_HABIT.value: {
         "at_risk": {
-            "income_below_30k": (
-                "Your savings habits are irregular or minimal. Start small with automated monthly contributions to build "
-                "consistency and discipline through myPlan."
-            ),
-            "income_above_30k": (
-                "Your savings habit seems irregular or minimal. Increase your savings safety net with Saving Bonds"
-            ),
-            "default": (
-                "Your saving habits are irregular or minimal. Start small with automated monthly contributions to build "
-                "consistency and discipline through myPlan."
-            ),
+            "income_below_30k": {
+                "en": (
+                    "Your savings habits are irregular or minimal. Start small with automated monthly contributions to build "
+                    "consistency and discipline through myPlan."
+                ),
+                "ar": (
+                    "عادات الادخار لديك غير منتظمة أو ضئيلة. ابدأ صغيرًا بمساهمات شهرية تلقائية لبناء الاتساق "
+                    "والانضباط من خلال خطتي."
+                ),
+            },
+            "income_above_30k": {
+                "en": (
+                    "Your savings habit seems irregular or minimal. Increase your savings safety net with Saving Bonds"
+                ),
+                "ar": (
+                    "يبدو أن عادة الادخار لديك غير منتظمة أو ضئيلة. زد شبكة الأمان الادخارية الخاصة بك مع سندات الادخار"
+                ),
+            },
+            "default": {
+                "en": (
+                    "Your saving habits are irregular or minimal. Start small with automated monthly contributions to build "
+                    "consistency and discipline through myPlan."
+                ),
+                "ar": (
+                    "عادات الادخار لديك غير منتظمة أو ضئيلة. ابدأ صغيرًا بمساهمات شهرية تلقائية لبناء الاتساق "
+                    "والانضباط من خلال خطتي."
+                ),
+            },
         },
         "good": {
-            "default": (
-                "You save occasionally, but your rate could improve. Set clear goals and increase your savings "
-                "percentage gradually"
-            ),
+            "default": {
+                "en": (
+                    "You save occasionally, but your rate could improve. Set clear goals and increase your savings "
+                    "percentage gradually"
+                ),
+                "ar": (
+                    "تدخر بشكل متقطع، ولكن معدلك يمكن أن يتحسن. حدد أهدافًا واضحة وزد نسبة مدخراتك تدريجيًا"
+                ),
+            },
         },
         "excellent": {
-            "default": (
-                "You maintain a strong savings routine. Continue optimizing returns through structured plans and "
-                "smart investments. Consider long term savings with our Booster offerings for enhanced savings "
-                "growth over 3 to 5 years"
-            ),
+            "default": {
+                "en": (
+                    "You maintain a strong savings routine. Continue optimizing returns through structured plans and "
+                    "smart investments. Consider long term savings with our Booster offerings for enhanced savings "
+                    "growth over 3 to 5 years"
+                ),
+                "ar": (
+                    "تحافظ على روتين ادخار قوي. استمر في تحسين العوائد من خلال الخطط المنظمة والاستثمارات الذكية. "
+                    "فكر في الادخار طويل الأجل مع عروض بوستر لتعزيز نمو المدخرات على مدى 3 إلى 5 سنوات"
+                ),
+            },
         },
     },
     FinancialClinicCategory.EMERGENCY_SAVINGS.value: {
         "at_risk": {
-            "default": (
-                "You may not have enough set aside for unexpected expenses. Aim for at least 3 months of essential living costs with myPlan."
-            ),
+            "default": {
+                "en": (
+                    "You may not have enough set aside for unexpected expenses. Aim for at least 3 months of essential living costs with myPlan."
+                ),
+                "ar": (
+                    "قد لا يكون لديك ما يكفي من المدخرات للنفقات غير المتوقعة. استهدف ما لا يقل عن 3 أشهر من تكاليف المعيشة الأساسية مع خطتي."
+                ),
+            },
         },
         "good": {
-            "emirati_woman": (
-                "You've built a partial safety net. Keep growing it to cover 6 months of living expenses for stronger security. "
-                "Enhance your emergency savings with Ahed savings plan"
-            ),
-            "else": (
-                "Enhance your emergency savings with our myPlan monthly savings plan"
-            ),
-            "default": (
-                "You've built a partial safety net. Keep growing it to cover 6 months of living expenses for stronger security."
-            ),
+            "emirati_woman": {
+                "en": (
+                    "You've built a partial safety net. Keep growing it to cover 6 months of living expenses for stronger security. "
+                    "Enhance your emergency savings with Ahed savings plan"
+                ),
+                "ar": (
+                    "لقد بنيت شبكة أمان جزئية. استمر في تنميتها لتغطية 6 أشهر من نفقات المعيشة لأمن أقوى. "
+                    "عزز مدخرات الطوارئ الخاصة بك مع خطة ادخار عهد"
+                ),
+            },
+            "else": {
+                "en": (
+                    "Enhance your emergency savings with our myPlan monthly savings plan"
+                ),
+                "ar": (
+                    "عزز مدخرات الطوارئ الخاصة بك مع خطة الادخار الشهرية خطتي"
+                ),
+            },
+            "default": {
+                "en": (
+                    "You've built a partial safety net. Keep growing it to cover 6 months of living expenses for stronger security."
+                ),
+                "ar": (
+                    "لقد بنيت شبكة أمان جزئية. استمر في تنميتها لتغطية 6 أشهر من نفقات المعيشة لأمن أقوى."
+                ),
+            },
         },
         "excellent": {
-            "default": (
-                "You're well-prepared for emergencies. Consider investing your surplus for sustainable long-term growth with National Bonds Term "
-                "Sukuk or Booster Offerings"
-            ),
+            "default": {
+                "en": (
+                    "You're well-prepared for emergencies. Consider investing your surplus for sustainable long-term growth with National Bonds Term "
+                    "Sukuk or Booster Offerings"
+                ),
+                "ar": (
+                    "أنت مستعد جيدًا للطوارئ. فكر في استثمار فائضك للنمو المستدام طويل الأجل مع صكوك الصكوك الوطنية أو عروض بوستر"
+                ),
+            },
         },
     },
     FinancialClinicCategory.DEBT_MANAGEMENT.value: {
         "at_risk": {
-            "default": (
-                "High debt levels or repayment habits may be limiting your flexibility. Prioritize reducing debt and avoid taking on new ones."
-            ),
+            "default": {
+                "en": (
+                    "High debt levels or repayment habits may be limiting your flexibility. Prioritize reducing debt and avoid taking on new ones."
+                ),
+                "ar": (
+                    "قد تحد مستويات الديون المرتفعة أو عادات السداد من مرونتك. أعط الأولوية لتقليل الديون وتجنب الحصول على ديون جديدة."
+                ),
+            },
         },
         "good": {
-            "default": (
-                "You're managing debt reasonably well, but there's room to improve. Focus on timely payments and debt reduction strategies."
-            ),
+            "default": {
+                "en": (
+                    "You're managing debt reasonably well, but there's room to improve. Focus on timely payments and debt reduction strategies."
+                ),
+                "ar": (
+                    "أنت تدير الديون بشكل معقول، ولكن هناك مجال للتحسين. ركز على المدفوعات في الوقت المناسب واستراتيجيات تقليل الديون."
+                ),
+            },
         },
         "excellent": {
-            "default": (
-                "You maintain excellent control over your debt. Use credit strategically to strengthen your financial profile."
-            ),
+            "default": {
+                "en": (
+                    "You maintain excellent control over your debt. Use credit strategically to strengthen your financial profile."
+                ),
+                "ar": (
+                    "تحافظ على سيطرة ممتازة على ديونك. استخدم الائتمان بشكل استراتيجي لتعزيز ملفك المالي."
+                ),
+            },
         },
     },
     FinancialClinicCategory.RETIREMENT_PLANNING.value: {
         "at_risk": {
-            "default": (
-                "You haven't started preparing for retirement yet. Begin now, even small contributions can create big impact over time."
-            ),
+            "default": {
+                "en": (
+                    "You haven't started preparing for retirement yet. Begin now, even small contributions can create big impact over time."
+                ),
+                "ar": (
+                    "لم تبدأ بعد في الاستعداد للتقاعد. ابدأ الآن، حتى المساهمات الصغيرة يمكن أن تحدث تأثيرًا كبيرًا مع مرور الوقت."
+                ),
+            },
         },
         "good": {
-            "income_above_30k": (
-                "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
-                "your retirement plans with our My Million plan."
-            ),
-            "else": (
-                "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
-                "your retirement goals with our Global Savings Club or Second Salary plan"
-            ),
-            "default": (
-                "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
-                "your retirement plans."
-            ),
+            "income_above_30k": {
+                "en": (
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "your retirement plans with our My Million plan."
+                ),
+                "ar": (
+                    "لقد بدأت في الادخار ولكن قد لا تساهم بما فيه الكفاية. راجع وزد مساهماتك بانتظام نحو خطط التقاعد الخاصة بك مع خطة مليوني."
+                ),
+            },
+            "else": {
+                "en": (
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "your retirement goals with our Global Savings Club or Second Salary plan"
+                ),
+                "ar": (
+                    "لقد بدأت في الادخار ولكن قد لا تساهم بما فيه الكفاية. راجع وزد مساهماتك بانتظام نحو أهداف التقاعد الخاصة بك مع نادي الادخار العالمي أو خطة الراتب الثاني"
+                ),
+            },
+            "default": {
+                "en": (
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "your retirement plans."
+                ),
+                "ar": (
+                    "لقد بدأت في الادخار ولكن قد لا تساهم بما فيه الكفاية. راجع وزد مساهماتك بانتظام نحو خطط التقاعد الخاصة بك."
+                ),
+            },
         },
         "excellent": {
-            "default": (
-                "You're actively preparing for retirement. Keep your portfolio balanced for both income and lifestyle needs."
-            ),
+            "default": {
+                "en": (
+                    "You're actively preparing for retirement. Keep your portfolio balanced for both income and lifestyle needs."
+                ),
+                "ar": (
+                    "أنت تستعد بنشاط للتقاعد. حافظ على توازن محفظتك لتلبية احتياجات الدخل ونمط الحياة."
+                ),
+            },
         },
     },
     FinancialClinicCategory.PROTECTING_FAMILY.value: {
         "at_risk": {
-            "default": (
-                "Your family may not have full financial protection. Explore saving and protection plans that safeguard your loved ones."
-            ),
+            "default": {
+                "en": (
+                    "Your family may not have full financial protection. Explore saving and protection plans that safeguard your loved ones."
+                ),
+                "ar": (
+                    "قد لا تتمتع عائلتك بحماية مالية كاملة. استكشف خطط الادخار والحماية التي تحمي أحبائك."
+                ),
+            },
         },
         "good": {
-            "children_zero": (
-                "You have basic financial protection in place for your family, but coverage may be limited."
-            ),
-            "children_above_zero": (
-                "You have some coverage, but it might be limited. Review your plans to ensure they align with your family's evolving needs. "
-                "At the same time, you can start saving to secure your child's education with My Education Plan."
-            ),
-            "default": (
-                "You have basic financial protection in place for your family, but coverage may be limited."
-            ),
+            "children_zero": {
+                "en": (
+                    "You have basic financial protection in place for your family, but coverage may be limited."
+                ),
+                "ar": (
+                    "لديك حماية مالية أساسية لعائلتك، ولكن التغطية قد تكون محدودة."
+                ),
+            },
+            "children_above_zero": {
+                "en": (
+                    "You have some coverage, but it might be limited. Review your plans to ensure they align with your family's evolving needs. "
+                    "At the same time, you can start saving to secure your child's education with My Education Plan."
+                ),
+                "ar": (
+                    "لديك بعض التغطية، ولكنها قد تكون محدودة. راجع خططك للتأكد من توافقها مع احتياجات عائلتك المتطورة. "
+                    "في الوقت نفسه، يمكنك البدء في الادخار لتأمين تعليم طفلك مع خطة تعليمي."
+                ),
+            },
+            "default": {
+                "en": (
+                    "You have basic financial protection in place for your family, but coverage may be limited."
+                ),
+                "ar": (
+                    "لديك حماية مالية أساسية لعائلتك، ولكن التغطية قد تكون محدودة."
+                ),
+            },
         },
         "excellent": {
-            "children_zero": (
-                "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
-                "You can also strengthen to your family's financial future with My Million plan"
-            ),
-            "else": (
-                "You can also save to secure your family's financial future with Junior Million plan"
-            ),
-            "default": (
-                "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change."
-            ),
+            "children_zero": {
+                "en": (
+                    "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
+                    "You can also strengthen to your family's financial future with My Million plan"
+                ),
+                "ar": (
+                    "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك. "
+                    "يمكنك أيضًا تعزيز مستقبل عائلتك المالي مع خطة مليوني"
+                ),
+            },
+            "else": {
+                "en": (
+                    "You can also save to secure your family's financial future with Junior Million plan"
+                ),
+                "ar": (
+                    "يمكنك أيضًا الادخار لتأمين مستقبل عائلتك المالي مع خطة مليون جونيور"
+                ),
+            },
+            "default": {
+                "en": (
+                    "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change."
+                ),
+                "ar": (
+                    "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك."
+                ),
+            },
         },
     },
 }
@@ -243,18 +398,19 @@ class InsightsEngine:
         for category_name, score_data in ranked_categories[:max_insights]:
             status_level = score_data["status_level"]
             
-            # Get conditional insight text based on profile
-            insight_text = self._select_insight_text(
+            # Get conditional insight text based on profile (bilingual)
+            insight_texts = self._select_insight_text(
                 category_name,
                 status_level,
                 profile or {}
             )
             
-            if insight_text:
+            if insight_texts:
                 insights.append(Insight(
                     category=category_name,
                     status_level=status_level,
-                    text=insight_text,
+                    text=insight_texts.get("en", ""),
+                    text_ar=insight_texts.get("ar", ""),
                     priority=self.category_priority.get(category_name, 99)
                 ))
         
@@ -265,9 +421,10 @@ class InsightsEngine:
         category: str,
         status_level: str,
         profile: Dict[str, Any]
-    ) -> str:
+    ) -> Dict[str, str]:
         """
         Select appropriate insight text based on profile conditions.
+        Returns bilingual dictionary with 'en' and 'ar' keys.
         
         Conditions evaluated in order:
         1. Income > 30K or < 30K
@@ -282,13 +439,13 @@ class InsightsEngine:
             profile: Profile data
             
         Returns:
-            Conditional insight text
+            Dictionary with 'en' and 'ar' translations
         """
         category_insights = self.insights_matrix.get(category, {})
         status_insights = category_insights.get(status_level, {})
         
         if not status_insights:
-            return ""
+            return {"en": "", "ar": ""}
         
         # Parse income range
         income_range = profile.get("income_range", "")
@@ -329,7 +486,7 @@ class InsightsEngine:
             return status_insights["else"]
         
         # 5. Default fallback
-        return status_insights.get("default", "")
+        return status_insights.get("default", {"en": "", "ar": ""})
     
     def _is_income_above_30k(self, income_range: str) -> bool:
         """
@@ -402,9 +559,10 @@ class InsightsEngine:
         category: str,
         status_level: str,
         profile: Optional[Dict[str, Any]] = None
-    ) -> str:
+    ) -> Dict[str, str]:
         """
         Get specific insight for a category and status level with profile conditions.
+        Returns bilingual dictionary.
         
         Args:
             category: Category name
@@ -412,7 +570,7 @@ class InsightsEngine:
             profile: Optional profile data for conditional insights
             
         Returns:
-            Insight text
+            Dictionary with 'en' and 'ar' translations
         """
         return self._select_insight_text(category, status_level, profile or {})
 
@@ -424,6 +582,7 @@ def generate_insights(
 ) -> List[Dict]:
     """
     Convenience function to generate insights with profile data.
+    Returns bilingual insights.
     
     Args:
         category_scores: Category scores from scoring engine
@@ -431,7 +590,7 @@ def generate_insights(
         max_insights: Maximum insights to return (strictly enforced at 5)
         
     Returns:
-        List of insight dictionaries
+        List of insight dictionaries with both 'text' (English) and 'text_ar' (Arabic)
     """
     engine = InsightsEngine()
     insights = engine.get_insights(category_scores, profile, max_insights)
@@ -441,6 +600,7 @@ def generate_insights(
             "category": insight.category,
             "status_level": insight.status_level,
             "text": insight.text,
+            "text_ar": insight.text_ar,
             "priority": insight.priority
         }
         for insight in insights
