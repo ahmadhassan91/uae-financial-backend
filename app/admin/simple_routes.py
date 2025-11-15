@@ -118,6 +118,60 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
     
     return query
 
+def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
+    """
+    Apply date range filtering to a SQLAlchemy query.
+    
+    Args:
+        query: SQLAlchemy query object
+        date_range: Predefined date range ('7d', '30d', '90d', '1y', 'ytd', 'all')
+        start_date: Custom start date (YYYY-MM-DD format)
+        end_date: Custom end date (YYYY-MM-DD format)
+        
+    Returns:
+        Filtered query
+    """
+    from app.models import FinancialClinicResponse
+    
+    # If custom date range is provided, use it
+    if start_date and end_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)  # Include end date
+            query = query.filter(
+                FinancialClinicResponse.created_at >= start_dt,
+                FinancialClinicResponse.created_at < end_dt
+            )
+        except ValueError:
+            # Invalid date format, skip filtering
+            pass
+        return query
+    
+    # Apply predefined date range filters
+    now = datetime.now()
+    
+    if date_range == "7d":
+        start_date = now - timedelta(days=7)
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    elif date_range == "30d":
+        start_date = now - timedelta(days=30)
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    elif date_range == "90d":
+        start_date = now - timedelta(days=90)
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    elif date_range == "1y":
+        start_date = now - timedelta(days=365)
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    elif date_range == "ytd":
+        # Year to date - from January 1st of current year
+        start_date = datetime(now.year, 1, 1)
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    elif date_range == "all":
+        # No date filtering for "all time"
+        pass
+    
+    return query
+
 def parse_filter_params(
     age_groups: Optional[str] = None,
     genders: Optional[str] = None,
@@ -538,6 +592,8 @@ async def get_overview_metrics(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -563,6 +619,9 @@ async def get_overview_metrics(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
@@ -632,6 +691,8 @@ async def get_score_distribution(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -657,6 +718,9 @@ async def get_score_distribution(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)

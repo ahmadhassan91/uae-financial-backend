@@ -37,25 +37,18 @@ def get_password_hash(password: str) -> str:
         raise
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None, is_admin: bool = False) -> str:
-    """Create a JWT access token with role-based expiration."""
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """Create a JWT access token."""
     to_encode = data.copy()
     
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        # Use longer expiration for admin users
-        expire_minutes = settings.ADMIN_TOKEN_EXPIRE_MINUTES if is_admin else settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
-
-
-def create_admin_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    """Create a JWT access token specifically for admin users with longer expiration."""
-    return create_access_token(data, expires_delta, is_admin=True)
 
 
 def verify_token(token: str) -> Optional[dict]:

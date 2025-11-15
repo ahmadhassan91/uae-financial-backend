@@ -23,15 +23,11 @@ class Settings(BaseSettings):
             return heroku_db_url
         return self.DATABASE_URL
     
-    # Security - Balanced approach for usability and security
+    # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Short for security
-    ADMIN_TOKEN_EXPIRE_MINUTES: int = 120  # 2 hours max for admin users
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    # Automatic token refresh settings
-    TOKEN_REFRESH_THRESHOLD_MINUTES: int = 10  # Refresh when 10 min left
-    MAX_TOKEN_REFRESH_COUNT: int = 24  # Max 24 refreshes per day
     
     # Environment
     ENVIRONMENT: str = "development"

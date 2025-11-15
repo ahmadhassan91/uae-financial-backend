@@ -91,22 +91,19 @@ async def login_user(
             detail="Account is deactivated"
         )
     
-    # Create tokens with longer expiration for admin users
+    # Create access token (same expiration for all users)
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    # Include admin status in token data
+    token_data = {"sub": str(user.id), "email": user.email}
     if user.is_admin:
-        access_token_expires = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email, "is_admin": True},
-            expires_delta=access_token_expires,
-            is_admin=True
-        )
-        expires_in_seconds = settings.ADMIN_TOKEN_EXPIRE_MINUTES * 60
-    else:
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email},
-            expires_delta=access_token_expires
-        )
-        expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        token_data["is_admin"] = True
+    
+    access_token = create_access_token(
+        data=token_data,
+        expires_delta=access_token_expires
+    )
+    expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     
     refresh_token = create_refresh_token(
         data={"sub": str(user.id), "email": user.email}
@@ -175,19 +172,17 @@ async def refresh_access_token(
                 detail="Account is deactivated"
             )
         
-        # Determine expiration time based on user role
+        # Use standard token expiration for all users
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+        # Create new access token with admin status if applicable
+        token_data = {"sub": str(user.id), "email": user.email}
         if user.is_admin:
-            expire_minutes = settings.ADMIN_TOKEN_EXPIRE_MINUTES
-        else:
-            expire_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        
-        access_token_expires = timedelta(minutes=expire_minutes)
-        
-        # Create new access token
+            token_data["is_admin"] = True
+            
         access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email},
-            expires_delta=access_token_expires,
-            is_admin=user.is_admin
+            data=token_data,
+            expires_delta=access_token_expires
         )
         
         # Optionally create new refresh token (for enhanced security)
