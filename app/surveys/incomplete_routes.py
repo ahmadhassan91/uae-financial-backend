@@ -274,6 +274,9 @@ async def send_follow_up(
     db: Session = Depends(get_db)
 ) -> Any:
     """Send follow-up communications to users with incomplete surveys."""
+    from app.reports.email_service import EmailReportService
+    from app.core.config import settings
+    
     # Get the incomplete surveys
     surveys = db.query(IncompleteSurvey).filter(
         IncompleteSurvey.id.in_(follow_up_data.survey_ids)
@@ -285,38 +288,68 @@ async def send_follow_up(
             detail="No surveys found with provided IDs"
         )
     
+    email_service = EmailReportService()
     sent_count = 0
+    failed_count = 0
     
     for survey in surveys:
         if not survey.email and follow_up_data.send_email:
             continue  # Skip if no email and email is requested
         
-        # Here you would integrate with your email/SMS service
-        # For now, we'll just mark as sent and log
-        
-        survey.follow_up_sent = True
-        survey.follow_up_count += 1
-        
-        # Log follow-up
-        audit_log = AuditLog(
-            user_id=current_user.id,
-            action="follow_up_sent",
-            entity_type="incomplete_survey",
-            entity_id=survey.id,
-            details={
-                "session_id": survey.session_id,
-                "email": survey.email,
-                "follow_up_count": survey.follow_up_count,
-                "message_template": follow_up_data.message_template[:100]  # Truncate for logging
-            }
-        )
-        db.add(audit_log)
-        sent_count += 1
+        try:
+            # Generate resume link with session_id
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            resume_link = f"{frontend_url}/financial-clinic?session={survey.session_id}"
+            
+            # Extract customer name from email or use generic
+            customer_name = survey.email.split('@')[0] if survey.email else "Valued Customer"
+            
+            # Detect language from responses if available
+            language = "en"
+            if survey.responses and isinstance(survey.responses, dict):
+                language = survey.responses.get('language', 'en')
+            
+            # Send reminder email
+            if follow_up_data.send_email and survey.email:
+                result = await email_service.send_reminder_email(
+                    recipient_email=survey.email,
+                    customer_name=customer_name,
+                    language=language,
+                    resume_link=resume_link
+                )
+                
+                if result.get('success'):
+                    survey.follow_up_sent = True
+                    survey.follow_up_count += 1
+                    sent_count += 1
+                else:
+                    failed_count += 1
+            
+            # Log follow-up attempt
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action="follow_up_sent",
+                entity_type="incomplete_survey",
+                entity_id=survey.id,
+                details={
+                    "session_id": survey.session_id,
+                    "email": survey.email,
+                    "follow_up_count": survey.follow_up_count,
+                    "resume_link": resume_link,
+                    "message_template": follow_up_data.message_template[:100]  # Truncate for logging
+                }
+            )
+            db.add(audit_log)
+            
+        except Exception as e:
+            failed_count += 1
+            print(f"Failed to send follow-up to {survey.email}: {str(e)}")
     
     db.commit()
     
     return {
-        "message": f"Follow-up sent to {sent_count} users",
+        "message": f"Follow-up sent to {sent_count} users ({failed_count} failed)",
         "sent_count": sent_count,
+        "failed_count": failed_count,
         "total_requested": len(follow_up_data.survey_ids)
     }

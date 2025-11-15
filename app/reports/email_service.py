@@ -424,7 +424,8 @@ National Bonds Team
         self,
         recipient_email: str,
         customer_name: str,
-        language: str = "en"
+        language: str = "en",
+        resume_link: Optional[str] = None
     ) -> Dict[str, Any]:
         """Send a reminder email for incomplete assessments."""
         try:
@@ -434,10 +435,10 @@ National Bonds Team
             
             if language == "ar":
                 msg['Subject'] = "تذكير: أكمل تقييم صحتك المالية"
-                content = self._get_reminder_content_ar(customer_name)
+                content = self._get_reminder_content_ar(customer_name, resume_link)
             else:
                 msg['Subject'] = "Reminder: Complete Your Financial Health Assessment"
-                content = self._get_reminder_content_en(customer_name)
+                content = self._get_reminder_content_en(customer_name, resume_link)
             
             msg.attach(MIMEText(content, 'html', 'utf-8'))
             
@@ -458,8 +459,24 @@ National Bonds Team
                 'error': str(e)
             }
     
-    def _get_reminder_content_en(self, customer_name: str) -> str:
+    def _get_reminder_content_en(self, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get English reminder email content."""
+        # Build the continue button HTML
+        continue_button = ""
+        if resume_link:
+            continue_button = f"""
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{resume_link}" 
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+                    Continue Your Assessment
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                Or copy this link: <a href="{resume_link}">{resume_link}</a>
+            </p>
+            """
+        
         return f"""
 <!DOCTYPE html>
 <html>
@@ -467,32 +484,69 @@ National Bonds Team
     <meta charset="UTF-8">
     <title>Complete Your Assessment</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>Hello {customer_name},</h2>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <!-- Header with Logo -->
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="https://www.nationalbonds.ae/homepage/icons/logo.svg" 
+                 alt="National Bonds" 
+                 style="height: 50px; max-width: 200px;">
+        </div>
         
-        <p>We noticed you started the Financial Health Assessment but haven't completed it yet.</p>
+        <!-- Main Content -->
+        <div style="padding: 30px 20px;">
+            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
+            
+            <p>We noticed you started the Financial Health Assessment but haven't completed it yet.</p>
+            
+            <p>Your financial wellness is important to us. The assessment takes just 5-10 minutes and provides valuable insights into your financial health.</p>
+            
+            <p><strong style="color: #437749;">Benefits of completing the assessment:</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ Personalized financial health score</li>
+                <li>✓ Detailed analysis of your financial situation</li>
+                <li>✓ Customized recommendations for improvement</li>
+                <li>✓ 90-day action plan</li>
+            </ul>
+            
+            {continue_button}
+            
+            <p>Ready to take control of your financial future?</p>
+        </div>
         
-        <p>Your financial wellness is important to us. The assessment takes just 5-10 minutes and provides valuable insights into your financial health.</p>
-        
-        <p><strong>Benefits of completing the assessment:</strong></p>
-        <ul>
-            <li>Personalized financial health score</li>
-            <li>Detailed analysis of your financial situation</li>
-            <li>Customized recommendations for improvement</li>
-            <li>90-day action plan</li>
-        </ul>
-        
-        <p>Ready to take control of your financial future?</p>
-        
-        <p>Best regards,<br>National Bonds Team</p>
+        <!-- Footer -->
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+            <img src="https://www.nationalbonds.ae/homepage/images/nbc-logo2-02-1.png" 
+                 alt="National Bonds" 
+                 style="height: 40px; margin-bottom: 10px;">
+            <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} National Bonds. All rights reserved.
+            </p>
+        </div>
     </div>
 </body>
 </html>
 """
     
-    def _get_reminder_content_ar(self, customer_name: str) -> str:
+    def _get_reminder_content_ar(self, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get Arabic reminder email content."""
+        # Build the continue button HTML
+        continue_button = ""
+        if resume_link:
+            continue_button = f"""
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{resume_link}" 
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+                    استمر في التقييم
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                أو انسخ هذا الرابط: <a href="{resume_link}">{resume_link}</a>
+            </p>
+            """
+        
         return f"""
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -500,25 +554,46 @@ National Bonds Team
     <meta charset="UTF-8">
     <title>أكمل تقييمك</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>مرحباً {customer_name}،</h2>
+<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <!-- Header with Logo -->
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="https://www.nationalbonds.ae/homepage/icons/logo.svg" 
+                 alt="National Bonds" 
+                 style="height: 50px; max-width: 200px;">
+        </div>
         
-        <p>لاحظنا أنك بدأت تقييم الصحة المالية ولكن لم تكمله بعد.</p>
+        <!-- Main Content -->
+        <div style="padding: 30px 20px;">
+            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
+            
+            <p>لاحظنا أنك بدأت تقييم الصحة المالية ولكن لم تكمله بعد.</p>
+            
+            <p>صحتك المالية مهمة بالنسبة لنا. يستغرق التقييم 5-10 دقائق فقط ويوفر رؤى قيمة حول وضعك المالي.</p>
+            
+            <p><strong style="color: #437749;">فوائد إكمال التقييم:</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ نتيجة شخصية للصحة المالية</li>
+                <li>✓ تحليل مفصل لوضعك المالي</li>
+                <li>✓ توصيات مخصصة للتحسين</li>
+                <li>✓ خطة عمل لـ 90 يوماً</li>
+            </ul>
+            
+            {continue_button}
+            
+            <p>هل أنت مستعد للسيطرة على مستقبلك المالي؟</p>
+        </div>
         
-        <p>صحتك المالية مهمة بالنسبة لنا. يستغرق التقييم 5-10 دقائق فقط ويوفر رؤى قيمة حول وضعك المالي.</p>
-        
-        <p><strong>فوائد إكمال التقييم:</strong></p>
-        <ul>
-            <li>نتيجة شخصية للصحة المالية</li>
-            <li>تحليل مفصل لوضعك المالي</li>
-            <li>توصيات مخصصة للتحسين</li>
-            <li>خطة عمل لـ 90 يوماً</li>
-        </ul>
-        
-        <p>هل أنت مستعد للسيطرة على مستقبلك المالي؟</p>
-        
-        <p>مع أطيب التحيات،<br>فريق السندات الوطنية</p>
+        <!-- Footer -->
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+            <img src="https://www.nationalbonds.ae/homepage/images/nbc-logo2-02-1.png" 
+                 alt="National Bonds" 
+                 style="height: 40px; margin-bottom: 10px;">
+            <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
+            </p>
+        </div>
     </div>
 </body>
 </html>

@@ -10,7 +10,6 @@ from typing import Optional
 
 simple_admin_router = APIRouter(prefix="/admin/simple", tags=["admin-simple"])
 
-
 def filter_unique_users(responses):
     """
     Filter responses to show only the most recent submission per unique email.
@@ -30,7 +29,6 @@ def filter_unique_users(responses):
                 email_to_latest[email] = response
     
     return list(email_to_latest.values())
-
 
 def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session):
     """
@@ -120,7 +118,6 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
     
     return query
 
-
 def parse_filter_params(
     age_groups: Optional[str] = None,
     genders: Optional[str] = None,
@@ -152,7 +149,6 @@ def parse_filter_params(
         filters['companies'] = [c.strip() for c in companies.split(',')]
     
     return filters
-
 
 @simple_admin_router.get("/localized-content")
 async def get_simple_localized_content(
@@ -537,7 +533,6 @@ async def get_filter_options(
             "companies": []
         }
 
-
 @simple_admin_router.get("/overview-metrics")
 async def get_overview_metrics(
     db: Session = Depends(get_db),
@@ -550,7 +545,8 @@ async def get_overview_metrics(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get overview metrics (KPIs) for the admin dashboard."""
     try:
@@ -576,10 +572,11 @@ async def get_overview_metrics(
         # Get total responses (before unique filter)
         all_responses_count = len(responses)
         
-        # Apply unique user filter
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
         
-        total_responses = len(unique_responses)
+        total_responses = len(responses)
         
         if total_responses == 0:
             return {
@@ -596,14 +593,14 @@ async def get_overview_metrics(
             }
         
         # Calculate metrics
-        total_score = sum(r.total_score for r in unique_responses)
+        total_score = sum(r.total_score for r in responses)
         average_score = total_score / total_responses if total_responses > 0 else 0
         
         # Count by status band
-        excellent_count = sum(1 for r in unique_responses if r.status_band == "Excellent")
-        good_count = sum(1 for r in unique_responses if r.status_band == "Good")
-        needs_improvement_count = sum(1 for r in unique_responses if r.status_band == "Needs Improvement")
-        at_risk_count = sum(1 for r in unique_responses if r.status_band == "At Risk")
+        excellent_count = sum(1 for r in responses if r.status_band == "Excellent")
+        good_count = sum(1 for r in responses if r.status_band == "Good")
+        needs_improvement_count = sum(1 for r in responses if r.status_band == "Needs Improvement")
+        at_risk_count = sum(1 for r in responses if r.status_band == "At Risk")
         
         # Calculate completion percentages
         # For "cases completed" we use unique responses as the success metric
@@ -630,7 +627,6 @@ async def get_overview_metrics(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/score-distribution")
 async def get_score_distribution(
     db: Session = Depends(get_db),
@@ -643,7 +639,8 @@ async def get_score_distribution(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get score distribution by status bands."""
     try:
@@ -666,16 +663,18 @@ async def get_score_distribution(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
         
         # Count by status band
         distribution = {}
-        for response in unique_responses:
+        for response in responses:
             status = response.status_band
             distribution[status] = distribution.get(status, 0) + 1
         
         return {
-            "total": len(unique_responses),
+            "total": len(responses),
             "distribution": [
                 {"status_band": status, "count": count}
                 for status, count in distribution.items()
@@ -689,7 +688,6 @@ async def get_score_distribution(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/category-performance")
 async def get_category_performance(
     db: Session = Depends(get_db),
@@ -702,7 +700,8 @@ async def get_category_performance(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get category performance (6 categories)."""
     try:
@@ -725,7 +724,10 @@ async def get_category_performance(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         # Categories mapping: database name -> API name
         # Database stores: "Income Stream", "Savings Habit", etc.
@@ -798,7 +800,6 @@ async def get_category_performance(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/nationality-breakdown")
 async def get_nationality_breakdown(
     db: Session = Depends(get_db),
@@ -811,7 +812,8 @@ async def get_nationality_breakdown(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get nationality breakdown (Emirati vs Non-Emirati)."""
     try:
@@ -834,7 +836,10 @@ async def get_nationality_breakdown(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         emirati_scores = []
         non_emirati_scores = []
@@ -863,7 +868,6 @@ async def get_nationality_breakdown(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/age-breakdown")
 async def get_age_breakdown(
     db: Session = Depends(get_db),
@@ -876,7 +880,8 @@ async def get_age_breakdown(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get age breakdown."""
     try:
@@ -899,7 +904,10 @@ async def get_age_breakdown(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         # Calculate age groups
         age_group_data = {}
@@ -967,7 +975,6 @@ async def get_age_breakdown(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/time-series")
 async def get_time_series(
     db: Session = Depends(get_db),
@@ -981,7 +988,8 @@ async def get_time_series(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get time series data (submissions over time)."""
     try:
@@ -1004,7 +1012,10 @@ async def get_time_series(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         # Group by period
         time_data = {}
@@ -1045,7 +1056,6 @@ async def get_time_series(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/companies-analytics")
 async def get_companies_analytics(
     db: Session = Depends(get_db),
@@ -1058,7 +1068,8 @@ async def get_companies_analytics(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get companies analytics."""
     try:
@@ -1081,7 +1092,10 @@ async def get_companies_analytics(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         # Group by company
         company_data = {}
@@ -1131,7 +1145,6 @@ async def get_companies_analytics(
             "traceback": traceback.format_exc()
         }
 
-
 @simple_admin_router.get("/score-analytics-table")
 async def get_score_analytics_table(
     db: Session = Depends(get_db),
@@ -1144,7 +1157,8 @@ async def get_score_analytics_table(
     employment_statuses: Optional[str] = Query(None),
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
-    companies: Optional[str] = Query(None)
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
 ):
     """Get score analytics table (question-level breakdown by nationality).
     
@@ -1172,7 +1186,10 @@ async def get_score_analytics_table(
         
         responses = query.all()
         
-        unique_responses = filter_unique_users(responses)
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        unique_responses = responses
         
         # Determine which questions to analyze based on company filter
         questions_to_analyze = FINANCIAL_CLINIC_QUESTIONS  # Default
