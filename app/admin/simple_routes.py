@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 import csv
 import io
-import pandas as pd
 import traceback
 
 simple_admin_router = APIRouter(prefix="/admin/simple", tags=["admin-simple"])
