@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from app.database import get_db
-from app.models import User, CustomerProfile, IncompleteSurvey, AuditLog
+from app.models import User, CustomerProfile, IncompleteSurvey, AuditLog, CompanyTracker
 from app.surveys.incomplete_schemas import (
     IncompleteSurveyCreate, IncompleteSurveyUpdate, IncompleteSurveyResponse,
     IncompleteSurveyStats, FollowUpRequest
@@ -31,6 +31,16 @@ async def start_incomplete_survey(
         CustomerProfile.user_id == current_user.id
     ).first()
     
+    # Get company if company_url provided
+    company_id = None
+    if survey_data.company_url:
+        company = db.query(CompanyTracker).filter(
+            CompanyTracker.unique_url == survey_data.company_url,
+            CompanyTracker.is_active == True
+        ).first()
+        if company:
+            company_id = company.id
+    
     # Create incomplete survey record
     incomplete_survey = IncompleteSurvey(
         user_id=current_user.id,
@@ -39,7 +49,9 @@ async def start_incomplete_survey(
         current_step=survey_data.current_step,
         total_steps=survey_data.total_steps,
         responses=survey_data.responses or {},
-        email=survey_data.email or current_user.email
+        email=survey_data.email or current_user.email,
+        company_id=company_id,
+        company_url=survey_data.company_url
     )
     
     db.add(incomplete_survey)
@@ -69,6 +81,16 @@ async def start_guest_incomplete_survey(
     # Generate unique session ID
     session_id = secrets.token_urlsafe(32)
     
+    # Get company if company_url provided
+    company_id = None
+    if survey_data.company_url:
+        company = db.query(CompanyTracker).filter(
+            CompanyTracker.unique_url == survey_data.company_url,
+            CompanyTracker.is_active == True
+        ).first()
+        if company:
+            company_id = company.id
+    
     # Create incomplete survey record for guest
     incomplete_survey = IncompleteSurvey(
         session_id=session_id,
@@ -76,7 +98,9 @@ async def start_guest_incomplete_survey(
         total_steps=survey_data.total_steps,
         responses=survey_data.responses or {},
         email=survey_data.email,
-        phone_number=survey_data.phone_number
+        phone_number=survey_data.phone_number,
+        company_id=company_id,
+        company_url=survey_data.company_url
     )
     
     db.add(incomplete_survey)
@@ -297,9 +321,14 @@ async def send_follow_up(
             continue  # Skip if no email and email is requested
         
         try:
-            # Generate resume link with session_id
+            # Generate resume link with session_id (company-aware)
             frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
-            resume_link = f"{frontend_url}/financial-clinic?session={survey.session_id}"
+            
+            # If survey was started via company, include company URL in resume link
+            if survey.company_url:
+                resume_link = f"{frontend_url}/company/{survey.company_url}/financial-clinic?session={survey.session_id}"
+            else:
+                resume_link = f"{frontend_url}/financial-clinic?session={survey.session_id}"
             
             # Extract customer name from email or use generic
             customer_name = survey.email.split('@')[0] if survey.email else "Valued Customer"
@@ -334,6 +363,7 @@ async def send_follow_up(
                 details={
                     "session_id": survey.session_id,
                     "email": survey.email,
+                    "company_url": survey.company_url,  # Track company context
                     "follow_up_count": survey.follow_up_count,
                     "resume_link": resume_link,
                     "message_template": follow_up_data.message_template[:100]  # Truncate for logging
@@ -353,3 +383,52 @@ async def send_follow_up(
         "failed_count": failed_count,
         "total_requested": len(follow_up_data.survey_ids)
     }
+
+
+@router.get("/resume/{session_id}", response_model=IncompleteSurveyResponse)
+async def get_resume_session(
+    session_id: str,
+    db: Session = Depends(get_db)
+) -> Any:
+    """Get incomplete survey data for resuming a session."""
+    
+    # Find the incomplete survey
+    incomplete_survey = db.query(IncompleteSurvey).filter(
+        IncompleteSurvey.session_id == session_id
+    ).first()
+    
+    if not incomplete_survey:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Survey session not found or has expired"
+        )
+    
+    # Check if session is too old (30 days expiry)
+    expiry_date = datetime.utcnow() - timedelta(days=30)
+    if incomplete_survey.started_at < expiry_date:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Survey session has expired. Please start a new survey."
+        )
+    
+    # Update last activity to track resume
+    incomplete_survey.last_activity = datetime.utcnow()
+    
+    # Log resume attempt
+    audit_log = AuditLog(
+        user_id=incomplete_survey.user_id,
+        action="survey_resumed",
+        entity_type="incomplete_survey",
+        entity_id=incomplete_survey.id,
+        details={
+            "session_id": session_id,
+            "current_step": incomplete_survey.current_step,
+            "company_url": incomplete_survey.company_url,
+            "resume_from_email": True
+        }
+    )
+    db.add(audit_log)
+    db.commit()
+    db.refresh(incomplete_survey)
+    
+    return incomplete_survey

@@ -212,6 +212,7 @@ class CompanyTracker(Base):
     # Relationships
     company_assessments = relationship("CompanyAssessment", back_populates="company_tracker")
     variation_set = relationship("VariationSet")
+    incomplete_surveys = relationship("IncompleteSurvey", back_populates="company")
 
 
 class CompanyAssessment(Base):
@@ -266,6 +267,10 @@ class IncompleteSurvey(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     customer_profile_id = Column(Integer, ForeignKey("customer_profiles.id"), nullable=True)
     
+    # Company tracking (for surveys started via company QR codes)
+    company_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=True)
+    company_url = Column(String(255), nullable=True, index=True)
+    
     # Session tracking
     session_id = Column(String(255), unique=True, index=True, nullable=False)
     
@@ -294,6 +299,7 @@ class IncompleteSurvey(Base):
     # Relationships
     user = relationship("User")
     customer_profile = relationship("CustomerProfile")
+    company = relationship("CompanyTracker", back_populates="incomplete_surveys")
 
 
 class AuditLog(Base):

@@ -11,6 +11,7 @@ class IncompleteSurveyCreate(BaseModel):
     responses: Optional[Dict[str, Any]] = None
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
+    company_url: Optional[str] = None  # For company tracking
 
 
 class IncompleteSurveyUpdate(BaseModel):
@@ -19,6 +20,7 @@ class IncompleteSurveyUpdate(BaseModel):
     responses: Optional[Dict[str, Any]] = None
     email: Optional[EmailStr] = None
     phone_number: Optional[str] = None
+    company_url: Optional[str] = None  # For company tracking
 
 
 class IncompleteSurveyResponse(BaseModel):
@@ -34,6 +36,8 @@ class IncompleteSurveyResponse(BaseModel):
     abandoned_at: Optional[datetime]
     email: Optional[str]
     phone_number: Optional[str]
+    company_id: Optional[int]  # For company tracking
+    company_url: Optional[str]  # For company tracking
     is_abandoned: bool
     follow_up_sent: bool
     follow_up_count: int
