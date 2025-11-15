@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="{{ language }}" dir="{{ 'rtl' if language == 'ar' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Health Assessment Report</title>
+    <style>
+        /* Tailwind CSS Reset and Base Styles */
+        *, ::before, ::after {
+            box-sizing: border-box;
+            border-width: 0;
+            border-style: solid;
+            border-color: #e5e7eb;
+        }
+        
+        html {
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            line-height: inherit;
+            background: linear-gradient(to bottom right, #ffffff, #f3f4f6);
+        }
+        
+        /* Container and Layout */
+        .container {
+            width: 100%;
+            max-width: 56rem;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 2rem 1rem;
+        }
+        
+        /* Typography */
+        .text-3xl {
+            font-size: 1.875rem;
+            line-height: 2.25rem;
+        }
+        
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem;
+        }
+        
+        .text-6xl {
+            font-size: 3.75rem;
+            line-height: 1;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+        
+        .font-bold {
+            font-weight: 700;
+        }
+        
+        .font-semibold {
+            font-weight: 600;
+        }
+        
+        .font-medium {
+            font-weight: 500;
+        }
+        
+        /* Colors */
+        .text-green-600 { color: #16a34a; }
+        .text-green-700 { color: #15803d; }
+        .text-yellow-600 { color: #ca8a04; }
+        .text-yellow-700 { color: #a16207; }
+        .text-orange-600 { color: #ea580c; }
+        .text-orange-700 { color: #c2410c; }
+        .text-red-600 { color: #dc2626; }
+        .text-red-700 { color: #b91c1c; }
+        .text-muted-foreground { color: #6b7280; }
+        
+        .bg-green-50 { background-color: #f0fdf4; }
+        .bg-yellow-50 { background-color: #fefce8; }
+        .bg-orange-50 { background-color: #fff7ed; }
+        .bg-red-50 { background-color: #fef2f2; }
+        .bg-muted { background-color: #f9fafb; }
+        
+        .border-green-200 { border-color: #bbf7d0; }
+        .border-yellow-200 { border-color: #fef08a; }
+        .border-orange-200 { border-color: #fed7aa; }
+        .border-red-200 { border-color: #fecaca; }
+        
+        /* Card Styles */
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+        }
+        
+        .card-gradient {
+            background: linear-gradient(to right, white, #f3f4f6);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .card-content {
+            padding: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem 0;
+        }
+        
+        .card-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 9999px;
+            background-color: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        
+        /* Progress Bar */
+        .progress {
+            width: 100%;
+            height: 0.75rem;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            transition: width 0.3s ease;
+            border-radius: 9999px;
+        }
+        
+        .progress-sm {
+            height: 0.5rem;
+        }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        
+        .grid-cols-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        
+        /* Spacing */
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-8 { padding: 2rem; }
+        
+        /* Flexbox */
+        .flex {
+            display: flex;
+        }
+        
+        .items-center {
+            align-items: center;
+        }
+        
+        .justify-center {
+            justify-content: center;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        
+        .space-y-3 > * + * {
+            margin-top: 0.75rem;
+        }
+        
+        .space-y-4 > * + * {
+            margin-top: 1rem;
+        }
+        
+        /* Utility */
+        .text-center {
+            text-align: center;
+        }
+        
+        .rounded-lg {
+            border-radius: 0.5rem;
+        }
+        
+        .border {
+            border-width: 1px;
+        }
+        
+        .max-w-md {
+            max-width: 28rem;
+        }
+        
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #fed7aa;
+            background-color: #fffbeb;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+        
+        .alert-icon {
+            width: 1rem;
+            height: 1rem;
+            color: #f59e0b;
+        }
+        
+        /* RTL Support */
+        [dir="rtl"] .text-left {
+            text-align: right;
+        }
+        
+        [dir="rtl"] .text-right {
+            text-align: left;
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .card {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">
+                {% if language == 'ar' %}
+                    نتيجة الصحة المالية الخاصة بك
+                {% else %}
+                    Your Financial Health Score
+                {% endif %}
+            </h1>
+            <p class="text-muted-foreground">
+                {% if customer_name %}
+                    {% if language == 'ar' %}
+                        {{ customer_name }} - تقييم شامل للصحة المالية
+                    {% else %}
+                        {{ customer_name }} - Comprehensive Financial Wellness Assessment
+                    {% endif %}
+                {% else %}
+                    {% if language == 'ar' %}
+                        بناءً على إجاباتك، إليك تقييمك الشامل للصحة المالية
+                    {% else %}
+                        Based on your responses, here's your comprehensive financial wellness assessment
+                    {% endif %}
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Main Score Card -->
+        <div class="card card-gradient">
+            <div class="card-content p-8">
+                <div class="text-center">
+                    <div class="flex items-center justify-center gap-3 mb-4">
+                        <div>
+                            <div class="text-6xl font-bold {{ score_color }}">
+                                {{ total_score }}
+                            </div>
+                            <div class="badge mt-2">
+                                {{ score_level }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="max-w-md mx-auto">
+                        <div class="progress mb-2">
+                            <div class="progress-bar" style="width: {{ score_percentage }}%"></div>
+                        </div>
+                        <div class="flex justify-between text-sm text-muted-foreground">
+                            <span>15</span>
+                            <span>
+                                {% if language == 'ar' %}
+                                    ممتاز (65+)
+                                {% else %}
+                                    Excellent (65+)
+                                {% endif %}
+                            </span>
+                            <span>{{ max_score }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pillar Breakdown and Recommendations -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <!-- Financial Pillar Scores -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if language == 'ar' %}
+                            درجات الركائز المالية
+                        {% else %}
+                            Financial Pillar Scores
+                        {% endif %}
+                    </h3>
+                    <p class="card-description">
+                        {% if language == 'ar' %}
+                            أداؤك عبر المجالات الرئيسية السبعة للصحة المالية
+                        {% else %}
+                            Your performance across the 7 key areas of financial health
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-content space-y-4">
+                    {% for pillar in pillar_scores %}
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">
+                                {{ pillar.name }}
+                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="badge">
+                                    {{ pillar.score }}/{{ pillar.max_score }}
+                                </span>
+                                <span class="text-xs text-muted-foreground">
+                                    {{ pillar.percentage }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar" style="width: {{ pillar.percentage }}%"></div>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            {{ pillar.description }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Personalized Recommendations -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if language == 'ar' %}
+                            التوصيات الشخصية
+                        {% else %}
+                            Personalized Recommendations
+                        {% endif %}
+                    </h3>
+                    <p class="card-description">
+                        {% if language == 'ar' %}
+                            إرشادات تعليمية لتحسين صحتك المالية
+                        {% else %}
+                            Educational guidance to improve your financial health
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="card-content">
+                    <div class="alert mb-4">
+                        <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <p class="text-xs">
+                            {% if language == 'ar' %}
+                                هذا محتوى تعليمي فقط ولا يشكل نصيحة مالية. استشر متخصصين مؤهلين للحصول على إرشادات شخصية.
+                            {% else %}
+                                This is educational content only and does not constitute financial advice. Consult qualified professionals for personalized guidance.
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        {% for insight in insights %}
+                        <div class="p-3 bg-muted rounded-lg">
+                            <p class="text-sm">{{ insight }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Interpretation -->
+        <div class="card mb-8">
+            <div class="card-header">
+                <h3 class="card-title">
+                    {% if language == 'ar' %}
+                        فهم نتيجتك
+                    {% else %}
+                        Understanding Your Score
+                    {% endif %}
+                </h3>
+                <p class="card-description">
+                    {% if language == 'ar' %}
+                        تتراوح درجة الصحة المالية من 15 إلى {{ max_score }} نقطة
+                    {% else %}
+                        Financial Health Score ranges from 15 to {{ max_score }} points
+                    {% endif %}
+                </p>
+            </div>
+            <div class="card-content">
+                <div class="grid grid-cols-4 gap-4 text-center">
+                    <div class="p-4 rounded-lg bg-red-50 border border-red-200">
+                        <div class="text-2xl font-bold text-red-600 mb-1">15-34</div>
+                        <div class="text-sm font-medium text-red-700">
+                            {% if language == 'ar' %}يحتاج إلى تحسين{% else %}Needs Improvement{% endif %}
+                        </div>
+                        <div class="text-xs text-red-600 mt-1">
+                            {% if language == 'ar' %}
+                                ركز على بناء العادات المالية الأساسية
+                            {% else %}
+                                Focus on building basic financial habits
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg bg-orange-50 border border-orange-200">
+                        <div class="text-2xl font-bold text-orange-600 mb-1">35-49</div>
+                        <div class="text-sm font-medium text-orange-700">
+                            {% if language == 'ar' %}مقبول{% else %}Fair{% endif %}
+                        </div>
+                        <div class="text-xs text-orange-600 mt-1">
+                            {% if language == 'ar' %}
+                                أساس جيد، مع مجال للنمو
+                            {% else %}
+                                Good foundation, room for growth
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg bg-yellow-50 border border-yellow-200">
+                        <div class="text-2xl font-bold text-yellow-600 mb-1">50-64</div>
+                        <div class="text-sm font-medium text-yellow-700">
+                            {% if language == 'ar' %}جيد{% else %}Good{% endif %}
+                        </div>
+                        <div class="text-xs text-yellow-600 mt-1">
+                            {% if language == 'ar' %}
+                                صحة مالية قوية
+                            {% else %}
+                                Strong financial health
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="p-4 rounded-lg bg-green-50 border border-green-200">
+                        <div class="text-2xl font-bold text-green-600 mb-1">65-{{ max_score }}</div>
+                        <div class="text-sm font-medium text-green-700">
+                            {% if language == 'ar' %}ممتاز{% else %}Excellent{% endif %}
+                        </div>
+                        <div class="text-xs text-green-600 mt-1">
+                            {% if language == 'ar' %}
+                                صحة مالية متميزة
+                            {% else %}
+                                Outstanding financial wellness
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

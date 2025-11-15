@@ -1,0 +1,20 @@
+# Cron Job Configuration for Incomplete Surveys
+# 
+# Add these to your crontab using: crontab -e
+# Or use a task scheduler like APScheduler in production
+
+# Mark abandoned surveys every hour (at minute 0)
+0 * * * * cd /path/to/backend && python3 -m app.surveys.incomplete_tasks mark_abandoned_surveys
+
+# Clean up expired surveys once per day (at 2:00 AM)
+0 2 * * * cd /path/to/backend && python3 -m app.surveys.incomplete_tasks cleanup_expired_surveys
+
+# Alternative: Use Python APScheduler (add to main.py)
+# 
+# from apscheduler.schedulers.background import BackgroundScheduler
+# from app.surveys.incomplete_tasks import mark_abandoned_surveys, cleanup_expired_surveys
+#
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(mark_abandoned_surveys, 'interval', hours=1)
+# scheduler.add_job(cleanup_expired_surveys, 'cron', hour=2, minute=0)
+# scheduler.start()

@@ -12,7 +12,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.database import Base, get_db
-from app.core.config import settings
+from app.config import settings
 
 
 # ============================================================================
@@ -83,9 +83,9 @@ def auth_headers(test_user):
     """
     # In a real implementation, generate JWT token
     # For testing, we can mock this
-    from app.core.security import create_access_token
+    from app.auth.utils import create_access_token
     
-    access_token = create_access_token(subject=test_user.id)
+    access_token = create_access_token(data={"sub": str(test_user.id)})
     
     return {
         "Authorization": f"Bearer {access_token}"
@@ -98,20 +98,21 @@ def admin_auth_headers(db):
     Create authentication headers for an admin user.
     """
     from app.models import User
-    from app.core.security import create_access_token
+    from app.auth.utils import create_access_token
     
     # Create admin user
     admin = User(
         email="admin@example.com",
+        username="admin",
         hashed_password="hashed_password",
         is_active=True,
-        is_superuser=True
+        is_admin=True
     )
     db.add(admin)
     db.commit()
     db.refresh(admin)
     
-    access_token = create_access_token(subject=admin.id)
+    access_token = create_access_token(data={"sub": str(admin.id)})
     
     return {
         "Authorization": f"Bearer {access_token}"

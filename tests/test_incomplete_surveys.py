@@ -37,9 +37,10 @@ def test_user(db: Session):
     """Create a test user."""
     user = User(
         email="testuser@example.com",
+        username="testuser",
         hashed_password="hashed_password_here",
         is_active=True,
-        is_superuser=False
+        is_admin=False
     )
     db.add(user)
     db.commit()
@@ -52,10 +53,11 @@ def test_company(db: Session):
     """Create a test company tracker."""
     company = CompanyTracker(
         company_name="Test Company Ltd",
+        company_email="company@testcompany.com",
+        contact_person="John Doe",
         unique_url="test-company",
         is_active=True,
-        qr_scans=0,
-        surveys_completed=0
+        total_assessments=0
     )
     db.add(company)
     db.commit()
@@ -68,10 +70,11 @@ def test_inactive_company(db: Session):
     """Create an inactive test company."""
     company = CompanyTracker(
         company_name="Inactive Company",
+        company_email="ahmad.hassan+2121@clustox.com",
+        contact_person="Jane Smith",
         unique_url="inactive-company",
         is_active=False,
-        qr_scans=0,
-        surveys_completed=0
+        total_assessments=0
     )
     db.add(company)
     db.commit()
@@ -461,7 +464,8 @@ class TestAdminEndpoints:
             responses={},
             email="abandoned@example.com",
             started_at=datetime.utcnow() - timedelta(days=2),
-            last_activity=datetime.utcnow() - timedelta(days=2)
+            last_activity=datetime.utcnow() - timedelta(days=2),
+            is_abandoned=True
         )
         db.add(abandoned)
         db.commit()
@@ -498,7 +502,7 @@ class TestAdminEndpoints:
             "/api/v1/surveys/incomplete/admin/list?skip=0&limit=10",
             headers=admin_auth_headers
         )
-        assert response.status_code == 200
+        assert response1.status_code == 200
         page1 = response1.json()
         assert len(page1) == 10
         
@@ -535,6 +539,7 @@ class TestAdminEndpoints:
             email="abandoned1@example.com",
             started_at=datetime.utcnow() - timedelta(days=2),
             last_activity=datetime.utcnow() - timedelta(days=2),
+            is_abandoned=True,
             follow_up_sent=False
         )
         db.add(abandoned1)
@@ -547,7 +552,8 @@ class TestAdminEndpoints:
             responses={"Q1": 4, "Q2": 3},
             email=None,
             started_at=datetime.utcnow() - timedelta(days=3),
-            last_activity=datetime.utcnow() - timedelta(days=3)
+            last_activity=datetime.utcnow() - timedelta(days=3),
+            is_abandoned=True
         )
         db.add(abandoned2)
         
@@ -560,6 +566,7 @@ class TestAdminEndpoints:
             email="followed@example.com",
             started_at=datetime.utcnow() - timedelta(days=4),
             last_activity=datetime.utcnow() - timedelta(days=4),
+            is_abandoned=True,
             follow_up_sent=True,
             follow_up_count=1
         )
@@ -763,7 +770,7 @@ class TestFollowUpEmails:
             current_step=3,
             total_steps=14,
             responses={},
-            email="increment@example.com",
+            email="ahmad.hassan+1@clustox.com",
             started_at=datetime.utcnow() - timedelta(days=1),
             last_activity=datetime.utcnow() - timedelta(days=1),
             follow_up_count=1  # Already sent once
@@ -804,7 +811,7 @@ class TestEdgeCases:
                 json={
                     "current_step": 1,
                     "total_steps": 14,
-                    "email": "unique@example.com"
+                    "email": "ahmad.hassan@clustox.com"
                 }
             )
             assert response.status_code == 200
@@ -820,7 +827,7 @@ class TestEdgeCases:
             current_step=3,
             total_steps=14,
             responses={},
-            email="concurrent@example.com",
+            email="ahmad.hassan+44@clustox.com",
             started_at=datetime.utcnow() - timedelta(hours=1),
             last_activity=datetime.utcnow() - timedelta(minutes=30)
         )
@@ -850,7 +857,7 @@ class TestEdgeCases:
                 "current_step": 500,
                 "total_steps": 500,
                 "responses": large_responses,
-                "email": "large@example.com"
+                "email": "ahmad.hassan+88@clustox.com"
             }
         )
         
@@ -886,7 +893,7 @@ class TestEdgeCases:
             json={
                 "current_step": 1,
                 "total_steps": 14,
-                "email": "update@example.com"
+                "email": "ahmad.hassan+00@clustox.com"
             }
         )
         session_id = response.json()["session_id"]
@@ -909,7 +916,7 @@ class TestEdgeCases:
             json={
                 "current_step": 0,
                 "total_steps": 14,
-                "email": "zero@example.com"
+                "email": "ahmad.hassan+33333@clustox.com"
             }
         )
         
@@ -925,7 +932,7 @@ class TestEdgeCases:
                 "current_step": 1,
                 "total_steps": 14,
                 "responses": None,
-                "email": "null@example.com"
+                "email": "ahmad.hassan@kwanso.com"
             }
         )
         
@@ -964,7 +971,7 @@ class TestCompanyTracking:
             json={
                 "current_step": 0,
                 "total_steps": 14,
-                "email": "flow@example.com",
+                "email": "ahmad.hassan+56@clustox.com",
                 "company_url": "test-company"
             }
         )
@@ -988,13 +995,19 @@ class TestCompanyTracking:
         # Create companies
         company1 = CompanyTracker(
             company_name="Company A",
+            company_email="companya@example.com",
+            contact_person="Contact A",
             unique_url="company-a",
-            is_active=True
+            is_active=True,
+            total_assessments=0
         )
         company2 = CompanyTracker(
             company_name="Company B",
+            company_email="companyb@example.com",
+            contact_person="Contact B",
             unique_url="company-b",
-            is_active=True
+            is_active=True,
+            total_assessments=0
         )
         db.add_all([company1, company2])
         db.commit()
@@ -1006,7 +1019,7 @@ class TestCompanyTracking:
                 json={
                     "current_step": 1,
                     "total_steps": 14,
-                    "email": f"user{i}@example.com",
+                    "email": f"user{i}@clustox.com",
                     "company_url": company_url
                 }
             )
@@ -1021,7 +1034,7 @@ class TestCompanyTracking:
             current_step=3,
             total_steps=14,
             responses={},
-            email="deleted@example.com",
+            email="ahmad.hassan@clustox.com",
             company_id=test_company.id,
             company_url="test-company",
             started_at=datetime.utcnow(),

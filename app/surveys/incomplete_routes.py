@@ -1,9 +1,12 @@
 """Routes for managing incomplete survey sessions."""
 from datetime import datetime, timedelta
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
+import csv
+import io
 from app.database import get_db
 from app.models import User, CustomerProfile, IncompleteSurvey, AuditLog, CompanyTracker
 from app.surveys.incomplete_schemas import (
@@ -125,6 +128,7 @@ async def start_guest_incomplete_survey(
 
 
 @router.put("/{session_id}", response_model=IncompleteSurveyResponse)
+@router.patch("/{session_id}", response_model=IncompleteSurveyResponse)
 async def update_incomplete_survey(
     session_id: str,
     survey_data: IncompleteSurveyUpdate,
@@ -206,26 +210,25 @@ async def list_incomplete_surveys(
     db: Session = Depends(get_db)
 ) -> Any:
     """List incomplete surveys for admin review."""
-    query = db.query(IncompleteSurvey)
-    
-    if abandoned_only:
-        # Consider surveys abandoned if no activity for 24 hours
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
-        query = query.filter(
-            and_(
-                IncompleteSurvey.last_activity < cutoff_time,
-                IncompleteSurvey.is_abandoned == False
-            )
+    # First, auto-mark surveys as abandoned if they have no activity for 24+ hours
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    surveys_to_mark = db.query(IncompleteSurvey).filter(
+        and_(
+            IncompleteSurvey.last_activity < cutoff_time,
+            IncompleteSurvey.is_abandoned == False
         )
-        
-        # Mark them as abandoned
-        abandoned_surveys = query.all()
-        for survey in abandoned_surveys:
-            survey.is_abandoned = True
-            survey.abandoned_at = datetime.utcnow()
-        
-        if abandoned_surveys:
-            db.commit()
+    ).all()
+    
+    # Mark them as abandoned
+    for survey in surveys_to_mark:
+        survey.is_abandoned = True
+        survey.abandoned_at = datetime.utcnow()
+    
+    if surveys_to_mark:
+        db.commit()
+    
+    # Now build the query for listing
+    query = db.query(IncompleteSurvey)
     
     # Apply filters
     if abandoned_only:
@@ -245,13 +248,29 @@ async def get_incomplete_survey_stats(
     db: Session = Depends(get_db)
 ) -> Any:
     """Get statistics about incomplete surveys."""
+    # First, auto-mark surveys as abandoned if they have no activity for 24+ hours
+    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    surveys_to_mark = db.query(IncompleteSurvey).filter(
+        and_(
+            IncompleteSurvey.last_activity < cutoff_time,
+            IncompleteSurvey.is_abandoned == False
+        )
+    ).all()
+    
+    # Mark them as abandoned
+    for survey in surveys_to_mark:
+        survey.is_abandoned = True
+        survey.abandoned_at = datetime.utcnow()
+    
+    if surveys_to_mark:
+        db.commit()
+    
     # Total incomplete surveys
     total_incomplete = db.query(IncompleteSurvey).count()
     
-    # Abandoned surveys (no activity for 24+ hours)
-    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+    # Abandoned surveys (using is_abandoned flag)
     abandoned_count = db.query(IncompleteSurvey).filter(
-        IncompleteSurvey.last_activity < cutoff_time
+        IncompleteSurvey.is_abandoned == True
     ).count()
     
     # Average completion rate (current_step / total_steps)
@@ -299,7 +318,7 @@ async def send_follow_up(
 ) -> Any:
     """Send follow-up communications to users with incomplete surveys."""
     from app.reports.email_service import EmailReportService
-    from app.core.config import settings
+    from app.config import settings
     
     # Get the incomplete surveys
     surveys = db.query(IncompleteSurvey).filter(
@@ -322,7 +341,7 @@ async def send_follow_up(
         
         try:
             # Generate resume link with session_id (company-aware)
-            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            frontend_url = settings.base_url
             
             # If survey was started via company, include company URL in resume link
             if survey.company_url:
@@ -386,13 +405,12 @@ async def send_follow_up(
 
 
 @router.get("/resume/{session_id}", response_model=IncompleteSurveyResponse)
-async def get_resume_session(
+async def resume_survey_session(
     session_id: str,
     db: Session = Depends(get_db)
 ) -> Any:
-    """Get incomplete survey data for resuming a session."""
-    
-    # Find the incomplete survey
+    """Resume an incomplete survey session."""
+    # Find the incomplete survey by session_id
     incomplete_survey = db.query(IncompleteSurvey).filter(
         IncompleteSurvey.session_id == session_id
     ).first()
@@ -400,21 +418,29 @@ async def get_resume_session(
     if not incomplete_survey:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Survey session not found or has expired"
+            detail="Survey session not found"
         )
     
-    # Check if session is too old (30 days expiry)
-    expiry_date = datetime.utcnow() - timedelta(days=30)
-    if incomplete_survey.started_at < expiry_date:
+    # Check if the survey is too old (30+ days)
+    from datetime import timedelta
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    # Handle timezone-aware vs timezone-naive comparison
+    started_at = incomplete_survey.started_at
+    if hasattr(started_at, 'tzinfo') and started_at.tzinfo is not None:
+        started_at = started_at.replace(tzinfo=None)
+        
+    if started_at < thirty_days_ago:
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail="Survey session has expired. Please start a new survey."
+            detail="Survey session has expired"
         )
     
-    # Update last activity to track resume
+    # Update last activity to current time
     incomplete_survey.last_activity = datetime.utcnow()
+    db.commit()
     
-    # Log resume attempt
+    # Log the resume action
     audit_log = AuditLog(
         user_id=incomplete_survey.user_id,
         action="survey_resumed",
@@ -422,13 +448,115 @@ async def get_resume_session(
         entity_id=incomplete_survey.id,
         details={
             "session_id": session_id,
-            "current_step": incomplete_survey.current_step,
             "company_url": incomplete_survey.company_url,
-            "resume_from_email": True
+            "current_step": incomplete_survey.current_step
         }
     )
     db.add(audit_log)
     db.commit()
-    db.refresh(incomplete_survey)
     
     return incomplete_survey
+
+
+@router.get("/admin/export")
+async def export_incomplete_surveys(
+    abandoned_only: bool = Query(False),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(1000, ge=1, le=10000),
+    current_admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Export incomplete surveys data in CSV format."""
+    
+    # Build query
+    query = db.query(IncompleteSurvey)
+    
+    if abandoned_only:
+        # Only get surveys that are abandoned (24h+ since last activity)
+        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        query = query.filter(
+            or_(
+                IncompleteSurvey.last_activity < cutoff_time,
+                IncompleteSurvey.is_abandoned == True
+            )
+        )
+    
+    # Get surveys with pagination
+    surveys = query.order_by(IncompleteSurvey.started_at.desc()).offset(skip).limit(limit).all()
+    
+    return _export_as_csv(surveys, abandoned_only)
+
+
+def _export_as_csv(surveys: List[IncompleteSurvey], abandoned_only: bool) -> StreamingResponse:
+    """Export surveys as CSV file."""
+    
+    # Create CSV content
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # CSV Headers
+    headers = [
+        'ID', 'Session ID', 'User Type', 'Email', 'Phone', 'Company URL', 'Company ID',
+        'Current Step', 'Total Steps', 'Completion %', 'Started At', 'Last Activity',
+        'Status', 'Hours Since Activity', 'Is Abandoned', 'Follow-up Sent', 
+        'Follow-up Count', 'Responses Count'
+    ]
+    writer.writerow(headers)
+    
+    # Data rows
+    for survey in surveys:
+        # Calculate status - handle timezone awareness
+        now = datetime.utcnow()
+        # Ensure both datetimes are offset-naive for comparison
+        last_activity = survey.last_activity
+        if hasattr(last_activity, 'tzinfo') and last_activity.tzinfo is not None:
+            last_activity = last_activity.replace(tzinfo=None)
+        
+        hours_since_activity = (now - last_activity).total_seconds() / 3600
+        
+        if hours_since_activity < 24:
+            status = 'Active'
+        elif hours_since_activity < 72:
+            status = 'Stalled'
+        else:
+            status = 'Abandoned'
+        
+        completion_pct = round((survey.current_step / survey.total_steps) * 100, 1)
+        responses_count = len(survey.responses) if survey.responses else 0
+        
+        row = [
+            survey.id,
+            survey.session_id,
+            'Registered' if survey.user_id else 'Guest',
+            survey.email or '',
+            survey.phone_number or '',
+            survey.company_url or '',
+            survey.company_id or '',
+            survey.current_step,
+            survey.total_steps,
+            completion_pct,
+            survey.started_at.isoformat(),
+            survey.last_activity.isoformat(),
+            status,
+            round(hours_since_activity, 1),
+            survey.is_abandoned,
+            survey.follow_up_sent,
+            survey.follow_up_count,
+            responses_count
+        ]
+        writer.writerow(row)
+    
+    output.seek(0)
+    
+    # Generate filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename_suffix = "abandoned" if abandoned_only else "all"
+    filename = f"incomplete_surveys_{filename_suffix}_{timestamp}.csv"
+    
+    # Return streaming response
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+    )
+

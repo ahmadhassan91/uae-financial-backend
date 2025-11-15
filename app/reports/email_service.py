@@ -433,12 +433,18 @@ National Bonds Team
             msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = recipient_email
             
+            # Get frontend URL for logos
+            frontend_url = getattr(settings, 'frontend_url', 'http://localhost:3000')
+            
             if language == "ar":
                 msg['Subject'] = "تذكير: أكمل تقييم صحتك المالية"
                 content = self._get_reminder_content_ar(customer_name, resume_link)
             else:
                 msg['Subject'] = "Reminder: Complete Your Financial Health Assessment"
                 content = self._get_reminder_content_en(customer_name, resume_link)
+            
+            # Replace template placeholders with actual URLs
+            content = content.replace('{{frontend_url}}', frontend_url)
             
             msg.attach(MIMEText(content, 'html', 'utf-8'))
             
@@ -488,8 +494,8 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="https://www.nationalbonds.ae/homepage/icons/logo.svg" 
-                 alt="National Bonds" 
+            <img src="{{frontend_url}}/homepage/icons/logo.svg" 
+                 alt="Financial Clinic" 
                  style="height: 50px; max-width: 200px;">
         </div>
         
@@ -516,7 +522,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="https://www.nationalbonds.ae/homepage/images/nbc-logo2-02-1.png" 
+            <img src="{{frontend_url}}/homepage/images/nbc-logo2-02-1.png" 
                  alt="National Bonds" 
                  style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
@@ -558,8 +564,8 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="https://www.nationalbonds.ae/homepage/icons/logo.svg" 
-                 alt="National Bonds" 
+            <img src="{{frontend_url}}/homepage/icons/logo.svg" 
+                 alt="Financial Clinic" 
                  style="height: 50px; max-width: 200px;">
         </div>
         
@@ -586,7 +592,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="https://www.nationalbonds.ae/homepage/images/nbc-logo2-02-1.png" 
+            <img src="{{frontend_url}}/homepage/images/nbc-logo2-02-1.png" 
                  alt="National Bonds" 
                  style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
@@ -1040,10 +1046,6 @@ Next Steps:
 2. Identify your financial priorities
 3. Start implementing the most impactful recommendations
 
-For inquiries: www.nationalbonds.ae
-
-Best regards,
-National Bonds Team
 """
     
     def _get_category_color(self, status_level: str) -> str:
@@ -1147,20 +1149,57 @@ If you didn't request this code, please ignore this email.
     
     def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
         """Generate simple OTP HTML email when template is not available."""
+        # Get frontend URL for logos
+        frontend_url = getattr(settings, 'frontend_url', 'http://localhost:3000')
+        
         if language == "ar":
             return f"""
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head><meta charset="UTF-8"></head>
-<body style="font-family: Arial, sans-serif; padding: 20px; direction: rtl;">
-    <div style="max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
-        <h1 style="color: #00529B;">صكوك الوطنية</h1>
-        <h2>رمز التحقق الخاص بك</h2>
-        <div style="background: white; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #00529B; border: 2px solid #00529B; border-radius: 8px;">
-            {otp_code}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>رمز التحقق</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <!-- Header with Logo -->
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="{frontend_url}/homepage/icons/logo.svg" 
+                 alt="Financial Clinic" 
+                 style="height: 50px; max-width: 200px;">
         </div>
-        <p style="color: #dc3545; margin-top: 15px;">ينتهي خلال 5 دقائق</p>
-        <p style="color: #666; margin-top: 20px;">لا تشارك هذا الرمز مع أي شخص.</p>
+        
+        <!-- Main Content -->
+        <div style="padding: 30px 20px; text-align: center;">
+            <h2 style="color: #437749; margin-bottom: 20px;">رمز التحقق الخاص بك</h2>
+            
+            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
+                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
+                    {otp_code}
+                </div>
+            </div>
+            
+            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">ينتهي خلال 5 دقائق</p>
+            <p style="color: #666; margin: 20px 0;">لا تشارك هذا الرمز مع أي شخص.</p>
+            
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #856404; font-size: 14px;">
+                    إذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
+                 alt="National Bonds" 
+                 style="height: 40px; margin-bottom: 10px;">
+            <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
+            </p>
+        </div>
     </div>
 </body>
 </html>
@@ -1169,16 +1208,50 @@ If you didn't request this code, please ignore this email.
             return f"""
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"></head>
-<body style="font-family: Arial, sans-serif; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;">
-        <h1 style="color: #00529B;">National Bonds</h1>
-        <h2>Your Verification Code</h2>
-        <div style="background: white; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #00529B; border: 2px solid #00529B; border-radius: 8px;">
-            {otp_code}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Code</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <!-- Header with Logo -->
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="{frontend_url}/homepage/icons/logo.svg" 
+                 alt="Financial Clinic" 
+                 style="height: 50px; max-width: 200px;">
         </div>
-        <p style="color: #dc3545; margin-top: 15px;">Expires in 5 minutes</p>
-        <p style="color: #666; margin-top: 20px;">Never share this code with anyone.</p>
+        
+        <!-- Main Content -->
+        <div style="padding: 30px 20px; text-align: center;">
+            <h2 style="color: #437749; margin-bottom: 20px;">Your Verification Code</h2>
+            
+            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
+                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
+                    {otp_code}
+                </div>
+            </div>
+            
+            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">Expires in 5 minutes</p>
+            <p style="color: #666; margin: 20px 0;">Never share this code with anyone.</p>
+            
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #856404; font-size: 14px;">
+                    If you didn't request this code, please ignore this email.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
+                 alt="National Bonds" 
+                 style="height: 40px; margin-bottom: 10px;">
+            <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} National Bonds. All rights reserved.
+            </p>
+        </div>
     </div>
 </body>
 </html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Verification Code - National Bonds</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #00529B 0%, #003d73 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .message {
+            font-size: 16px;
+            color: #555555;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+        .otp-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #00529B;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .otp-label {
+            font-size: 14px;
+            color: #666666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .otp-code {
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: 12px;
+            color: #00529B;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 10px 0;
+        }
+        .otp-expiry {
+            font-size: 14px;
+            color: #dc3545;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+        .warning-box h3 {
+            margin: 0 0 10px 0;
+            color: #856404;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .warning-box ul {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+            color: #856404;
+        }
+        .warning-box li {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        .help-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        .help-section p {
+            margin: 0 0 10px 0;
+            color: #666666;
+            font-size: 14px;
+        }
+        .help-link {
+            color: #00529B;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .help-link:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666666;
+        }
+        .footer a {
+            color: #00529B;
+            text-decoration: none;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .otp-code {
+                font-size: 36px;
+                letter-spacing: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>National Bonds</h1>
+            <p>Financial Health Check</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hello,
+            </div>
+
+            <div class="message">
+                Thank you for using the National Bonds Financial Health Check. To verify your email address and secure your account, please use the verification code below:
+            </div>
+
+            <!-- OTP Box -->
+            <div class="otp-box">
+                <div class="otp-label">Your Verification Code</div>
+                <div class="otp-code">{{ otp_code }}</div>
+                <div class="otp-expiry">⏱ This code expires in 5 minutes</div>
+            </div>
+
+            <div class="message">
+                Enter this code in the application to complete your verification. If you didn't request this code, you can safely ignore this email.
+            </div>
+
+            <!-- Security Warning -->
+            <div class="warning-box">
+                <h3>⚠️ Security Notice</h3>
+                <ul>
+                    <li><strong>Never share this code</strong> with anyone, including National Bonds staff</li>
+                    <li>National Bonds will <strong>never</strong> ask you for this code via phone, email, or text</li>
+                    <li>If you didn't request this code, someone may be trying to access your account</li>
+                    <li>This code can only be used once and expires in 5 minutes</li>
+                </ul>
+            </div>
+
+            <!-- Help Section -->
+            <div class="help-section">
+                <p>Need help or have questions?</p>
+                <p>Contact us at <a href="mailto:support@nationalbonds.ae" class="help-link">support@nationalbonds.ae</a></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>National Bonds Corporation PJSC</strong></p>
+            <p>P.O. Box 5209, Dubai, United Arab Emirates</p>
+            <p>
+                <a href="https://www.nationalbonds.ae">www.nationalbonds.ae</a> | 
+                <a href="tel:600522265">600 522 265</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
