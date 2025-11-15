@@ -1,21 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth.dependencies import get_current_admin_user
 from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile, CompanyTracker
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
-from typing import Optional
+import csv
+import io
+import pandas as pd
+import traceback
 
 simple_admin_router = APIRouter(prefix="/admin/simple", tags=["admin-simple"])
 
 def filter_unique_users(responses):
     """
-    Filter responses to show only the most recent submission per unique email.
-    
-    Args:
-        responses: List of FinancialClinicResponse objects
         
     Returns:
         List of FinancialClinicResponse objects with only the latest submission per email
@@ -288,6 +288,218 @@ async def get_simple_analytics(
             "error": str(e),
             "total_content_items": 0
         }
+
+@simple_admin_router.get("/export-csv")
+async def export_simple_admin_csv(
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None),
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> StreamingResponse:
+    """Export filtered financial clinic responses as CSV (admin only)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, AuditLog
+
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+
+        # Build base query
+        query = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+
+        # Apply date filters
+        if start_date:
+            start_dt = datetime.fromisoformat(start_date)
+            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
+        if end_date:
+            end_dt = datetime.fromisoformat(end_date)
+            query = query.filter(FinancialClinicResponse.created_at <= end_dt)
+
+        # Apply other demographic filters
+        query = apply_demographic_filters(query, filters, db)
+
+        # Optionally filter unique users
+        responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+
+        # Prepare CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Header
+        writer.writerow([
+            'id', 'profile_id', 'email', 'total_score', 'status_band',
+            'questions_answered', 'total_questions', 'created_at', 'company_tracker_id'
+        ])
+
+        for r in responses:
+            profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
+            writer.writerow([
+                r.id,
+                r.profile_id,
+                profile.email if profile else '',
+                r.total_score,
+                r.status_band,
+                r.questions_answered,
+                r.total_questions,
+                r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',
+                r.company_tracker_id
+            ])
+
+        # Audit log
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="simple_admin_export_csv",
+            entity_type="financial_clinic_responses",
+            details={"exported_count": len(responses), "filters": filters}
+        )
+        db.add(audit_log)
+        db.commit()
+
+        output.seek(0)
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        filename = f"financial_clinic_responses_{timestamp}.csv"
+
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            media_type='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@simple_admin_router.get("/export-excel")
+async def export_simple_admin_excel(
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None),
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> StreamingResponse:
+    """Export filtered financial clinic responses as Excel (admin only)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, AuditLog
+
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+
+        query = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+
+        if start_date:
+            start_dt = datetime.fromisoformat(start_date)
+            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
+        if end_date:
+            end_dt = datetime.fromisoformat(end_date)
+            query = query.filter(FinancialClinicResponse.created_at <= end_dt)
+
+        query = apply_demographic_filters(query, filters, db)
+
+        responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+
+        # Build dataframe
+        rows = []
+        for r in responses:
+            profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
+            rows.append({
+                'id': r.id,
+                'profile_id': r.profile_id,
+                'email': profile.email if profile else '',
+                'total_score': r.total_score,
+                'status_band': r.status_band,
+                'questions_answered': r.questions_answered,
+                'total_questions': r.total_questions,
+                'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',
+                'company_tracker_id': r.company_tracker_id
+            })
+
+        # Create Excel file without pandas to avoid issues
+        bio = io.BytesIO()
+        
+        # Use openpyxl directly for better compatibility
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Financial Clinic Responses"
+        
+        # Add headers
+        headers = ['ID', 'Profile ID', 'Email', 'Total Score', 'Status Band', 
+                  'Questions Answered', 'Total Questions', 'Created At', 'Company Tracker ID']
+        ws.append(headers)
+        
+        # Add data rows
+        for row in rows:
+            ws.append([
+                row['id'],
+                row['profile_id'], 
+                row['email'],
+                row['total_score'],
+                row['status_band'],
+                row['questions_answered'],
+                row['total_questions'],
+                row['created_at'],
+                row['company_tracker_id']
+            ])
+        
+        wb.save(bio)
+        bio.seek(0)
+
+        # Audit log
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="simple_admin_export_excel",
+            entity_type="financial_clinic_responses",
+            details={"exported_count": len(responses), "filters": filters}
+        )
+        db.add(audit_log)
+        db.commit()
+
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        filename = f"financial_clinic_responses_{timestamp}.xlsx"
+
+        return StreamingResponse(
+            bio,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+
+    except Exception as e:
+        import traceback
+        raise HTTPException(status_code=500, detail=str(e))
 
 @simple_admin_router.get("/survey-submissions")
 async def get_survey_submissions(

@@ -206,6 +206,9 @@ class CompanyTracker(Base):
     # Variation Set Assignment
     variation_set_id = Column(Integer, ForeignKey("variation_sets.id"), nullable=True, index=True)
     
+    # Question Variation Mapping (API compatibility)
+    question_variation_mapping = Column(JSON, nullable=True)  # {"fc_q3": 123, "fc_q11": 456}
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
