@@ -45,11 +45,9 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3002",
         "http://127.0.0.1:3003",
         "http://127.0.0.1:5173",
-        "https://*.herokuapp.com",  # Heroku apps
-        "https://*.netlify.app",    # Netlify apps
+        "https://financial-clinic.netlify.app",  # Current Netlify deployment
         "https://national-bonds-ae.netlify.app",  # Specific Netlify production deployment
         "https://lively-sawine-92b143.netlify.app",  # Previous Netlify deployment
-        "https://*.vercel.app"      # Vercel apps
     ]
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0", "*.herokuapp.com"]
     
