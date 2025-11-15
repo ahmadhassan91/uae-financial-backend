@@ -44,16 +44,16 @@ class FinancialClinicAnswers(BaseModel):
 
 class ProfileData(BaseModel):
     """Customer profile data for recommendations."""
-    # Required fields
-    name: str
-    date_of_birth: str  # Format: DD/MM/YYYY
-    gender: str  # Male, Female
-    nationality: str  # Emirati, Non-Emirati
-    children: int  # 0-5+
-    employment_status: str  # Employed, Self-Employed, Unemployed
-    income_range: str  # Below 5K, 5K-10K, etc.
-    emirate: str  # Dubai, Abu Dhabi, Sharjah, etc.
-    email: str
+    # Required fields (but flexible for resumed surveys)
+    name: str = ""
+    date_of_birth: str = ""  # Format: DD/MM/YYYY
+    gender: str = ""  # Male, Female
+    nationality: str = ""  # Emirati, Non-Emirati
+    children: int = 0  # 0-5+
+    employment_status: str = ""  # Employed, Self-Employed, Unemployed
+    income_range: str = ""  # Below 5K, 5K-10K, etc.
+    emirate: str = ""  # Dubai, Abu Dhabi, Sharjah, etc.
+    email: str  # This is truly required
     
     # Optional fields
     mobile_number: Optional[str] = None
@@ -338,6 +338,24 @@ async def submit_financial_clinic_survey(
     from app.models import FinancialClinicProfile, FinancialClinicResponse
     from datetime import datetime
     
+    try:
+        logger.info(f"📝 Survey submission started")
+        logger.info(f"📝 Answers count: {len(request.answers) if request.answers else 0}")
+        logger.info(f"📝 Profile email: {request.profile.email if request.profile else 'None'}")
+        logger.info(f"📝 Company URL: {request.company_url}")
+        
+        # Validate required data
+        if not request.answers:
+            raise HTTPException(status_code=422, detail="No answers provided")
+        if not request.profile:
+            raise HTTPException(status_code=422, detail="No profile data provided")
+        if not request.profile.email:
+            raise HTTPException(status_code=422, detail="Email is required in profile")
+            
+    except Exception as e:
+        logger.error(f"❌ Validation error: {str(e)}")
+        raise
+    
     # Calculate results first
     result = await calculate_financial_clinic_result(request, db)
     
@@ -360,6 +378,7 @@ async def submit_financial_clinic_survey(
         
         # 2. Create or get profile
         profile_data = request.profile.dict() if request.profile else {}
+        logger.info(f"📝 Profile data received: {profile_data}")
         
         # Check if profile exists by email
         existing_profile = None
@@ -369,26 +388,28 @@ async def submit_financial_clinic_survey(
             ).first()
         
         if existing_profile:
-            # Update existing profile
+            # Update existing profile with non-empty values
             for key, value in profile_data.items():
-                if hasattr(existing_profile, key) and value is not None:
+                if hasattr(existing_profile, key) and value is not None and value != "":
                     setattr(existing_profile, key, value)
             profile = existing_profile
+            logger.info(f"📝 Updated existing profile for: {existing_profile.email}")
         else:
-            # Create new profile
+            # Create new profile with flexible fields for resumed surveys
             profile = FinancialClinicProfile(
-                name=profile_data.get('name', ''),
-                date_of_birth=profile_data.get('date_of_birth', ''),
-                gender=profile_data.get('gender', ''),
-                nationality=profile_data.get('nationality', ''),
+                name=profile_data.get('name', 'Anonymous User'),
+                date_of_birth=profile_data.get('date_of_birth', '01/01/1990'),
+                gender=profile_data.get('gender', 'Not Specified'),
+                nationality=profile_data.get('nationality', 'Not Specified'),
                 children=profile_data.get('children', 0),
-                employment_status=profile_data.get('employment_status', ''),
-                income_range=profile_data.get('income_range', ''),
-                emirate=profile_data.get('emirate', ''),
+                employment_status=profile_data.get('employment_status', 'Not Specified'),
+                income_range=profile_data.get('income_range', 'Not Specified'),
+                emirate=profile_data.get('emirate', 'Not Specified'),
                 email=profile_data.get('email', ''),
                 mobile_number=profile_data.get('mobile_number')
             )
             db.add(profile)
+            logger.info(f"📝 Created new profile for: {profile.email}")
             db.flush()  # Get profile.id
         
         # 3. Create survey response

@@ -4,6 +4,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 from sqlalchemy import func, and_, or_
 import csv
 import io
@@ -149,13 +150,24 @@ async def update_incomplete_survey(
     
     # Update fields
     if survey_data.current_step is not None:
+        print(f"📝 Updating step from {incomplete_survey.current_step} to {survey_data.current_step}")
         incomplete_survey.current_step = survey_data.current_step
     
     if survey_data.responses is not None:
         # Merge responses
         existing_responses = incomplete_survey.responses or {}
+        print(f"📝 Existing responses: {len(existing_responses)} questions")
+        print(f"📝 New responses: {len(survey_data.responses)} questions")
+        print(f"📝 New responses data: {survey_data.responses}")
+        
         existing_responses.update(survey_data.responses)
         incomplete_survey.responses = existing_responses
+        
+        # Mark the JSON field as modified so SQLAlchemy detects the change
+        flag_modified(incomplete_survey, 'responses')
+        
+        print(f"📝 After merge: {len(existing_responses)} total questions")
+        print(f"📝 Question IDs: {list(existing_responses.keys())}")
     
     if survey_data.email is not None:
         incomplete_survey.email = survey_data.email
@@ -226,8 +238,41 @@ async def list_incomplete_surveys(
     
     if surveys_to_mark:
         db.commit()
+
+    # Clean up duplicate sessions - keep only the most progressed session per user/email
+    # Get all incomplete surveys grouped by user_id and email
+    all_surveys = db.query(IncompleteSurvey).all()
+    user_surveys = {}
     
-    # Now build the query for listing
+    for survey in all_surveys:
+        # Group by user_id (for registered users) or email (for guest users)
+        key = survey.user_id if survey.user_id else survey.email
+        if key not in user_surveys:
+            user_surveys[key] = []
+        user_surveys[key].append(survey)
+    
+    # For each user/email, keep only the survey with highest progress
+    surveys_to_keep = []
+    surveys_to_delete = []
+    
+    for key, surveys in user_surveys.items():
+        if len(surveys) > 1:
+            # Sort by progress (current_step/total_steps) then by last_activity
+            surveys.sort(key=lambda s: (s.current_step / s.total_steps if s.total_steps > 0 else 0, s.last_activity), reverse=True)
+            surveys_to_keep.append(surveys[0])  # Keep the most progressed
+            surveys_to_delete.extend(surveys[1:])  # Delete the rest
+        else:
+            surveys_to_keep.append(surveys[0])
+    
+    # Delete duplicate sessions
+    for survey in surveys_to_delete:
+        db.delete(survey)
+    
+    if surveys_to_delete:
+        db.commit()
+        print(f"🧹 Cleaned up {len(surveys_to_delete)} duplicate survey sessions")
+    
+    # Now build the query for listing from remaining surveys
     query = db.query(IncompleteSurvey)
     
     # Apply filters
@@ -455,7 +500,32 @@ async def resume_survey_session(
     db.add(audit_log)
     db.commit()
     
-    return incomplete_survey
+    # Extract profile data from responses if available
+    profile_data = None
+    if incomplete_survey.responses and isinstance(incomplete_survey.responses, dict):
+        # Look for profile data in responses
+        profile_data = incomplete_survey.responses.get('profile')
+        
+        # If no direct profile, try to extract from common fields
+        if not profile_data and any(key in incomplete_survey.responses for key in ['name', 'email', 'gender']):
+            profile_data = {
+                'name': incomplete_survey.responses.get('name', ''),
+                'date_of_birth': incomplete_survey.responses.get('date_of_birth', ''),
+                'gender': incomplete_survey.responses.get('gender', 'Male'),
+                'nationality': incomplete_survey.responses.get('nationality', 'Emirati'),
+                'children': incomplete_survey.responses.get('children', 0),
+                'employment_status': incomplete_survey.responses.get('employment_status', 'Employed'),
+                'income_range': incomplete_survey.responses.get('income_range', 'Below 5,000'),
+                'emirate': incomplete_survey.responses.get('emirate', 'Dubai'),
+                'email': incomplete_survey.responses.get('email', incomplete_survey.email or ''),
+                'mobile_number': incomplete_survey.responses.get('mobile_number', incomplete_survey.phone_number or '')
+            }
+    
+    # Return enhanced response with profile data
+    return {
+        **incomplete_survey.__dict__,
+        "profile": profile_data
+    }
 
 
 @router.get("/admin/export")
@@ -559,4 +629,53 @@ def _export_as_csv(surveys: List[IncompleteSurvey], abandoned_only: bool) -> Str
         media_type='text/csv',
         headers={'Content-Disposition': f'attachment; filename="{filename}"'}
     )
+
+
+@router.post("/admin/cleanup-duplicates")
+async def cleanup_duplicate_sessions(
+    current_admin: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Clean up duplicate survey sessions, keeping only the most progressed session per user."""
+    
+    # Get all incomplete surveys grouped by user_id and email
+    all_surveys = db.query(IncompleteSurvey).all()
+    user_surveys = {}
+    
+    for survey in all_surveys:
+        # Group by user_id (for registered users) or email (for guest users)
+        key = survey.user_id if survey.user_id else survey.email
+        if key not in user_surveys:
+            user_surveys[key] = []
+        user_surveys[key].append(survey)
+    
+    # For each user/email, keep only the survey with highest progress
+    surveys_to_delete = []
+    duplicate_groups = 0
+    
+    for key, surveys in user_surveys.items():
+        if len(surveys) > 1:
+            duplicate_groups += 1
+            # Sort by progress (current_step/total_steps) then by last_activity
+            surveys.sort(key=lambda s: (
+                s.current_step / s.total_steps if s.total_steps > 0 else 0, 
+                s.last_activity
+            ), reverse=True)
+            
+            # Keep the most progressed, delete the rest
+            surveys_to_delete.extend(surveys[1:])
+    
+    # Delete duplicate sessions
+    for survey in surveys_to_delete:
+        db.delete(survey)
+    
+    if surveys_to_delete:
+        db.commit()
+    
+    return {
+        "message": f"Cleanup completed",
+        "duplicate_groups_found": duplicate_groups,
+        "sessions_removed": len(surveys_to_delete),
+        "remaining_sessions": len(all_surveys) - len(surveys_to_delete)
+    }
 

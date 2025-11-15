@@ -91,12 +91,22 @@ async def login_user(
             detail="Account is deactivated"
         )
     
-    # Create tokens
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email},
-        expires_delta=access_token_expires
-    )
+    # Create tokens with longer expiration for admin users
+    if user.is_admin:
+        access_token_expires = timedelta(minutes=settings.ADMIN_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email, "is_admin": True},
+            expires_delta=access_token_expires,
+            is_admin=True
+        )
+        expires_in_seconds = settings.ADMIN_TOKEN_EXPIRE_MINUTES * 60
+    else:
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email},
+            expires_delta=access_token_expires
+        )
+        expires_in_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     
     refresh_token = create_refresh_token(
         data={"sub": str(user.id), "email": user.email}
@@ -117,56 +127,89 @@ async def login_user(
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        "expires_in": expires_in_seconds
     }
 
 
-@router.post("/refresh", response_model=Token)
-async def refresh_token(
-    token_data: RefreshTokenRequest,
+@router.post("/refresh", response_model=dict)
+async def refresh_access_token(
+    refresh_data: dict,
     db: Session = Depends(get_db)
 ) -> Any:
     """Refresh access token using refresh token."""
-    # Verify refresh token
-    payload = verify_token(token_data.refresh_token)
-    if payload is None or payload.get("type") != "refresh":
+    refresh_token = refresh_data.get("refresh_token")
+    
+    if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Refresh token is required"
         )
     
-    user_id = payload.get("sub")
-    if user_id is None:
+    try:
+        # Verify refresh token
+        payload = verify_token(refresh_token)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+        
+        user_id = int(payload.get("sub"))
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+        
+        # Get user from database
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Account is deactivated"
+            )
+        
+        # Determine expiration time based on user role
+        if user.is_admin:
+            expire_minutes = settings.ADMIN_TOKEN_EXPIRE_MINUTES
+        else:
+            expire_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        
+        access_token_expires = timedelta(minutes=expire_minutes)
+        
+        # Create new access token
+        access_token = create_access_token(
+            data={"sub": str(user.id), "email": user.email},
+            expires_delta=access_token_expires,
+            is_admin=user.is_admin
+        )
+        
+        # Optionally create new refresh token (for enhanced security)
+        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        new_refresh_token = create_access_token(
+            data={"sub": str(user.id), "type": "refresh"},
+            expires_delta=refresh_token_expires
+        )
+        
+        return {
+            "access_token": access_token,
+            "refresh_token": new_refresh_token,
+            "token_type": "bearer",
+            "expires_in": expire_minutes * 60,  # Return in seconds
+            "user_type": "admin" if user.is_admin else "user"
+        }
+        
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid refresh token"
+            detail="Invalid or expired refresh token"
         )
-    
-    # Check if user exists and is active
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if not user or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive"
-        )
-    
-    # Create new tokens
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": str(user.id), "email": user.email},
-        expires_delta=access_token_expires
-    )
-    
-    refresh_token = create_refresh_token(
-        data={"sub": str(user.id), "email": user.email}
-    )
-    
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-    }
 
 
 @router.get("/me", response_model=UserResponse)

@@ -1,7 +1,7 @@
 """Database models for the UAE Financial Health Check application."""
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -690,3 +690,39 @@ class OTPCode(Base):
     is_used = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     used_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ConsultationRequest(Base):
+    """Consultation requests from users who want to book a free consultation."""
+    __tablename__ = "consultation_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Contact information
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    phone_number = Column(String(20), nullable=False)
+    
+    # Request details
+    message = Column(Text, nullable=True)
+    preferred_contact_method = Column(String(20), default="phone", nullable=False)  # phone, email, whatsapp
+    preferred_time = Column(String(20), nullable=True)  # morning, afternoon, evening
+    source = Column(String(50), default="financial_clinic", nullable=False)  # financial_clinic, website, etc.
+    
+    # Status tracking
+    status = Column(String(20), default="pending", nullable=False)  # pending, contacted, scheduled, completed, cancelled
+    notes = Column(Text, nullable=True)  # Admin notes
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    contacted_at = Column(DateTime(timezone=True), nullable=True)
+    scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_consultation_status', 'status'),
+        Index('idx_consultation_source', 'source'),
+        Index('idx_consultation_created_at', 'created_at'),
+        Index('idx_consultation_email', 'email'),
+    )

@@ -25,6 +25,7 @@ from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
 from app.surveys.financial_clinic_routes import router as financial_clinic_router
 from app.consent.routes import router as consent_router
+from app.consultations.routes import router as consultations_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -48,7 +49,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -119,6 +120,19 @@ async def health_check():
     }
 
 
+# API v1 Health check endpoint
+@app.get("/api/v1/health")
+async def api_v1_health_check():
+    """API v1 health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT,
+        "timestamp": time.time(),
+        "api_version": "v1"
+    }
+
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -138,6 +152,7 @@ app.include_router(surveys_router, prefix="/api/v1")
 app.include_router(incomplete_surveys_router, prefix="/api/v1")
 app.include_router(dynamic_questions_router, prefix="/api/v1")
 app.include_router(financial_clinic_router, prefix="/api/v1")  # Financial Clinic survey system
+app.include_router(consultations_router, prefix="/api/v1")  # Consultation requests
 app.include_router(companies_router, prefix="/api/v1")
 app.include_router(company_questions_router, prefix="/api/v1")
 app.include_router(url_config_router, prefix="/api/v1")

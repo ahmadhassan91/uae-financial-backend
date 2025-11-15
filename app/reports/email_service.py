@@ -434,7 +434,7 @@ National Bonds Team
             msg['To'] = recipient_email
             
             # Get frontend URL for logos
-            frontend_url = getattr(settings, 'frontend_url', 'http://localhost:3000')
+            frontend_url = settings.FRONTEND_BASE_URL
             
             if language == "ar":
                 msg['Subject'] = "تذكير: أكمل تقييم صحتك المالية"
@@ -1150,7 +1150,7 @@ If you didn't request this code, please ignore this email.
     def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
         """Generate simple OTP HTML email when template is not available."""
         # Get frontend URL for logos
-        frontend_url = getattr(settings, 'frontend_url', 'http://localhost:3000')
+        frontend_url = getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000')
         
         if language == "ar":
             return f"""
