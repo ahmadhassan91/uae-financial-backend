@@ -131,7 +131,7 @@ class EmailReportService:
     ) -> str:
         """Generate HTML email content."""
         # Get base URL for assets (frontend URL)
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        base_url = settings.base_url
         
         # Try to use the new Financial Clinic email template
         if self.jinja_env:
@@ -437,7 +437,7 @@ National Bonds Team
             msg['To'] = recipient_email
             
             # Get frontend URL for logos
-            frontend_url = settings.FRONTEND_BASE_URL
+            frontend_url = settings.base_url
             
             if language == "ar":
                 msg['Subject'] = "تذكير: أكمل تقييم صحتك المالية"
@@ -1165,7 +1165,7 @@ If you didn't request this code, please ignore this email."""
     def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
         """Generate simple OTP HTML email when template is not available."""
         # Get frontend URL for logos
-        frontend_url = getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000')
+        frontend_url = settings.base_url
         
         if language == "ar":
             return f"""

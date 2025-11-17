@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
-    PRODUCTION_BASE_URL: str = "https://financial-health.uae"  # Production URL
+    PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
     
     @property
     def base_url(self) -> str:

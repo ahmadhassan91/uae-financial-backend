@@ -178,7 +178,7 @@ class ReportDeliveryService:
         """Generate a download URL for the PDF report."""
         # Get the base URL from settings
         from app.config import settings
-        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        base_url = settings.base_url
         
         # Generate download URL - this will be handled by the API endpoint
         download_url = f"{base_url}/api/reports/download/{survey_response_id}"
