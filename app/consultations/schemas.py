@@ -46,12 +46,12 @@ class ConsultationRequestResponse(BaseModel):
 
 class ConsultationRequestStats(BaseModel):
     """Schema for consultation request statistics."""
-    total_requests: int
-    pending_requests: int
-    contacted_requests: int
-    scheduled_requests: int
-    completed_requests: int
-    this_month_requests: int
+    total: int
+    pending: int
+    contacted: int
+    scheduled: int
+    completed: int
+    this_week: int
     conversion_rate: float  # percentage of requests that became consultations
 
 

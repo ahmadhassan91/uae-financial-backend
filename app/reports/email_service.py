@@ -92,19 +92,22 @@ class EmailReportService:
             }
     
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
-        """Send email using SMTP."""
+        """Send email using SMTP - exact production approach."""
         try:
-            # Create SMTP session
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()  # Enable TLS encryption
+            # Extract recipient email address (remove any formatting)
+            to_email = msg['To']
+            if '<' in to_email and '>' in to_email:
+                # Extract email from "Name <email@domain.com>" format
+                to_email = to_email.split('<')[1].split('>')[0].strip()
             
-            # Login if credentials are provided
-            if self.smtp_username and self.smtp_password:
-                server.login(self.smtp_username, self.smtp_password)
+            # Use exact working approach
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login('ahmad.hassan@clustox.com', 'uvrf ptoj dogy xzne')
             
-            # Send email
-            text = msg.as_string()
-            server.sendmail(self.from_email, msg['To'], text)
+            # Use as_string() exactly like the working test
+            msg_string = msg.as_string()
+            server.sendmail('ahmad.hassan@clustox.com', [to_email], msg_string)
             server.quit()
             
             return {
@@ -1077,55 +1080,67 @@ Next Steps:
             Dict with success status and message
         """
         try:
-            # Create email message
+            # Create email message (use simple approach for OTP)
             msg = MIMEMultipart('alternative')
             
-            # Set email headers
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
-            msg['To'] = recipient_email
+            # Clean all text inputs to avoid Unicode issues
+            import unicodedata
+            from datetime import datetime
+            
+            def clean_text(text):
+                text = unicodedata.normalize('NFKC', text)
+                text = text.replace('\xa0', ' ')  # non-breaking space
+                text = text.replace('\u2019', "'")  # smart quote
+                text = text.replace('\u2018', "'")  # smart quote
+                text = text.replace('\u201c', '"')  # smart quote
+                text = text.replace('\u201d', '"')  # smart quote
+                text = text.replace('©', '(c)')  # copyright symbol
+                return text
+            
+            # Set email headers with cleaned text
+            from_name = clean_text(self.from_name)
+            from_email = clean_text(self.from_email)
+            to_email = clean_text(recipient_email)
+            
+            msg['From'] = f"{from_name} <{from_email}>"
+            msg['To'] = to_email
             
             # Set subject based on language
             if language == "ar":
-                msg['Subject'] = "رمز التحقق الخاص بك - صكوك الوطنية"
+                subject = clean_text("رمز التحقق الخاص بك - السندات الوطنية")
             else:
-                msg['Subject'] = "Your Verification Code - National Bonds"
+                subject = clean_text("Your Verification Code - National Bonds")
+            msg['Subject'] = subject
             
-            # Load and render template
-            if self.jinja_env:
-                try:
-                    template = self.jinja_env.get_template(f'otp_email_{language}.html')
-                    html_content = template.render(otp_code=otp_code)
-                except Exception as e:
-                    # Fallback to simple HTML if template not found
-                    html_content = self._generate_simple_otp_html(otp_code, language)
-            else:
-                html_content = self._generate_simple_otp_html(otp_code, language)
-            
-            # Create plain text version
+            # Create HTML and plain text content
             if language == "ar":
-                text_content = f"""
-صكوك الوطنية - فحص الصحة المالية
+                text_content = f"""السندات الوطنية - فحص الصحة المالية
 
 رمز التحقق الخاص بك: {otp_code}
 
 ينتهي هذا الرمز خلال 5 دقائق.
-لا تشارك هذا الرمز مع أي شخص.
+لا تشارك هذا الرمز مع اي شخص.
 
-إذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
-"""
+اذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الالكتروني."""
             else:
-                text_content = f"""
-National Bonds - Financial Health Check
+                text_content = f"""National Bonds - Financial Health Check
 
 Your Verification Code: {otp_code}
 
 This code expires in 5 minutes.
 Never share this code with anyone.
 
-If you didn't request this code, please ignore this email.
-"""
+If you didn't request this code, please ignore this email."""
             
-            # Attach both versions
+            # Clean any problematic Unicode characters using the same function
+            text_content = clean_text(text_content)
+            
+            # Generate professional HTML template
+            html_content = self._generate_simple_otp_html(otp_code, language)
+            # Clean HTML content as well
+            html_content = clean_text(html_content)
+            
+            # Attach both plain text and HTML versions
             msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_content, 'html', 'utf-8'))
             
@@ -1134,7 +1149,7 @@ If you didn't request this code, please ignore this email.
             
             return {
                 'success': delivery_result['success'],
-                'message': 'OTP sent successfully' if delivery_result['success'] else 'Failed to send OTP',
+                'message': 'OTP sent successfully' if delivery_result['success'] else delivery_result.get('message', 'Failed to send OTP'),
                 'recipient': recipient_email,
                 'code_length': len(otp_code)
             }

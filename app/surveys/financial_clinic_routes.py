@@ -423,7 +423,8 @@ async def submit_financial_clinic_survey(
             insights=result_dict.get('insights', []),
             product_recommendations=result_dict.get('products', []),
             questions_answered=result_dict.get('questions_answered', len(request.answers)),
-            total_questions=result_dict.get('total_questions', 15)
+            total_questions=result_dict.get('total_questions', 15),
+            completed_at=datetime.utcnow()  # Set completion timestamp
         )
         db.add(survey_response)
         db.commit()

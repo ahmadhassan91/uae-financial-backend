@@ -675,6 +675,7 @@ class FinancialClinicResponse(Base):
     questions_answered = Column(Integer, nullable=False)
     total_questions = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)  # When the survey was completed
     
     # Relationships
     profile = relationship("FinancialClinicProfile", back_populates="survey_responses")

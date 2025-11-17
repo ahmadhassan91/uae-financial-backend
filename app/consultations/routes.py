@@ -151,42 +151,42 @@ async def get_consultation_stats(
     """Get consultation request statistics."""
     try:
         # Total requests
-        total_requests = db.query(ConsultationRequest).count()
+        total = db.query(ConsultationRequest).count()
         
         # Requests by status
-        pending_requests = db.query(ConsultationRequest).filter(
+        pending = db.query(ConsultationRequest).filter(
             ConsultationRequest.status == "pending"
         ).count()
         
-        contacted_requests = db.query(ConsultationRequest).filter(
+        contacted = db.query(ConsultationRequest).filter(
             ConsultationRequest.status == "contacted"
         ).count()
         
-        scheduled_requests = db.query(ConsultationRequest).filter(
+        scheduled = db.query(ConsultationRequest).filter(
             ConsultationRequest.status == "scheduled"
         ).count()
         
-        completed_requests = db.query(ConsultationRequest).filter(
+        completed = db.query(ConsultationRequest).filter(
             ConsultationRequest.status == "completed"
         ).count()
         
-        # This month's requests
-        start_of_month = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        this_month_requests = db.query(ConsultationRequest).filter(
-            ConsultationRequest.created_at >= start_of_month
+        # This week's requests (last 7 days)
+        week_ago = datetime.utcnow() - timedelta(days=7)
+        this_week = db.query(ConsultationRequest).filter(
+            ConsultationRequest.created_at >= week_ago
         ).count()
         
         # Conversion rate (scheduled + completed / total)
-        conversion_count = scheduled_requests + completed_requests
-        conversion_rate = (conversion_count / total_requests * 100) if total_requests > 0 else 0.0
+        conversion_count = scheduled + completed
+        conversion_rate = (conversion_count / total * 100) if total > 0 else 0.0
         
         return ConsultationRequestStats(
-            total_requests=total_requests,
-            pending_requests=pending_requests,
-            contacted_requests=contacted_requests,
-            scheduled_requests=scheduled_requests,
-            completed_requests=completed_requests,
-            this_month_requests=this_month_requests,
+            total=total,
+            pending=pending,
+            contacted=contacted,
+            scheduled=scheduled,
+            completed=completed,
+            this_week=this_week,
             conversion_rate=round(conversion_rate, 2)
         )
         
@@ -321,10 +321,22 @@ async def export_consultation_requests_csv(
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> StreamingResponse:
-    """Export consultation requests as CSV (admin only)."""
+    """Export consultation requests as CSV with comprehensive Financial Clinic data (admin only)."""
     try:
-        # Build query with filters
-        query = db.query(ConsultationRequest)
+        from app.models import FinancialClinicProfile, FinancialClinicResponse
+        
+        # Build query with filters - join with Financial Clinic data
+        query = db.query(
+            ConsultationRequest,
+            FinancialClinicProfile,
+            FinancialClinicResponse
+        ).outerjoin(
+            FinancialClinicProfile,
+            ConsultationRequest.email == FinancialClinicProfile.email
+        ).outerjoin(
+            FinancialClinicResponse,
+            FinancialClinicProfile.id == FinancialClinicResponse.profile_id
+        )
         
         if status:
             query = query.filter(ConsultationRequest.status == status)
@@ -340,27 +352,75 @@ async def export_consultation_requests_csv(
             date_to_dt = datetime.fromisoformat(date_to)
             query = query.filter(ConsultationRequest.created_at <= date_to_dt)
         
-        # Get all matching requests
-        requests = query.order_by(desc(ConsultationRequest.created_at)).all()
+        # Get all matching requests with their related data
+        results = query.order_by(desc(ConsultationRequest.created_at)).all()
         
         # Create CSV content
         output = io.StringIO()
         writer = csv.writer(output)
         
-        # Write header
+        # Write comprehensive header matching the reference CSV structure
         writer.writerow([
-            'ID', 'Name', 'Email', 'Phone', 'Status', 'Source',
-            'Preferred Contact', 'Preferred Time', 'Message',
-            'Created At', 'Contacted At', 'Scheduled At', 'Notes'
+            # Consultation Request Fields
+            'Consultation ID', 'Consultation Status', 'Consultation Source',
+            'Preferred Contact Method', 'Preferred Time', 'Message',
+            'Consultation Created At', 'Contacted At', 'Scheduled At', 'Notes',
+            
+            # Profile Information (matches Financial Clinic export)
+            'Profile ID', 'Name', 'Email', 'Mobile Number', 'Date of Birth', 'Age',
+            'Gender', 'Nationality', 'Emirate', 'Children',
+            'Employment Status', 'Income Range', 'Company',
+            
+            # Assessment Results
+            'Response ID', 'Total Score', 'Status Band', 'Questions Answered', 'Total Questions',
+            
+            # Category Scores
+            'Income Stream Score', 'Savings Habit Score', 'Debt Management Score',
+            'Retirement Planning Score', 'Financial Protection Score', 'Financial Knowledge Score',
+            
+            # Submission Date
+            'Assessment Submission Date'
         ])
         
+        # Helper function to calculate age from DOB string (DD/MM/YYYY)
+        def calculate_age(dob_str):
+            try:
+                from datetime import datetime
+                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                today = datetime.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                return age
+            except:
+                return ''
+        
+        # Helper function to get category score from JSON
+        def get_category_score(category_scores, category_name):
+            if not category_scores:
+                return 0
+            try:
+                # category_scores is stored as JSON with structure like:
+                # {"income_stream": {"score": 10, ...}, "savings_habit": {...}, ...}
+                if isinstance(category_scores, dict):
+                    category_data = category_scores.get(category_name, {})
+                    if isinstance(category_data, dict):
+                        return category_data.get('score', 0)
+                return 0
+            except:
+                return 0
+        
         # Write data rows
-        for request in requests:
+        for request, profile, response in results:
+            # Extract category scores if response exists
+            income_stream_score = get_category_score(response.category_scores if response else None, 'income_stream')
+            savings_habit_score = get_category_score(response.category_scores if response else None, 'savings_habit')
+            debt_management_score = get_category_score(response.category_scores if response else None, 'debt_management')
+            retirement_planning_score = get_category_score(response.category_scores if response else None, 'retirement_planning')
+            financial_protection_score = get_category_score(response.category_scores if response else None, 'financial_protection')
+            financial_knowledge_score = get_category_score(response.category_scores if response else None, 'financial_knowledge')
+            
             writer.writerow([
+                # Consultation Request Data
                 request.id,
-                request.name,
-                request.email,
-                request.phone_number,
                 request.status,
                 request.source,
                 request.preferred_contact_method,
@@ -369,7 +429,40 @@ async def export_consultation_requests_csv(
                 request.created_at.strftime('%Y-%m-%d %H:%M:%S') if request.created_at else '',
                 request.contacted_at.strftime('%Y-%m-%d %H:%M:%S') if request.contacted_at else '',
                 request.scheduled_at.strftime('%Y-%m-%d %H:%M:%S') if request.scheduled_at else '',
-                request.notes or ''
+                request.notes or '',
+                
+                # Profile Data
+                profile.id if profile else '',
+                profile.name if profile else request.name,
+                profile.email if profile else request.email,
+                profile.mobile_number if profile else request.phone_number,
+                profile.date_of_birth if profile else '',
+                calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
+                profile.gender if profile else '',
+                profile.nationality if profile else '',
+                profile.emirate if profile else '',
+                profile.children if profile else '',
+                profile.employment_status if profile else '',
+                profile.income_range if profile else '',
+                '',  # Company (from company_tracker_id if available)
+                
+                # Assessment Results
+                response.id if response else '',
+                round(response.total_score, 2) if response else '',
+                response.status_band if response else '',
+                response.questions_answered if response else '',
+                response.total_questions if response else '',
+                
+                # Category Scores
+                income_stream_score,
+                savings_habit_score,
+                debt_management_score,
+                retirement_planning_score,
+                financial_protection_score,
+                financial_knowledge_score,
+                
+                # Submission Date
+                response.created_at.strftime('%Y-%m-%d %H:%M:%S') if response and response.created_at else ''
             ])
         
         # Log the export
@@ -378,14 +471,15 @@ async def export_consultation_requests_csv(
             action="consultation_requests_exported",
             entity_type="consultation_request",
             details={
-                "exported_count": len(requests),
+                "exported_count": len(results),
                 "filters": {
                     "status": status,
                     "source": source,
                     "date_from": date_from,
                     "date_to": date_to
                 },
-                "admin_email": current_user.email
+                "admin_email": current_user.email,
+                "includes_financial_clinic_data": True
             }
         )
         db.add(audit_log)
@@ -396,9 +490,9 @@ async def export_consultation_requests_csv(
         
         # Generate filename with timestamp
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        filename = f"consultation_requests_{timestamp}.csv"
+        filename = f"consultation_leads_comprehensive_{timestamp}.csv"
         
-        logger.info(f"✅ Consultation requests exported by {current_user.email}: {len(requests)} records")
+        logger.info(f"✅ Comprehensive consultation leads exported by {current_user.email}: {len(results)} records")
         
         return StreamingResponse(
             io.BytesIO(output.getvalue().encode('utf-8')),
@@ -410,7 +504,7 @@ async def export_consultation_requests_csv(
         logger.error(f"❌ Error exporting consultation requests: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to export consultation requests"
+            detail=f"Failed to export consultation requests: {str(e)}"
         )
 
 

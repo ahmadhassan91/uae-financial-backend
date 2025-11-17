@@ -329,28 +329,78 @@ async def export_simple_admin_csv(
         if unique_users_only:
             responses = filter_unique_users(responses)
 
+        # Helper function to calculate age from DOB string (DD/MM/YYYY)
+        def calculate_age(dob_str):
+            try:
+                from datetime import datetime
+                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                today = datetime.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                return age
+            except:
+                return ''
+        
+        # Helper function to get category score from JSON
+        def get_category_score(category_scores, category_name):
+            if not category_scores:
+                return 0
+            try:
+                # category_scores is stored as JSON with structure like:
+                # {"income_stream": {"score": 10, ...}, "savings_habit": {...}, ...}
+                if isinstance(category_scores, dict):
+                    category_data = category_scores.get(category_name, {})
+                    if isinstance(category_data, dict):
+                        return category_data.get('score', 0)
+                return 0
+            except:
+                return 0
+        
         # Prepare CSV
         output = io.StringIO()
         writer = csv.writer(output)
 
-        # Header
+        # Header matching reference CSV structure
         writer.writerow([
-            'id', 'profile_id', 'email', 'total_score', 'status_band',
-            'questions_answered', 'total_questions', 'created_at', 'company_tracker_id'
+            'ID', 'Name', 'Email', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
+            'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
+            'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
+            'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
+            'Financial Knowledge Score', 'Submission Date'
         ])
 
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
+            
+            # Extract category scores from JSON
+            income_stream_score = get_category_score(r.category_scores, 'income_stream')
+            savings_habit_score = get_category_score(r.category_scores, 'savings_habit')
+            debt_management_score = get_category_score(r.category_scores, 'debt_management')
+            retirement_planning_score = get_category_score(r.category_scores, 'retirement_planning')
+            financial_protection_score = get_category_score(r.category_scores, 'financial_protection')
+            financial_knowledge_score = get_category_score(r.category_scores, 'financial_knowledge')
+            
             writer.writerow([
                 r.id,
-                r.profile_id,
+                profile.name if profile else '',
                 profile.email if profile else '',
-                r.total_score,
-                r.status_band,
-                r.questions_answered,
-                r.total_questions,
-                r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',
-                r.company_tracker_id
+                calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
+                profile.gender if profile else '',
+                profile.nationality if profile else '',
+                profile.emirate if profile else '',
+                profile.children if profile else '',
+                profile.employment_status if profile else '',
+                profile.income_range if profile else '',
+                '',  # Company (from company_tracker_id if needed)
+                round(r.total_score, 2) if r.total_score else 0,
+                r.status_band if r.status_band else '',
+                r.questions_answered if r.questions_answered else 0,
+                income_stream_score,
+                savings_habit_score,
+                debt_management_score,
+                retirement_planning_score,
+                financial_protection_score,
+                financial_knowledge_score,
+                r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else ''
             ])
 
         # Audit log
@@ -397,52 +447,94 @@ async def export_simple_admin_excel(
 ) -> StreamingResponse:
     """Export filtered financial clinic responses as Excel (admin only)."""
     try:
-        from app.models import SurveyResponse, CustomerProfile
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, AuditLog
 
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies
         )
 
-        query = db.query(SurveyResponse).join(
-            CustomerProfile,
-            SurveyResponse.customer_profile_id == CustomerProfile.id
+        # Build base query using correct Financial Clinic models
+        query = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
 
         if start_date:
             start_dt = datetime.fromisoformat(start_date)
-            query = query.filter(SurveyResponse.created_at >= start_dt)
+            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
         if end_date:
             end_dt = datetime.fromisoformat(end_date)
-            query = query.filter(SurveyResponse.created_at <= end_dt)
+            query = query.filter(FinancialClinicResponse.created_at <= end_dt)
 
         query = apply_demographic_filters(query, filters, db)
 
-        responses = query.order_by(SurveyResponse.created_at.desc()).all()
+        responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
         if unique_users_only:
             responses = filter_unique_users(responses)
 
-        # Build dataframe
+        # Helper function to calculate age from DOB string (DD/MM/YYYY)
+        def calculate_age(dob_str):
+            try:
+                from datetime import datetime
+                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                today = datetime.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                return age
+            except:
+                return ''
+        
+        # Helper function to get category score from JSON
+        def get_category_score(category_scores, category_name):
+            if not category_scores:
+                return 0
+            try:
+                if isinstance(category_scores, dict):
+                    category_data = category_scores.get(category_name, {})
+                    if isinstance(category_data, dict):
+                        return category_data.get('score', 0)
+                return 0
+            except:
+                return 0
+
+        # Build dataframe rows
         rows = []
         for r in responses:
-            profile = db.query(CustomerProfile).filter(CustomerProfile.id == r.customer_profile_id).first()
+            profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
+            
+            # Extract category scores from JSON
+            income_stream_score = get_category_score(r.category_scores, 'income_stream')
+            savings_habit_score = get_category_score(r.category_scores, 'savings_habit')
+            debt_management_score = get_category_score(r.category_scores, 'debt_management')
+            retirement_planning_score = get_category_score(r.category_scores, 'retirement_planning')
+            financial_protection_score = get_category_score(r.category_scores, 'financial_protection')
+            financial_knowledge_score = get_category_score(r.category_scores, 'financial_knowledge')
+            
             rows.append({
                 'id': r.id,
-                'customer_profile_id': r.customer_profile_id,
-                'first_name': profile.first_name if profile else '',
-                'last_name': profile.last_name if profile else '',
-                'overall_score': r.overall_score,
-                'budgeting_score': r.budgeting_score,
-                'savings_score': r.savings_score,
-                'debt_management_score': r.debt_management_score,
-                'financial_planning_score': r.financial_planning_score,
-                'investment_knowledge_score': r.investment_knowledge_score,
-                'risk_tolerance': r.risk_tolerance,
-                'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else '',
-                'company_tracker_id': r.company_tracker_id
+                'name': profile.name if profile else '',
+                'email': profile.email if profile else '',
+                'age': calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
+                'gender': profile.gender if profile else '',
+                'nationality': profile.nationality if profile else '',
+                'emirate': profile.emirate if profile else '',
+                'children': profile.children if profile else '',
+                'employment_status': profile.employment_status if profile else '',
+                'income_range': profile.income_range if profile else '',
+                'company': '',  # Company (from company_tracker_id if needed)
+                'total_score': round(r.total_score, 2) if r.total_score else 0,
+                'status_band': r.status_band if r.status_band else '',
+                'questions_answered': r.questions_answered if r.questions_answered else 0,
+                'income_stream_score': income_stream_score,
+                'savings_habit_score': savings_habit_score,
+                'debt_management_score': debt_management_score,
+                'retirement_planning_score': retirement_planning_score,
+                'financial_protection_score': financial_protection_score,
+                'financial_knowledge_score': financial_knowledge_score,
+                'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else ''
             })
 
-        # Create Excel file without pandas to avoid issues
+        # Create Excel file
         bio = io.BytesIO()
         
         # Use openpyxl directly for better compatibility
@@ -451,36 +543,57 @@ async def export_simple_admin_excel(
         ws = wb.active
         ws.title = "Financial Clinic Responses"
         
-        # Add headers
-        headers = ['ID', 'Customer Profile ID', 'First Name', 'Last Name', 'Overall Score', 
-                  'Budgeting Score', 'Savings Score', 'Debt Management Score', 
-                  'Financial Planning Score', 'Investment Knowledge Score', 'Risk Tolerance',
-                  'Created At', 'Company Tracker ID']
+        # Add headers matching reference CSV structure
+        headers = [
+            'ID', 'Name', 'Email', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
+            'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
+            'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
+            'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
+            'Financial Knowledge Score', 'Submission Date'
+        ]
         ws.append(headers)
         
         # Add data rows
         for row in rows:
             ws.append([
                 row['id'],
-                row['customer_profile_id'], 
-                row['first_name'],
-                row['last_name'],
-                row['overall_score'],
-                row['budgeting_score'],
-                row['savings_score'],
+                row['name'], 
+                row['email'],
+                row['age'],
+                row['gender'],
+                row['nationality'],
+                row['emirate'],
+                row['children'],
+                row['employment_status'],
+                row['income_range'],
+                row['company'],
+                row['total_score'],
+                row['status_band'],
+                row['questions_answered'],
+                row['income_stream_score'],
+                row['savings_habit_score'],
                 row['debt_management_score'],
-                row['financial_planning_score'],
-                row['investment_knowledge_score'],
-                row['risk_tolerance'],
-                row['created_at'],
-                row['company_tracker_id']
+                row['retirement_planning_score'],
+                row['financial_protection_score'],
+                row['financial_knowledge_score'],
+                row['created_at']
             ])
         
         wb.save(bio)
         bio.seek(0)
 
+        # Audit log
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="simple_admin_export_excel",
+            entity_type="financial_clinic_responses",
+            details={"exported_count": len(responses), "filters": filters}
+        )
+        db.add(audit_log)
+        db.commit()
+
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        filename = f"survey_responses_{timestamp}.xlsx"
+        filename = f"financial_clinic_responses_{timestamp}.xlsx"
 
         return StreamingResponse(
             bio,
@@ -1576,3 +1689,220 @@ async def get_score_analytics_table(
             "questions": [],
             "total_questions": 0
         }
+
+@simple_admin_router.get("/submissions")
+async def get_submissions(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: Optional[str] = None,
+    status_band: Optional[str] = None,
+    nationality: Optional[str] = None,
+    company_id: Optional[int] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get paginated list of all Financial Clinic submissions with filtering.
+    """
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        # Build query with joins
+        query = db.query(
+            FinancialClinicResponse,
+            FinancialClinicProfile
+        ).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        # Apply filters
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.name.ilike(search_term),
+                    FinancialClinicProfile.email.ilike(search_term),
+                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                )
+            )
+        
+        if status_band:
+            query = query.filter(FinancialClinicResponse.status_band == status_band)
+        
+        if nationality:
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+        
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+        
+        if date_from:
+            date_from_dt = datetime.fromisoformat(date_from)
+            query = query.filter(FinancialClinicResponse.created_at >= date_from_dt)
+        
+        if date_to:
+            date_to_dt = datetime.fromisoformat(date_to)
+            query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
+        
+        # Get total count
+        total_count = query.count()
+        total_pages = (total_count + page_size - 1) // page_size
+        
+        # Get paginated results
+        offset = (page - 1) * page_size
+        results = query.order_by(
+            FinancialClinicResponse.created_at.desc()
+        ).offset(offset).limit(page_size).all()
+        
+        # Helper function to calculate age from DOB string (DD/MM/YYYY)
+        def calculate_age(dob_str):
+            try:
+                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                today = datetime.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                return age
+            except:
+                return None
+        
+        # Format submissions
+        submissions = []
+        for response, profile in results:
+            # Get company name if exists
+            company_name = None
+            if response.company_tracker_id:
+                company = db.query(CompanyTracker).filter(
+                    CompanyTracker.id == response.company_tracker_id
+                ).first()
+                if company:
+                    company_name = company.company_name
+            
+            submissions.append({
+                'id': response.id,
+                'profile_id': profile.id,
+                'profile_name': profile.name,
+                'profile_email': profile.email,
+                'profile_mobile': profile.mobile_number,
+                'gender': profile.gender,
+                'nationality': profile.nationality,
+                'emirate': profile.emirate,
+                'age': calculate_age(profile.date_of_birth) if profile.date_of_birth else None,
+                'employment_status': profile.employment_status,
+                'income_range': profile.income_range,
+                'company_name': company_name,
+                'total_score': round(response.total_score, 2),
+                'status_band': response.status_band,
+                'questions_answered': response.questions_answered,
+                'total_questions': response.total_questions,
+                'category_scores': response.category_scores,
+                'created_at': response.created_at.isoformat(),
+                'completed_at': response.completed_at.isoformat() if response.completed_at else None,
+            })
+        
+        return {
+            'submissions': submissions,
+            'total': total_count,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': total_pages
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in get_submissions: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@simple_admin_router.get("/submissions/stats")
+async def get_submissions_stats(
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get statistics about Financial Clinic submissions.
+    """
+    try:
+        from app.models import FinancialClinicResponse
+        
+        # Total submissions
+        total = db.query(FinancialClinicResponse).count()
+        
+        # Today's submissions
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = db.query(FinancialClinicResponse).filter(
+            FinancialClinicResponse.created_at >= today_start
+        ).count()
+        
+        # This week's submissions
+        week_start = today_start - timedelta(days=today_start.weekday())
+        this_week = db.query(FinancialClinicResponse).filter(
+            FinancialClinicResponse.created_at >= week_start
+        ).count()
+        
+        # This month's submissions
+        month_start = today_start.replace(day=1)
+        this_month = db.query(FinancialClinicResponse).filter(
+            FinancialClinicResponse.created_at >= month_start
+        ).count()
+        
+        # Average score
+        avg_score_result = db.query(
+            func.avg(FinancialClinicResponse.total_score)
+        ).scalar()
+        average_score = float(avg_score_result) if avg_score_result else 0.0
+        
+        return {
+            'total': total,
+            'today': today,
+            'this_week': this_week,
+            'this_month': this_month,
+            'average_score': round(average_score, 2)
+        }
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in get_submissions_stats: {str(e)}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@simple_admin_router.delete("/submissions/{submission_id}")
+async def delete_submission(
+    submission_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a Financial Clinic submission by ID.
+    """
+    try:
+        from app.models import FinancialClinicResponse
+        
+        # Find the submission
+        submission = db.query(FinancialClinicResponse).filter(
+            FinancialClinicResponse.id == submission_id
+        ).first()
+        
+        if not submission:
+            raise HTTPException(status_code=404, detail="Submission not found")
+        
+        # Delete the submission
+        db.delete(submission)
+        db.commit()
+        
+        return {
+            'success': True,
+            'message': 'Submission deleted successfully',
+            'id': submission_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"Error in delete_submission: {str(e)}")
+        print(traceback.format_exc())
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

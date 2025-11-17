@@ -498,11 +498,11 @@ async def request_otp(
         )
         
         if not email_result['success']:
-            # Log the error but don't expose details to user
-            print(f"Failed to send OTP email: {email_result.get('error', 'Unknown error')}")
+            # Log the detailed error for debugging
+            error_message = email_result.get('message', email_result.get('error', 'Unknown error'))
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to send verification code. Please try again."
+                detail=f"Failed to send verification code: {error_message}"
             )
         
         # Audit log
