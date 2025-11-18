@@ -331,12 +331,24 @@ async def export_simple_admin_csv(
 
         # Helper function to calculate age from DOB string (DD/MM/YYYY)
         def calculate_age(dob_str):
+            if not dob_str or dob_str.strip() == '':
+                return ''
             try:
                 from datetime import datetime
-                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                # Try DD/MM/YYYY format first
+                dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
                 today = datetime.today()
                 age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
                 return age
+            except ValueError:
+                # Try YYYY-MM-DD format (ISO format)
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return ''
             except:
                 return ''
         
@@ -475,12 +487,24 @@ async def export_simple_admin_excel(
 
         # Helper function to calculate age from DOB string (DD/MM/YYYY)
         def calculate_age(dob_str):
+            if not dob_str or dob_str.strip() == '':
+                return ''
             try:
                 from datetime import datetime
-                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                # Try DD/MM/YYYY format first
+                dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
                 today = datetime.today()
                 age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
                 return age
+            except ValueError:
+                # Try YYYY-MM-DD format (ISO format)
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return ''
             except:
                 return ''
         
@@ -1758,11 +1782,23 @@ async def get_submissions(
         
         # Helper function to calculate age from DOB string (DD/MM/YYYY)
         def calculate_age(dob_str):
+            if not dob_str or dob_str.strip() == '':
+                return None
             try:
-                dob = datetime.strptime(dob_str, '%d/%m/%Y')
+                # Try DD/MM/YYYY format first
+                dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
                 today = datetime.today()
                 age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
                 return age
+            except ValueError:
+                # Try YYYY-MM-DD format (ISO format)
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return None
             except:
                 return None
         
