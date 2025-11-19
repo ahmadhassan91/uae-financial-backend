@@ -358,7 +358,7 @@ async def export_simple_admin_csv(
                 return 0
             try:
                 # category_scores is stored as JSON with structure like:
-                # {"income_stream": {"score": 10, ...}, "savings_habit": {...}, ...}
+                # {"Income Stream": {"score": 10, ...}, "Savings Habit": {...}, ...}
                 if isinstance(category_scores, dict):
                     category_data = category_scores.get(category_name, {})
                     if isinstance(category_data, dict):
@@ -383,13 +383,13 @@ async def export_simple_admin_csv(
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
             
-            # Extract category scores from JSON
-            income_stream_score = get_category_score(r.category_scores, 'income_stream')
-            savings_habit_score = get_category_score(r.category_scores, 'savings_habit')
-            debt_management_score = get_category_score(r.category_scores, 'debt_management')
-            retirement_planning_score = get_category_score(r.category_scores, 'retirement_planning')
-            financial_protection_score = get_category_score(r.category_scores, 'financial_protection')
-            financial_knowledge_score = get_category_score(r.category_scores, 'financial_knowledge')
+            # Extract category scores from JSON (using actual category enum values with spaces)
+            income_stream_score = get_category_score(r.category_scores, 'Income Stream')
+            savings_habit_score = get_category_score(r.category_scores, 'Savings Habit')
+            debt_management_score = get_category_score(r.category_scores, 'Debt Management')
+            retirement_planning_score = get_category_score(r.category_scores, 'Retirement Planning')
+            financial_protection_score = get_category_score(r.category_scores, 'Protecting Your Family')
+            financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
             writer.writerow([
                 r.id,
@@ -513,6 +513,8 @@ async def export_simple_admin_excel(
             if not category_scores:
                 return 0
             try:
+                # category_scores is stored as JSON with structure like:
+                # {"Income Stream": {"score": 10, ...}, "Savings Habit": {...}, ...}
                 if isinstance(category_scores, dict):
                     category_data = category_scores.get(category_name, {})
                     if isinstance(category_data, dict):
@@ -526,13 +528,13 @@ async def export_simple_admin_excel(
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
             
-            # Extract category scores from JSON
-            income_stream_score = get_category_score(r.category_scores, 'income_stream')
-            savings_habit_score = get_category_score(r.category_scores, 'savings_habit')
-            debt_management_score = get_category_score(r.category_scores, 'debt_management')
-            retirement_planning_score = get_category_score(r.category_scores, 'retirement_planning')
-            financial_protection_score = get_category_score(r.category_scores, 'financial_protection')
-            financial_knowledge_score = get_category_score(r.category_scores, 'financial_knowledge')
+            # Extract category scores from JSON (using actual category enum values with spaces)
+            income_stream_score = get_category_score(r.category_scores, 'Income Stream')
+            savings_habit_score = get_category_score(r.category_scores, 'Savings Habit')
+            debt_management_score = get_category_score(r.category_scores, 'Debt Management')
+            retirement_planning_score = get_category_score(r.category_scores, 'Retirement Planning')
+            financial_protection_score = get_category_score(r.category_scores, 'Protecting Your Family')
+            financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
             rows.append({
                 'id': r.id,
