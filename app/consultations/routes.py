@@ -324,8 +324,17 @@ async def export_consultation_requests_csv(
     """Export consultation requests as CSV with comprehensive Financial Clinic data (admin only)."""
     try:
         from app.models import FinancialClinicProfile, FinancialClinicResponse
+        from sqlalchemy import and_
+        from sqlalchemy.sql import func
+        
+        # First, get the most recent response ID for each profile
+        subquery = db.query(
+            FinancialClinicResponse.profile_id,
+            func.max(FinancialClinicResponse.id).label('max_response_id')
+        ).group_by(FinancialClinicResponse.profile_id).subquery()
         
         # Build query with filters - join with Financial Clinic data
+        # Join to get the most recent response for each profile
         query = db.query(
             ConsultationRequest,
             FinancialClinicProfile,
@@ -334,8 +343,14 @@ async def export_consultation_requests_csv(
             FinancialClinicProfile,
             ConsultationRequest.email == FinancialClinicProfile.email
         ).outerjoin(
+            subquery,
+            FinancialClinicProfile.id == subquery.c.profile_id
+        ).outerjoin(
             FinancialClinicResponse,
-            FinancialClinicProfile.id == FinancialClinicResponse.profile_id
+            and_(
+                FinancialClinicResponse.id == subquery.c.max_response_id,
+                FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+            )
         )
         
         if status:
@@ -415,20 +430,30 @@ async def export_consultation_requests_csv(
                 if isinstance(category_scores, dict):
                     category_data = category_scores.get(category_name, {})
                     if isinstance(category_data, dict):
-                        return category_data.get('score', 0)
+                        return round(category_data.get('score', 0), 2)
+                    # Fallback: check if it's stored differently
+                    elif isinstance(category_data, (int, float)):
+                        return round(float(category_data), 2)
                 return 0
-            except:
+            except Exception as e:
+                logger.warning(f"Error extracting category score for {category_name}: {e}")
                 return 0
         
         # Write data rows
         for request, profile, response in results:
+            # Debug logging for first record
+            if request.id == results[0][0].id and response:
+                logger.info(f"🔍 Debug - Response ID: {response.id}, category_scores type: {type(response.category_scores)}")
+                logger.info(f"🔍 Debug - category_scores content: {response.category_scores}")
+            
             # Extract category scores if response exists
-            income_stream_score = get_category_score(response.category_scores if response else None, 'income_stream')
-            savings_habit_score = get_category_score(response.category_scores if response else None, 'savings_habit')
-            debt_management_score = get_category_score(response.category_scores if response else None, 'debt_management')
-            retirement_planning_score = get_category_score(response.category_scores if response else None, 'retirement_planning')
-            financial_protection_score = get_category_score(response.category_scores if response else None, 'financial_protection')
-            financial_knowledge_score = get_category_score(response.category_scores if response else None, 'financial_knowledge')
+            # NOTE: Category keys use spaces, not snake_case (e.g., "Income Stream" not "income_stream")
+            income_stream_score = get_category_score(response.category_scores if response else None, 'Income Stream')
+            savings_habit_score = get_category_score(response.category_scores if response else None, 'Savings Habit')
+            debt_management_score = get_category_score(response.category_scores if response else None, 'Debt Management')
+            retirement_planning_score = get_category_score(response.category_scores if response else None, 'Retirement Planning')
+            financial_protection_score = get_category_score(response.category_scores if response else None, 'Protecting Your Family')
+            financial_knowledge_score = get_category_score(response.category_scores if response else None, 'Emergency Savings')
             
             writer.writerow([
                 # Consultation Request Data
