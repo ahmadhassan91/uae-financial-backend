@@ -103,9 +103,14 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
             )
         ).all()
         company_ids = [c.id for c in company_trackers]
+        
         if company_ids:
             from app.models import FinancialClinicResponse
             query = query.filter(FinancialClinicResponse.company_tracker_id.in_(company_ids))
+        else:
+            # If companies were requested but none found, return empty result
+            from sqlalchemy import literal
+            query = query.filter(literal(False))
     
     return query
 
@@ -237,6 +242,328 @@ async def get_simple_localized_content(
             "error": str(e),
             "content": [],
             "total": 0
+        }
+
+@simple_admin_router.get("/employment-breakdown")
+async def get_employment_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get breakdown by employment status."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        query = db.query(
+            FinancialClinicProfile.employment_status,
+            func.count(FinancialClinicResponse.id).label('count')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
+        
+        if unique_users_only:
+            # This is complex with aggregation, skipping for now or need subquery
+            pass
+            
+        results = query.group_by(FinancialClinicProfile.employment_status).all()
+        
+        breakdown = []
+        for status, count in results:
+            if status:
+                breakdown.append({
+                    "status": status,
+                    "count": count
+                })
+                
+        # Sort by count desc
+        breakdown.sort(key=lambda x: x['count'], reverse=True)
+        
+        return {"breakdown": breakdown}
+        
+    except Exception as e:
+        return {"error": str(e), "breakdown": []}
+
+@simple_admin_router.get("/emirate-breakdown")
+async def get_emirate_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get breakdown by emirate."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        query = db.query(
+            FinancialClinicProfile.emirate,
+            func.count(FinancialClinicResponse.id).label('count')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
+        
+        results = query.group_by(FinancialClinicProfile.emirate).all()
+        
+        breakdown = []
+        for emirate, count in results:
+            if emirate:
+                breakdown.append({
+                    "emirate": emirate,
+                    "count": count
+                })
+                
+        breakdown.sort(key=lambda x: x['count'], reverse=True)
+        
+        return {"breakdown": breakdown}
+        
+    except Exception as e:
+        return {"error": str(e), "breakdown": []}
+
+@simple_admin_router.get("/children-breakdown")
+async def get_children_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get breakdown by number of children."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        query = db.query(
+            FinancialClinicProfile.children,
+            func.count(FinancialClinicResponse.id).label('count')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
+        
+        results = query.group_by(FinancialClinicProfile.children).all()
+        
+        breakdown = []
+        for child_count, count in results:
+            if child_count is not None:
+                label = str(child_count)
+                if child_count >= 5:
+                    label = "5+"
+                breakdown.append({
+                    "count_label": label,
+                    "count": count,
+                    "sort_key": child_count
+                })
+        
+        # Merge 5+ if needed (though simplified here)
+        # Sort by numeric value
+        breakdown.sort(key=lambda x: x['sort_key'])
+        
+        # Remove sort key
+        for item in breakdown:
+            del item['sort_key']
+            
+        return {"breakdown": breakdown}
+        
+    except Exception as e:
+        return {"error": str(e), "breakdown": []}
+
+@simple_admin_router.get("/income-breakdown")
+async def get_income_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get breakdown by income range."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        query = db.query(
+            FinancialClinicProfile.income_range,
+            func.count(FinancialClinicResponse.id).label('count')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
+        
+        results = query.group_by(FinancialClinicProfile.income_range).all()
+        
+        breakdown = []
+        # Define sort order for income ranges
+        income_order = {
+            "Below AED 5,000": 1,
+            "AED 5,000 to AED 10,000": 2,
+            "AED 10,000 to AED 20,000": 3,
+            "AED 20,000 to AED 30,000": 4,
+            "AED 30,000 to AED 40,000": 5,
+            "AED 40,000 to AED 50,000": 6,
+            "AED 50,000 to AED 100,000": 7,
+            "Above AED 100,000": 8
+        }
+        
+        for income_range, count in results:
+            if income_range:
+                breakdown.append({
+                    "range": income_range,
+                    "count": count,
+                    "sort_order": income_order.get(income_range, 99)
+                })
+                
+        breakdown.sort(key=lambda x: x['sort_order'])
+        
+        # Remove sort order
+        for item in breakdown:
+            del item['sort_order']
+            
+        return {"breakdown": breakdown}
+        
+    except Exception as e:
+        return {"error": str(e), "breakdown": []}
+
+@simple_admin_router.get("/gender-breakdown")
+async def get_gender_breakdown(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get gender distribution breakdown."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies
+        )
+        
+        query = db.query(
+            FinancialClinicProfile.gender,
+            func.count(FinancialClinicResponse.id).label('count')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
+        
+        results = query.group_by(FinancialClinicProfile.gender).all()
+        
+        breakdown = []
+        total_count = 0
+        
+        for gender, count in results:
+            if gender:
+                breakdown.append({
+                    "gender": gender,
+                    "count": count
+                })
+                total_count += count
+            
+        # Calculate percentages
+        for item in breakdown:
+            item["percentage"] = round((item["count"] / total_count * 100), 1) if total_count > 0 else 0
+            
+        # Sort by count descending
+        breakdown.sort(key=lambda x: x["count"], reverse=True)
+        
+        return {
+            "total": total_count,
+            "breakdown": breakdown
+        }
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
         }
 
 @simple_admin_router.get("/analytics")
@@ -702,6 +1029,7 @@ async def get_survey_submissions(
                     "overall_score": submission.total_score,
                     "status_band": submission.status_band,
                     "category_scores": submission.category_scores,
+                    "insights": submission.insights,
                     "budgeting_score": submission.category_scores.get('income_stream', 0) if submission.category_scores else 0,
                     "savings_score": submission.category_scores.get('savings_habit', 0) if submission.category_scores else 0,
                     "debt_management_score": submission.category_scores.get('debt_management', 0) if submission.category_scores else 0,
@@ -1834,6 +2162,7 @@ async def get_submissions(
                 'questions_answered': response.questions_answered,
                 'total_questions': response.total_questions,
                 'category_scores': response.category_scores,
+                'insights': response.insights,
                 'created_at': response.created_at.isoformat(),
                 'completed_at': response.completed_at.isoformat() if response.completed_at else None,
             })
