@@ -1164,14 +1164,32 @@ If you didn't request this code, please ignore this email."""
     
     def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
         """Generate OTP HTML email using Jinja2 template."""
+        # Debug information
+        template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+        print(f"🔍 Template directory: {template_dir}")
+        print(f"🔍 Template directory exists: {os.path.exists(template_dir)}")
+        print(f"🔍 Jinja env initialized: {self.jinja_env is not None}")
+        
+        if self.jinja_env is None:
+            print("⚠️ Jinja2 environment is None, using fallback")
+            return self._generate_fallback_otp_html(otp_code, language)
+        
         try:
             # Try to load the Jinja2 template
             template_name = f"otp_email_{language}.html"
+            print(f"🔍 Loading template: {template_name}")
+            
+            # List available templates for debugging
+            template_files = os.listdir(template_dir) if os.path.exists(template_dir) else []
+            print(f"🔍 Available templates: {template_files}")
+            
             template = self.jinja_env.get_template(template_name)
             html_content = template.render(otp_code=otp_code)
+            print(f"✅ Template loaded successfully: {template_name}")
             return html_content
         except Exception as e:
-            print(f"Warning: Could not load template {template_name}: {e}")
+            print(f"❌ Could not load template {template_name}: {e}")
+            print(f"❌ Exception type: {type(e)}")
             # Fallback to hardcoded HTML
             return self._generate_fallback_otp_html(otp_code, language)
     
