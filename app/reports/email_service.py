@@ -213,26 +213,26 @@ National Bonds Team
         """Get recommended products based on financial health score."""
         # Sample products - can be customized based on score ranges
         products_en = [
-            {
-                'title': 'SAVING BONDS',
-                'description': 'A saving plan with a clear path to achieve your goals, and build a better financial future.',
-                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png',
-                'link': ' https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png'
-            },
-            {
-                'title': 'SECOND SALARY',
-                'description': 'Receive a future monthly income with competitive accumulated returns in the UAE.',
-                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png',
-                'link': 'https://nationalbonds.ae/products/second-salary'
-            },
-            {
-                'title': 'MY MILLION',
-                'description': 'The journey to a million is smooth with this plan.',
-                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png',
-                'link': 'https://nationalbonds.ae/products/my-million'
-            }
-        ]
-        
+    {
+        'title': 'SAVING BONDS',
+        'description': 'A saving plan with a clear path to achieve your goals, and build a better financial future.',
+        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" />',
+        'link': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png'
+    },
+    {
+        'title': 'SECOND SALARY',
+        'description': 'Receive a future monthly income with competitive accumulated returns in the UAE.',
+        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" />',
+        'link': 'https://nationalbonds.ae/products/second-salary'
+    },
+    {
+        'title': 'MY MILLION',
+        'description': 'The journey to a million is smooth with this plan.',
+        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Million" />',
+        'link': 'https://nationalbonds.ae/products/my-million'
+    }
+]
+
         products_ar = [
             {
                 'title': 'سندات الادخار',
@@ -975,36 +975,46 @@ National Bonds Team
             <span style="font-size:16px; font-weight:600; color:#3D4D57;">Based on your score, we’ve selected products tailored to your goals and current financial stage:</span>
             </div>
             <div>
-          <!-- Add this block where you want the product cards to appear in your email template -->
-<div style="display: flex; justify-content: center; gap: 24px; margin: 40px 0; flex-wrap: wrap;">
-    <!-- Saving Bonds Card -->
-    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
-        <div style="padding: 18px 16px 0 16px;">
-            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
-            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms.</div>
-        </div>
-        <img src="/homepage/images/imagemail5.png" alt="Saving Bonds" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
-        <a href=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
-    </div>
-    <!-- Second Salary Card -->
-    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
-        <div style="padding: 18px 16px 0 16px;">
-            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
-            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive anticipated returns included.</div>
-        </div>
-        <img src="/homepage/images/imagemail6.png" alt="Second Salary" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
-        <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
-    </div>
-    <!-- My Million Card -->
-    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
-        <div style="padding: 18px 16px 0 16px;">
-            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLION</div>
-            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
-        </div>
-        <img src="/homepage/images/imagemail7.png" alt="My Million" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
-        <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
-    </div>
-</div>
+         
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0 40px 0;">
+            <tr>
+                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                    <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">A saving plan with a clear path to achieve your goals, and build a better financial future.</div>
+                        </div>
+                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" style="width:100%; width: 200px;
+    height: 150px;object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+                        
+                        <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+                    </div>
+                </td>
+                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                     <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive accumulated returns in the UAE.</div>
+                        </div>
+                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" style="width:100%; width: 200px;
+    height: 150px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+                       
+                        <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+                    </div>
+                </td>
+                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                     <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLION</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
+                        
+                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Million" style="width:100%; width: 200px; height: 150px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+                         <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 <div style="display: flex;
     width: 100%;
     justify-content: center">
