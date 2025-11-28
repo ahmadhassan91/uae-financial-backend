@@ -216,19 +216,19 @@ National Bonds Team
             {
                 'title': 'SAVING BONDS',
                 'description': 'A saving plan with a clear path to achieve your goals, and build a better financial future.',
-                'image_url': 'https://images.pexels.com/photos/235615/pexels-photo-235615.jpeg?auto=compress&cs=tinysrgb&w=400',
-                'link': 'https://nationalbonds.ae/products/saving-bonds'
+                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png',
+                'link': ' https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png'
             },
             {
                 'title': 'SECOND SALARY',
                 'description': 'Receive a future monthly income with competitive accumulated returns in the UAE.',
-                'image_url': 'https://images.pexels.com/photos/1438072/pexels-photo-1438072.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png',
                 'link': 'https://nationalbonds.ae/products/second-salary'
             },
             {
                 'title': 'MY MILLION',
                 'description': 'The journey to a million is smooth with this plan.',
-                'image_url': 'https://images.pexels.com/photos/618613/pexels-photo-618613.jpeg?auto=compress&cs=tinysrgb&w=400',
+                'image_url': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png',
                 'link': 'https://nationalbonds.ae/products/my-million'
             }
         ]
@@ -302,8 +302,8 @@ National Bonds Team
         .benefits ul {{ list-style: none; padding: 0; }}
         .benefits li {{ padding-right: 24px; position: relative; margin-bottom: 12px; color: #767f87; }}
         .benefits li::before {{ content: '✓'; position: absolute; right: 0; color: {secondary_color}; font-weight: bold; }}
-        .footer {{ background-color: #f8fbfd; border-top: 1px solid #bdcdd6; padding: 40px; text-align: center; }}
-        .footer-text {{ font-size: 11px; color: #a1aeb7; margin-top: 20px; }}
+        .footer {{ background-color: #f8fbfd; border-top: 1px solid #bdcdd6; text-align: center; }}
+        .footer-text {{ font-size: 11px; color: #a1aeb7;}}
     </style>
 </head>
 <body>
@@ -503,7 +503,7 @@ National Bonds Team
         <div style="background-color: #437749; padding: 20px; text-align: center;">
             <img src="/homepage/icons/logo.svg" 
                  alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
+                 style="height: 30px; max-width: 200px;">
         </div>
         
         <!-- Main Content -->
@@ -529,9 +529,8 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="/homepage/images/nbc-logo2-02-1.png" 
+            <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
                  alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
                 © {datetime.now().year} National Bonds. All rights reserved.
@@ -573,7 +572,7 @@ National Bonds Team
         <div style="background-color: #437749; padding: 20px; text-align: center;">
             <img src="/homepage/icons/logo.svg" 
                  alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
+                 style="height: 30px; max-width: 200px;">
         </div>
         
         <!-- Main Content -->
@@ -599,9 +598,8 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="/homepage/images/nbc-logo2-02-1.png" 
+            <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
                  alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
                 © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
@@ -908,7 +906,7 @@ National Bonds Team
     <title>Financial Clinic Report</title>
     <style>
         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: white; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; background: white; }}
+        .container {{ max-width: 945px; margin: 0 auto; padding: 20px; background: white; }}
         .header {{ background-color: white; padding: 30px 20px; text-align: center; }}
         .header h1 {{ color: #374151; font-size: 28px; margin: 0 0 10px 0; }}
         .header p {{ color: #9ca3af; font-size: 14px; margin: 5px 0; }}
@@ -941,7 +939,7 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <img src="/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332338/Man_qt2i81.png" alt="Financial Health" style="width:788px; height: 499px; margin-bottom: 20px;" />
             
         </div>
         <div>
@@ -986,7 +984,7 @@ National Bonds Team
             <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms.</div>
         </div>
         <img src="/homepage/images/imagemail5.png" alt="Saving Bonds" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
-        <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+        <a href=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
     </div>
     <!-- Second Salary Card -->
     <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
@@ -1007,39 +1005,65 @@ National Bonds Team
         <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
     </div>
 </div>
-        <div class="footer" style="background:#fff; border-top:1px solid #e5e7eb; padding:30px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:16px;">
-                <img src="/homepage/logos/nbc-logo2-02-1.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
-                <div style="font-size:18px; font-weight:600; color:#374151;"> NATIONAL BONDS </div>
-            </div>
-            <div style="text-align:center; flex:1; min-width:220px;">
-                <div style="display:flex; justify-content:center; gap:18px; margin-bottom:8px;">
-                    <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                </div>
-                <div style="font-size:12px; color:#6b7280;">STAY CONNECTED</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; min-width:180px;">
-                <div style="display:flex; gap:24px; margin-bottom:8px;">
-                    <img src="homepage/images/Vector.png" alt="Download App" style="height:28px;" />
-                    <img src="/homepage/images/Vector2.png" alt="Branches" style="height:28px;" />
-                </div>
-                <div style="display:flex; gap:24px;">
-                    <span style="font-size:12px; color:#6b7280;">DOWNLOAD OUR APP</span>
-                    <span style="font-size:12px; color:#6b7280;">OUR BRANCHES</span>
-                </div>
-            </div>
-        </div>
+<div style="display: flex;
+    width: 100%;
+    justify-content: center">
+ <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
+</div>
+
+                <table class="footer" width="100%" cellpadding="0" cellspacing="0" style="background:#fff; border-top:1px solid #e5e7eb;">
+                    <tr>
+                        <!-- Logo Left -->
+                        <td align="left" style="vertical-align:middle;">
+                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" alt="National Bonds" style="height:200px; width:250px;margin-right:12px;" />
+                        </td>
+                        <!-- Social Icons Center -->
+                        <td align="center" style="vertical-align:middle;padding-right:80px;">
+                            <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.facebook.com/NationalBondsUAE">
+                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.instagram.com/nationalbondsuae">
+                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.linkedin.com/company/national-bonds-corporation">
+                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.youtube.com/user/NationalBondsUAE">
+                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                            </tr></table>
+                            <div style="font-size:8px; color:#6b7280;">STAY CONNECTED</div>
+                        </td>
+                        <!-- App/Branches Right -->
+                        <td align="center" style="vertical-align:middle; padding-right:30px;">
+                            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                <tr>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                        <span style="display:inline-block; width:40px; height:40px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="height:20px; width:20px; display:block;" />
+                                        </span>
+                                        <div style="font-size:8px; color:#6b7280;">DOWNLOAD OUR APP</div>
+                                    </td>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                        <span style="display:inline-block; width:40px; height:40px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="height:20px; width:20px; display:block;" />
+                                        </span>
+                                        <div style="font-size:8px; color:#6b7280;">OUR BRANCHES</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
     </div>
 </body>
 </html>
@@ -1337,35 +1361,94 @@ If you didn't request this code, please ignore this email."""
                 </div>
             </div>
 
-            <!-- Footer -->
-            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
-                <div class="footer-logo">
-                    <img src="/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
-                </div>
+         <!-- Footer -->
+<div class="footer" style="display: flex; justify-content: space-between; align-items: center; ">
+    <!-- LEFT: Logo -->
+    <div class="footer-logo">
+        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+             alt="National Bonds" />
+        <div>
+            SAVE.INVEST.<span style="color: #b8985f;">PROSPER.</span>
+        </div>
+    </div>
 
-                <div style="flex: 0 0 auto; text-align: center;">
-                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">ابق على تواصل</div>
-                    <div style="display: flex; justify-content: center; gap: 15px;">
-                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                    </div>
-                </div>
+    <!-- CENTER: Social Icons -->
+    <div>
+        <div>
+            STAY CONNECTED
+        </div>
+
+        <div ">
+            <a href="https://www.facebook.com/NationalBondsUAE" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" 
+                     alt="Facebook" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.instagram.com/nationalbondsuae" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" 
+                     alt="Instagram" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.linkedin.com/company/national-bonds-corporation" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" 
+                     alt="LinkedIn" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.youtube.com/user/NationalBondsUAE" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" 
+                     alt="YouTube" style="width: 24px; height: 24px;" />
+            </a>
+        </div>
+    </div>
+
+    <!-- RIGHT: App + Branches -->
+    <div >
+
+        <!-- DOWNLOAD -->
+        <div>
+            <div >
+                DOWNLOAD OUR APP
+            </div>
+
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" 
+                 alt="Download App" 
+                 style="height:28px;" />
+        </div>
+
+        <!-- BRANCHES -->
+        <div>
+            <div 
+            >
+                OUR BRANCHES
+            </div>
+
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" 
+                 alt="Branches" 
+                 style="height:28px;" />
+        </div>
+
+    </div>
+
+</div>
+
 
                 <div style="display: flex; gap: 30px; flex: 0 0 auto;">
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">حمل تطبيقنا</div>
                         <div style="margin-top: 10px;">
-                            <img src="/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="https://res.cloudina https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.pngry.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                     <div style="text-align: center;">
@@ -1445,44 +1528,89 @@ If you didn't request this code, please ignore this email."""
             </div>
 
             <!-- Footer -->
-            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
-                <div class="footer-logo">
-                    <img src="/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
-                </div>
+           <!-- Footer -->
+<div class="footer" >
+    
+    <!-- LEFT: Logo -->
+    <div class="footer-logo">
+        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+             alt="National Bonds" 
+        
+        <div>
+            SAVE.INVEST.<span style="color: #b8985f;">PROSPER.</span>
+        </div>
+    </div>
 
-                <div style="flex: 0 0 auto; text-align: center;">
-                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">STAY CONNECTED</div>
-                    <div style="display: flex; justify-content: center; gap: 15px;">
-                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
-                        </a>
-                    </div>
-                </div>
+    <!-- CENTER: Social Icons -->
+    <div>
+        <div>
+            STAY CONNECTED
+        </div>
 
-                <div style="display: flex; gap: 30px; flex: 0 0 auto;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">DOWNLOAD OUR APP</div>
-                        <div style="margin-top: 10px;">
-                            <img src="/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
-                        </div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">OUR BRANCHES</div>
-                        <div style="margin-top: 10px;">
-                            <img src="/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
-                        </div>
-                    </div>
-                </div>
+        <div s>
+            <a href="https://www.facebook.com/NationalBondsUAE" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" 
+                     alt="Facebook" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.instagram.com/nationalbondsuae" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" 
+                     alt="Instagram" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.linkedin.com/company/national-bonds-corporation" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" 
+                     alt="LinkedIn" style="width: 24px; height: 24px;" />
+            </a>
+
+            <a href="https://www.youtube.com/user/NationalBondsUAE" 
+               style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
+                      display: inline-flex; align-items: center; justify-content: center; 
+                      text-decoration: none; background-color: transparent; padding: 8px;">
+                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" 
+                     alt="YouTube" style="width: 24px; height: 24px;" />
+            </a>
+        </div>
+    </div>
+
+    <!-- RIGHT: App + Branches -->
+    <div >
+
+        <!-- DOWNLOAD -->
+        <div>
+            <div >
+                DOWNLOAD OUR APP
             </div>
+
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" 
+                 alt="Download App" 
+                 style="height:28px;" />
+        </div>
+
+        <!-- BRANCHES -->
+        <div>
+            <div >
+                OUR BRANCHES
+            </div>
+
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" 
+                 alt="Branches" 
+                 style="height:28px;" />
+        </div>
+
+    </div>
+
+</div>
+
         </div>
     </div>
 </body>
