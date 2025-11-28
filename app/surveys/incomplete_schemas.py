@@ -1,6 +1,6 @@
 """Pydantic schemas for incomplete survey tracking."""
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, EmailStr
 
 
@@ -57,7 +57,7 @@ class IncompleteSurveyStats(BaseModel):
 
 class FollowUpRequest(BaseModel):
     """Schema for sending follow-up communications."""
-    survey_ids: list[int]
+    survey_ids: List[int]
     message_template: str
     send_email: bool = True
     send_sms: bool = False
