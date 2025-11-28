@@ -1163,7 +1163,20 @@ If you didn't request this code, please ignore this email."""
             }
     
     def _generate_simple_otp_html(self, otp_code: str, language: str) -> str:
-        """Generate simple OTP HTML email when template is not available."""
+        """Generate OTP HTML email using Jinja2 template."""
+        try:
+            # Try to load the Jinja2 template
+            template_name = f"otp_email_{language}.html"
+            template = self.jinja_env.get_template(template_name)
+            html_content = template.render(otp_code=otp_code)
+            return html_content
+        except Exception as e:
+            print(f"Warning: Could not load template {template_name}: {e}")
+            # Fallback to hardcoded HTML
+            return self._generate_fallback_otp_html(otp_code, language)
+    
+    def _generate_fallback_otp_html(self, otp_code: str, language: str) -> str:
+        """Generate simple OTP HTML email fallback when template is not available."""
         # Get frontend URL for logos
         frontend_url = settings.base_url
         

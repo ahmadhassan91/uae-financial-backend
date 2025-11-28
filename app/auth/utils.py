@@ -1,6 +1,6 @@
 """Authentication utilities and JWT token management."""
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 import bcrypt
 from jose import JWTError, jwt
 from app.config import settings
@@ -69,7 +69,7 @@ def create_refresh_token(data: dict) -> str:
     return encoded_jwt
 
 
-def create_simple_session(user_id: int) -> tuple[str, datetime]:
+def create_simple_session(user_id: int) -> Tuple[str, datetime]:
     """Create a simple session ID and expiration time."""
     import secrets
     session_id = secrets.token_urlsafe(32)
