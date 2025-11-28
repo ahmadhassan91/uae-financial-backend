@@ -390,3 +390,29 @@ async def get_delivery_stats(
             status_code=500,
             detail=f"Failed to get stats: {str(e)}"
         )
+
+
+@router.get("/download-public/{file_token}")
+async def download_public_report(file_token: str):
+    """Public download endpoint for PDF reports via email links."""
+    import os
+    
+    # Define downloads directory
+    downloads_dir = "/home/clustox/Desktop/uae-financial-backend/uae-financial-backend/downloads"
+    
+    # Look for file matching the token
+    for filename in os.listdir(downloads_dir):
+        if filename.startswith(file_token) and filename.endswith('.pdf'):
+            file_path = os.path.join(downloads_dir, filename)
+            if os.path.exists(file_path):
+                return FileResponse(
+                    path=file_path,
+                    filename=f"financial_clinic_report.pdf",
+                    media_type="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=financial_clinic_report.pdf"}
+                )
+    
+    raise HTTPException(
+        status_code=404,
+        detail="Report file not found or expired"
+    )

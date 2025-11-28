@@ -1,6 +1,10 @@
 """Email service for delivering financial health reports."""
 import os
 import smtplib
+import json
+import logging
+import unicodedata
+import hashlib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -614,7 +618,8 @@ National Bonds Team
         result: Dict[str, Any],
         pdf_content: bytes,
         profile: Optional[Dict[str, Any]] = None,
-        language: str = "en"
+        language: str = "en",
+        download_url: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Send Financial Clinic assessment report via email.
@@ -653,10 +658,18 @@ National Bonds Team
             else:
                 msg['Subject'] = "Your Financial Clinic Assessment Report"
             
+            # Store PDF for download if not provided with download_url
+            if download_url is None and pdf_content:
+                logger.info("💾 Storing PDF for download...")
+                # Generate unique identifier
+                recipient_hash = hashlib.md5(recipient_email.encode()).hexdigest()[:8]
+                download_url = self._store_pdf_for_download(pdf_content, recipient_hash)
+                logger.info(f"✅ PDF stored with download URL: {download_url}")
+            
             # Generate email content
             logger.info("📧 Generating HTML content...")
             html_content = self._generate_financial_clinic_email_html(
-                result, profile, language
+                result, profile, language, download_url
             )
             logger.info("📧 Generating text content...")
             text_content = self._generate_financial_clinic_email_text(
@@ -667,18 +680,6 @@ National Bonds Team
             # Attach HTML and text versions
             msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-            
-            # Attach PDF report
-            pdf_attachment = MIMEBase('application', 'pdf')
-            pdf_attachment.set_payload(pdf_content)
-            encoders.encode_base64(pdf_attachment)
-            
-            filename = f"financial_clinic_report_{datetime.now().strftime('%Y%m%d')}.pdf"
-            pdf_attachment.add_header(
-                'Content-Disposition',
-                f'attachment; filename="{filename}"'
-            )
-            msg.attach(pdf_attachment)
             
             # Send email
             delivery_result = self._send_email(msg)
@@ -703,9 +704,13 @@ National Bonds Team
         self,
         result: Dict[str, Any],
         profile: Optional[Dict[str, Any]],
-        language: str
+        language: str,
+        download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content for Financial Clinic report - Updated to match new design."""
+        # Get frontend URL for images
+        frontend_url = settings.base_url
+        
         # Handle case where result might be a string (shouldn't happen but defensive programming)
         if isinstance(result, str):
             import json
@@ -824,6 +829,7 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
+            <img src="{frontend_url}/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
             <h1>إليك درجة صحتك المالية!</h1>
             <p>هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم</p>
         </div>
@@ -872,6 +878,10 @@ National Bonds Team
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
+                <div style="margin-bottom: 20px;">
+                    {f'<a href="{download_url}" class="cta-button" style="background: #1f2937; margin: 5px; text-decoration: none;" download="financial_clinic_report.pdf">📄 تحميل التقرير المفصل</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer;" title="تحقق من مرفقات بريدك الإلكتروني لتحميل تقرير PDF">📄 تحميل التقرير المفصل</a>'}
+                    {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 تقريرك المفصل بصيغة PDF مرفق بهذا البريد الإلكتروني. يرجى التحقق من مرفقات بريدك الإلكتروني لتحميله.</p>'}
+                </div>
                 <a href="https://www.nationalbonds.ae/ar/contact-us" class="cta-button">احجز استشارة مجانية</a>
                 <a href="https://nationalbonds.onelink.me/NAu3/9m8huddj" class="cta-button">ابدأ الادخار مع السندات الوطنية</a>
             </div>
@@ -931,10 +941,21 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <h1>Here's your Financial Health Score!</h1>
-            <p>This is your snapshot, a clear view of how healthy your finances are today.</p>
+            <img src="{frontend_url}/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
+            
         </div>
-        
+        <div>
+<span> Dear {profile.get('name', 'Valued Customer') if profile else 'Valued Customer'}</span>
+</div>
+<div>
+<span> Congratulations you’ve just completed your Financial Checkup!</span>
+<div>
+<span> Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.</span>
+</div>
+
+<div>
+<span>Inside your report, you’ll find:</span>
+        </div>
         <div class="score-display">
             <div class="score">{round(score)}%</div>
             <div class="progress-bar">
@@ -979,17 +1000,45 @@ National Bonds Team
             </div>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="https://www.nationalbonds.ae/en/contact-us" class="cta-button">BOOK A FREE CONSULTATION</a>
-                <a href="https://nationalbonds.onelink.me/NAu3/9m8huddj" class="cta-button">START SAVING WITH NATIONAL BONDS</a>
+                <div style="margin-bottom: 20px;">
+                    {f'<a href="{download_url}" class="cta-button" style="background: #3FAB4C; margin: 5px; text-decoration: none; color:white;" download="financial_clinic_report.pdf">DOWNLOAD DETAILED REPORT</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer;" title="Check your email attachments to download the PDF report">📄 DOWNLOAD DETAILED REPORT</a>'}
+                    {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 Your detailed PDF report is attached to this email. Please check your email attachments to download it.</p>'}
+                </div>
+                <div>
+
+                <span>Your Personalized Financial Path</span>
+                </div>
+                <div>
+               <span> Based on your score, we’ve selected products tailored to your goals and current financial stage:</span>
+               </div>
             </div>
             
-            <p style="text-align: center; color: #6b7280;"><strong>Remember:</strong> Improving your financial health is a journey that requires patience and persistence. We're with you every step of the way!</p>
         </div>
         
-        <div class="footer">
-            <p style="margin: 5px 0; color: #6b7280;">This report is for informational purposes only</p>
-            <p style="margin: 5px 0; font-weight: bold; color: #374151;">National Bonds</p>
-            <p style="margin: 5px 0; color: #6b7280;">www.nationalbonds.ae</p>
+        <div class="footer" style="background:#fff; border-top:1px solid #e5e7eb; padding:30px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <img src="{frontend_url}/homepage/logos/nbc-logo2-02-1.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
+                <div style="font-size:18px; font-weight:600; color:#374151;"> NATIONAL BONDS </div>
+            </div>
+            <div style="text-align:center; flex:1; min-width:220px;">
+                <div style="display:flex; justify-content:center; gap:18px; margin-bottom:8px;">
+                    <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="height:28px;" />
+                    <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="height:28px;" />
+                    <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="height:28px;" />
+                    <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="height:28px;" />
+                </div>
+                <div style="font-size:12px; color:#6b7280;">STAY CONNECTED</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; min-width:180px;">
+                <div style="display:flex; gap:24px; margin-bottom:8px;">
+                    <img src="{frontend_url}/homepage/images/Vector.png" alt="Download App" style="height:28px;" />
+                    <img src="{frontend_url}/homepage/images/Vector2.png" alt="Branches" style="height:28px;" />
+                </div>
+                <div style="display:flex; gap:24px;">
+                    <span style="font-size:12px; color:#6b7280;">DOWNLOAD OUR APP</span>
+                    <span style="font-size:12px; color:#6b7280;">OUR BRANCHES</span>
+                </div>
+            </div>
         </div>
     </div>
 </body>
@@ -1061,6 +1110,33 @@ Next Steps:
             'at_risk': '#991b1b'     # Dark Red
         }
         return color_map.get(status_level.lower(), '#6b7280')  # Gray as default
+    
+    def _store_pdf_for_download(self, pdf_content: bytes, identifier: str) -> str:
+        """Store PDF file in downloads directory and return download URL."""
+        import os
+        import hashlib
+        from datetime import datetime
+        
+        # Create downloads directory if it doesn't exist
+        downloads_dir = "/home/clustox/Desktop/uae-financial-backend/uae-financial-backend/downloads"
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        # Generate unique token for file
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        token = hashlib.md5(f"{identifier}_{timestamp}".encode()).hexdigest()[:12]
+        
+        # Save PDF file
+        filename = f"{token}_financial_clinic_report.pdf"
+        file_path = os.path.join(downloads_dir, filename)
+        
+        with open(file_path, 'wb') as f:
+            f.write(pdf_content)
+        
+        # Generate download URL
+        base_url = settings.api_base_url
+        download_url = f"{base_url}/api/v1/reports/download-public/{token}"
+        
+        return download_url
     
     async def send_otp_email(
         self,
@@ -1199,104 +1275,214 @@ If you didn't request this code, please ignore this email."""
         frontend_url = settings.base_url
         
         if language == "ar":
+            # Generate individual digit boxes for Arabic
+            otp_digits_html = ""
+            for digit in otp_code:
+                otp_digits_html += f'''
+                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                    {digit}
+                </div>'''
+            
             return f"""
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رمز التحقق</title>
+    <title>رمز التحقق الخاص بك - صكوك الوطنية</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ margin: 0; padding: 0; font-family: "Segoe UI", "Arial", sans-serif; line-height: 1.8; color: #505d68; background-color: #f5f5f5; direction: rtl; }}
+        .email-wrapper {{ width: 100%; background-color: #f5f5f5; padding: 40px 0; }}
+        .email-container {{ width: 50%; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }}
+        .header {{ background-color: #ffffff; padding: 30px 40px 20px 40px; }}
+        .content {{ padding: 40px; }}
+        .footer {{ background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; border-top: 1px solid #f0f0f0; }}
+        @media only screen and (max-width: 600px) {{
+            .email-container {{ width: 95%; }}
+            .content {{ padding: 30px 20px; }}
+            .header {{ padding: 20px; }}
+            .footer {{ flex-direction: column; gap: 20px; }}
+        }}
+    </style>
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{frontend_url}/homepage/icons/logo.svg" 
-                 alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px; text-align: center;">
-            <h2 style="color: #437749; margin-bottom: 20px;">رمز التحقق الخاص بك</h2>
-            
-            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
-                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
-                    {otp_code}
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header" style="width: 100%; display: flex; justify-content: center;">
+                <div class="logo">
+                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
-            
-            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">ينتهي خلال 5 دقائق</p>
-            <p style="color: #666; margin: 20px 0;">لا تشارك هذا الرمز مع أي شخص.</p>
-            
-            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404; font-size: 14px;">
-                    إذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
-                </p>
+
+            <!-- Content -->
+            <div class="content">
+                <div style="font-size: 16px; color: #505d68; margin-bottom: 20px; font-weight: 400;">أهلاً وسهلاً،</div>
+
+                <div style="font-size: 15px; color: #505d68; margin-bottom: 30px; line-height: 1.8;">
+                    شكراً لك على استخدام فحص الصحة المالية من السندات الوطنية. للتحقق من عنوان بريدك الإلكتروني وتأمين حسابك، يرجى استخدام رمز التحقق أدناه:
+                </div>
+
+                <!-- Verification Code -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">رمز التحقق</div>
+                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                        {otp_digits_html}
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; color: #6b7280; margin-top: 30px; line-height: 1.8;">
+                    أدخل هذا الرمز في التطبيق لإكمال التحقق. إذا لم تطلب هذا الرمز، يمكنك تجاهل هذا البريد الإلكتروني بأمان.
+                </div>
             </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
-                 alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
-            </p>
+
+            <!-- Footer -->
+            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
+                <div class="footer-logo">
+                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                </div>
+
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">ابق على تواصل</div>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 30px; flex: 0 0 auto;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">حمل تطبيقنا</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">فروعنا</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
 </html>
 """
         else:
+            # Generate individual digit boxes for English
+            otp_digits_html = ""
+            for digit in otp_code:
+                otp_digits_html += f'''
+                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                    {digit}
+                </div>'''
+            
             return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Code</title>
+    <title>Your Verification Code - National Bonds</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif; line-height: 1.6; color: #505d68; background-color: #f5f5f5; }}
+        .email-wrapper {{ width: 100%; background-color: #f5f5f5; padding: 40px 0; }}
+        .email-container {{ width: 50%; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }}
+        .header {{ background-color: #ffffff; padding: 30px 40px 20px 40px; }}
+        .content {{ padding: 40px; width: 100%; }}
+        .footer {{ background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; border-top: 1px solid #f0f0f0; }}
+        @media only screen and (max-width: 600px) {{
+            .email-container {{ width: 95%; }}
+            .content {{ padding: 30px 20px; }}
+            .header {{ padding: 20px; }}
+            .footer {{ flex-direction: column; gap: 20px; }}
+        }}
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{frontend_url}/homepage/icons/logo.svg" 
-                 alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px; text-align: center;">
-            <h2 style="color: #437749; margin-bottom: 20px;">Your Verification Code</h2>
-            
-            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
-                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
-                    {otp_code}
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header" style="width: 100%; display: flex; justify-content: center;">
+                <div class="logo">
+                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
-            
-            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">Expires in 5 minutes</p>
-            <p style="color: #666; margin: 20px 0;">Never share this code with anyone.</p>
-            
-            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404; font-size: 14px;">
-                    If you didn't request this code, please ignore this email.
-                </p>
+
+            <!-- Content -->
+            <div class="content">
+                <div style="font-size: 16px; color: #505d68; margin-bottom: 20px; font-weight: 400;">Hello,</div>
+
+                <div style="font-size: 15px; color: #505d68; margin-bottom: 30px; line-height: 1.6;">
+                    Thank you for using the National Bonds Financial Health Check. To verify your email address and secure your account, please use the verification code below:
+                </div>
+
+                <!-- Verification Code -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">Verification Code</div>
+                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                        {otp_digits_html}
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; color: #6b7280; margin-top: 30px; line-height: 1.6;">
+                    Enter this code in the application to complete your verification. If you didn't request this code, you can safely ignore this email.
+                </div>
             </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
-                 alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} National Bonds. All rights reserved.
-            </p>
+
+            <!-- Footer -->
+            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
+                <div class="footer-logo">
+                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                </div>
+
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">STAY CONNECTED</div>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 30px; flex: 0 0 auto;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">DOWNLOAD OUR APP</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">OUR BRANCHES</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
