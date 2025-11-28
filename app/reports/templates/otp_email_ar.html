@@ -37,7 +37,7 @@
         padding: 30px 40px 20px 40px;
       }
       .logo {
-        text-align: right;
+        text-align: center;
       }
       .logo-text {
         font-size: 24px;
@@ -229,12 +229,47 @@
           </div>
 
           <!-- Verification Code -->
-          <div class="verification-section" style="text-align: center; margin: 40px 0;">
-            <div class="verification-label" style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">رمز التحقق</div>
-            <div class="otp-boxes" style="text-align: center; margin: 0 auto; width: 100%;">
+          <div
+            class="verification-section"
+            style="text-align: center; margin: 40px 0"
+          >
+            <div
+              class="verification-label"
+              style="
+                font-size: 14px;
+                color: #6b7280;
+                margin-bottom: 20px;
+                font-weight: 500;
+              "
+            >
+              رمز التحقق
+            </div>
+            <div
+              class="otp-boxes"
+              style="text-align: center; margin: 0 auto; width: 100%"
+            >
               {% set otp_digits = otp_code|string %} {% for digit in otp_digits
               %}
-              <div class="otp-box" style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">{{ digit }}</div>
+              <div
+                class="otp-box"
+                style="
+                  display: inline-block;
+                  width: 60px;
+                  height: 70px;
+                  border: 2px solid #437749;
+                  border-radius: 8px;
+                  font-size: 32px;
+                  font-weight: 600;
+                  color: #1a1a1a;
+                  background-color: #ffffff;
+                  text-align: center;
+                  line-height: 66px;
+                  margin: 0 4px;
+                  vertical-align: top;
+                "
+              >
+                {{ digit }}
+              </div>
               {% endfor %}
             </div>
           </div>
