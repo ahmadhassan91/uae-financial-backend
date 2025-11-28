@@ -1199,104 +1199,214 @@ If you didn't request this code, please ignore this email."""
         frontend_url = settings.base_url
         
         if language == "ar":
+            # Generate individual digit boxes for Arabic
+            otp_digits_html = ""
+            for digit in otp_code:
+                otp_digits_html += f'''
+                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                    {digit}
+                </div>'''
+            
             return f"""
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رمز التحقق</title>
+    <title>رمز التحقق الخاص بك - صكوك الوطنية</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ margin: 0; padding: 0; font-family: "Segoe UI", "Arial", sans-serif; line-height: 1.8; color: #505d68; background-color: #f5f5f5; direction: rtl; }}
+        .email-wrapper {{ width: 100%; background-color: #f5f5f5; padding: 40px 0; }}
+        .email-container {{ width: 50%; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }}
+        .header {{ background-color: #ffffff; padding: 30px 40px 20px 40px; }}
+        .content {{ padding: 40px; }}
+        .footer {{ background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; border-top: 1px solid #f0f0f0; }}
+        @media only screen and (max-width: 600px) {{
+            .email-container {{ width: 95%; }}
+            .content {{ padding: 30px 20px; }}
+            .header {{ padding: 20px; }}
+            .footer {{ flex-direction: column; gap: 20px; }}
+        }}
+    </style>
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{frontend_url}/homepage/icons/logo.svg" 
-                 alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px; text-align: center;">
-            <h2 style="color: #437749; margin-bottom: 20px;">رمز التحقق الخاص بك</h2>
-            
-            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
-                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
-                    {otp_code}
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header" style="width: 100%; display: flex; justify-content: center;">
+                <div class="logo">
+                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
-            
-            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">ينتهي خلال 5 دقائق</p>
-            <p style="color: #666; margin: 20px 0;">لا تشارك هذا الرمز مع أي شخص.</p>
-            
-            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404; font-size: 14px;">
-                    إذا لم تطلب هذا الرمز، يرجى تجاهل هذا البريد الإلكتروني.
-                </p>
+
+            <!-- Content -->
+            <div class="content">
+                <div style="font-size: 16px; color: #505d68; margin-bottom: 20px; font-weight: 400;">أهلاً وسهلاً،</div>
+
+                <div style="font-size: 15px; color: #505d68; margin-bottom: 30px; line-height: 1.8;">
+                    شكراً لك على استخدام فحص الصحة المالية من السندات الوطنية. للتحقق من عنوان بريدك الإلكتروني وتأمين حسابك، يرجى استخدام رمز التحقق أدناه:
+                </div>
+
+                <!-- Verification Code -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">رمز التحقق</div>
+                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                        {otp_digits_html}
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; color: #6b7280; margin-top: 30px; line-height: 1.8;">
+                    أدخل هذا الرمز في التطبيق لإكمال التحقق. إذا لم تطلب هذا الرمز، يمكنك تجاهل هذا البريد الإلكتروني بأمان.
+                </div>
             </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
-                 alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
-            </p>
+
+            <!-- Footer -->
+            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
+                <div class="footer-logo">
+                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                </div>
+
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">ابق على تواصل</div>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 30px; flex: 0 0 auto;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">حمل تطبيقنا</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">فروعنا</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
 </html>
 """
         else:
+            # Generate individual digit boxes for English
+            otp_digits_html = ""
+            for digit in otp_code:
+                otp_digits_html += f'''
+                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                    {digit}
+                </div>'''
+            
             return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verification Code</title>
+    <title>Your Verification Code - National Bonds</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif; line-height: 1.6; color: #505d68; background-color: #f5f5f5; }}
+        .email-wrapper {{ width: 100%; background-color: #f5f5f5; padding: 40px 0; }}
+        .email-container {{ width: 50%; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }}
+        .header {{ background-color: #ffffff; padding: 30px 40px 20px 40px; }}
+        .content {{ padding: 40px; width: 100%; }}
+        .footer {{ background-color: #ffffff; display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; border-top: 1px solid #f0f0f0; }}
+        @media only screen and (max-width: 600px) {{
+            .email-container {{ width: 95%; }}
+            .content {{ padding: 30px 20px; }}
+            .header {{ padding: 20px; }}
+            .footer {{ flex-direction: column; gap: 20px; }}
+        }}
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{frontend_url}/homepage/icons/logo.svg" 
-                 alt="Financial Clinic" 
-                 style="height: 50px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px; text-align: center;">
-            <h2 style="color: #437749; margin-bottom: 20px;">Your Verification Code</h2>
-            
-            <div style="background: #f8fbfd; padding: 30px; text-align: center; border: 2px solid #437749; border-radius: 12px; margin: 20px 0;">
-                <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: #437749; margin: 10px 0;">
-                    {otp_code}
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header" style="width: 100%; display: flex; justify-content: center;">
+                <div class="logo">
+                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
-            
-            <p style="color: #dc3545; margin: 15px 0; font-weight: 600;">Expires in 5 minutes</p>
-            <p style="color: #666; margin: 20px 0;">Never share this code with anyone.</p>
-            
-            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin: 20px 0;">
-                <p style="margin: 0; color: #856404; font-size: 14px;">
-                    If you didn't request this code, please ignore this email.
-                </p>
+
+            <!-- Content -->
+            <div class="content">
+                <div style="font-size: 16px; color: #505d68; margin-bottom: 20px; font-weight: 400;">Hello,</div>
+
+                <div style="font-size: 15px; color: #505d68; margin-bottom: 30px; line-height: 1.6;">
+                    Thank you for using the National Bonds Financial Health Check. To verify your email address and secure your account, please use the verification code below:
+                </div>
+
+                <!-- Verification Code -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">Verification Code</div>
+                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                        {otp_digits_html}
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; color: #6b7280; margin-top: 30px; line-height: 1.6;">
+                    Enter this code in the application to complete your verification. If you didn't request this code, you can safely ignore this email.
+                </div>
             </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" 
-                 alt="National Bonds" 
-                 style="height: 40px; margin-bottom: 10px;">
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} National Bonds. All rights reserved.
-            </p>
+
+            <!-- Footer -->
+            <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
+                <div class="footer-logo">
+                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                </div>
+
+                <div style="flex: 0 0 auto; text-align: center;">
+                    <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">STAY CONNECTED</div>
+                    <div style="display: flex; justify-content: center; gap: 15px;">
+                        <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 30px; flex: 0 0 auto;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">DOWNLOAD OUR APP</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">OUR BRANCHES</div>
+                        <div style="margin-top: 10px;">
+                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
