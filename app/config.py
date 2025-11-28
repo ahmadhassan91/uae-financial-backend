@@ -69,6 +69,8 @@ class Settings(BaseSettings):
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
     PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
+    BACKEND_BASE_URL: str = "http://localhost:8000"  # Backend API URL
+    PRODUCTION_BACKEND_URL: str = "https://uae-financial-backend.herokuapp.com"  # Production backend URL
     
     @property
     def base_url(self) -> str:
@@ -76,6 +78,13 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return self.PRODUCTION_BASE_URL
         return self.FRONTEND_BASE_URL
+    
+    @property
+    def api_base_url(self) -> str:
+        """Get the appropriate API base URL for backend endpoints."""
+        if self.ENVIRONMENT == "production":
+            return self.PRODUCTION_BACKEND_URL
+        return self.BACKEND_BASE_URL
     
     class Config:
         env_file = ".env"
