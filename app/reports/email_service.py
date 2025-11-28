@@ -976,6 +976,37 @@ National Bonds Team
             <div>
             <span style="font-size:16px; font-weight:600; color:#3D4D57;">Based on your score, we’ve selected products tailored to your goals and current financial stage:</span>
             </div>
+            <div>
+          <!-- Add this block where you want the product cards to appear in your email template -->
+<div style="display: flex; justify-content: center; gap: 24px; margin: 40px 0; flex-wrap: wrap;">
+    <!-- Saving Bonds Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms.</div>
+        </div>
+        <img src="/homepage/images/imagemail5.png" alt="Saving Bonds" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
+    <!-- Second Salary Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive anticipated returns included.</div>
+        </div>
+        <img src="/homepage/images/imagemail6.png" alt="Second Salary" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
+    <!-- My Million Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLION</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
+        </div>
+        <img src="/homepage/images/imagemail7.png" alt="My Million" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
+</div>
         <div class="footer" style="background:#fff; border-top:1px solid #e5e7eb; padding:30px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:16px;">
                 <img src="/homepage/logos/nbc-logo2-02-1.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
@@ -983,10 +1014,18 @@ National Bonds Team
             </div>
             <div style="text-align:center; flex:1; min-width:220px;">
                 <div style="display:flex; justify-content:center; gap:18px; margin-bottom:8px;">
-                    <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="height:28px;" />
-                    <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="height:28px;" />
-                    <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="height:28px;" />
-                    <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="height:28px;" />
+                    <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
                 </div>
                 <div style="font-size:12px; color:#6b7280;">STAY CONNECTED</div>
             </div>
