@@ -75,24 +75,24 @@
         font-weight: 500;
       }
       .otp-boxes {
+        text-align: center;
+        margin: 0 auto;
         width: 100%;
-        display: flex;
-        justify-content: center !important;
       }
       .otp-box {
+        display: inline-block;
         width: 60px;
         height: 70px;
         border: 2px solid #437749;
         border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         font-size: 32px;
         font-weight: 600;
         color: #1a1a1a;
         background-color: #ffffff;
         text-align: center;
-        line-height: 70px;
+        line-height: 66px;
+        margin: 0 4px;
+        vertical-align: top;
       }
       .instruction {
         font-size: 14px;
@@ -197,10 +197,11 @@
           width: 50px;
           height: 60px;
           font-size: 28px;
+          margin: 0 2px;
+          line-height: 56px;
         }
         .otp-boxes {
-          align-items: center;
-          justify-content: center;
+          text-align: center;
         }
       }
     </style>
@@ -233,12 +234,12 @@
           </div>
 
           <!-- Verification Code -->
-          <div class="verification-section">
-            <div class="verification-label">Verification Code</div>
-            <div class="otp-boxes">
+          <div class="verification-section" style="text-align: center; margin: 40px 0;">
+            <div class="verification-label" style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">Verification Code</div>
+            <div class="otp-boxes" style="text-align: center; margin: 0 auto; width: 100%;">
               {% set otp_digits = otp_code|string %} {% for digit in otp_digits
               %}
-              <div class="otp-box">{{ digit }}</div>
+              <div class="otp-box" style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">{{ digit }}</div>
               {% endfor %}
             </div>
           </div>
