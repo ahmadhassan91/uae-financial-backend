@@ -1,211 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Your Verification Code - National Bonds</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f4f4f4;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-        }
-        .header {
-            background: linear-gradient(135deg, #00529B 0%, #003d73 100%);
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            color: #ffffff;
-            font-size: 28px;
-            font-weight: 600;
-        }
-        .header p {
-            margin: 10px 0 0 0;
-            color: #e0e0e0;
-            font-size: 16px;
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Helvetica", "Arial", sans-serif;
+        line-height: 1.6;
+        color: #505d68;
+        background-color: #f5f5f5;
+      }
+      .email-wrapper {
+        width: 100%;
+        background-color: #f5f5f5;
+        padding: 40px 0;
+      }
+      .email-container {
+        width: 50%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background-color: #ffffff;
+        padding: 30px 40px 20px 40px;
+      }
+      .logo {
+        text-align: left;
+      }
+      .logo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        letter-spacing: -0.5px;
+      }
+      .logo-text .highlight {
+        color: #437749;
+      }
+      .content {
+        padding: 40px;
+        width: 100%;
+      }
+      .greeting {
+        font-size: 16px;
+        color: #505d68;
+        margin-bottom: 20px;
+        font-weight: 400;
+      }
+      .message {
+        font-size: 15px;
+        color: #505d68;
+        margin-bottom: 30px;
+        line-height: 1.6;
+      }
+      .verification-section {
+        text-align: center;
+        margin: 40px 0;
+      }
+      .verification-label {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 20px;
+        font-weight: 500;
+      }
+      .otp-boxes {
+        width: 100%;
+        display: flex;
+        justify-content: center !important;
+      }
+      .otp-box {
+        width: 60px;
+        height: 70px;
+        border: 2px solid #437749;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 600;
+        color: #1a1a1a;
+        background-color: #ffffff;
+        text-align: center;
+        line-height: 70px;
+      }
+      .instruction {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 30px;
+        line-height: 1.6;
+      }
+      .footer {
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 30px 40px;
+        border-top: 1px solid #f0f0f0;
+      }
+      .footer-logo {
+        flex: 0 0 auto;
+      }
+      .footer-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 10px;
+      }
+      .footer-brand-logo {
+        height: 40px;
+      }
+      .footer-tagline {
+        font-size: 12px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .social-links {
+        text-align: center;
+        flex: 0 0 auto;
+      }
+      .social-title {
+        font-size: 11px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+      }
+      .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+      .social-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 2px solid #b8985f;
+        border-bottom-color: transparent;
+        border-bottom-width: 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s;
+        background-color: transparent;
+        padding: 8px;
+      }
+      .social-icon img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+      }
+      .social-icon:hover {
+        transform: translateY(-2px);
+      }
+      .app-links {
+        text-align: center;
+        display: flex;
+        gap: 30px;
+        flex: 0 0 auto;
+      }
+      .app-link-title {
+        font-size: 11px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+      }
+      .branches-link {
+        text-align: center;
+        margin-top: 20px;
+      }
+      @media only screen and (max-width: 600px) {
+        .email-wrapper {
+          padding: 20px 0;
         }
         .content {
-            padding: 40px 30px;
+          padding: 30px 20px;
         }
-        .greeting {
-            font-size: 18px;
-            color: #333333;
-            margin-bottom: 20px;
-        }
-        .message {
-            font-size: 16px;
-            color: #555555;
-            margin-bottom: 30px;
-            line-height: 1.8;
+        .header {
+          padding: 20px;
         }
         .otp-box {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border: 2px solid #00529B;
-            border-radius: 12px;
-            padding: 30px;
-            text-align: center;
-            margin: 30px 0;
+          width: 50px;
+          height: 60px;
+          font-size: 28px;
         }
-        .otp-label {
-            font-size: 14px;
-            color: #666666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            font-weight: 600;
+        .otp-boxes {
+          align-items: center;
+          justify-content: center;
         }
-        .otp-code {
-            font-size: 42px;
-            font-weight: bold;
-            letter-spacing: 12px;
-            color: #00529B;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 10px 0;
-        }
-        .otp-expiry {
-            font-size: 14px;
-            color: #dc3545;
-            margin-top: 15px;
-            font-weight: 600;
-        }
-        .warning-box {
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 20px;
-            margin: 30px 0;
-            border-radius: 4px;
-        }
-        .warning-box h3 {
-            margin: 0 0 10px 0;
-            color: #856404;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-        }
-        .warning-box ul {
-            margin: 10px 0 0 0;
-            padding-left: 20px;
-            color: #856404;
-        }
-        .warning-box li {
-            margin: 8px 0;
-            font-size: 14px;
-        }
-        .help-section {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-top: 30px;
-            text-align: center;
-        }
-        .help-section p {
-            margin: 0 0 10px 0;
-            color: #666666;
-            font-size: 14px;
-        }
-        .help-link {
-            color: #00529B;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .help-link:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            background-color: #f8f9fa;
-            padding: 30px 20px;
-            text-align: center;
-            border-top: 1px solid #e0e0e0;
-        }
-        .footer p {
-            margin: 5px 0;
-            font-size: 13px;
-            color: #666666;
-        }
-        .footer a {
-            color: #00529B;
-            text-decoration: none;
-        }
-        @media only screen and (max-width: 600px) {
-            .content {
-                padding: 30px 20px;
-            }
-            .otp-code {
-                font-size: 36px;
-                letter-spacing: 8px;
-            }
-        }
+      }
     </style>
-</head>
-<body>
-    <div class="email-container">
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="email-container">
         <!-- Header -->
-        <div class="header">
-            <h1>National Bonds</h1>
-            <p>Financial Health Check</p>
+        <div
+          class="header"
+          style="width: 100%; display: flex; justify-content: center"
+        >
+          <div class="logo">
+            <img
+              src="https://financial-clinic.netlify.app/homepage/icons/logo.svg"
+              alt="Financial Clinic"
+              style="height: 40px"
+            />
+          </div>
         </div>
 
         <!-- Content -->
         <div class="content">
-            <div class="greeting">
-                Hello,
-            </div>
+          <div class="greeting">Hello,</div>
 
-            <div class="message">
-                Thank you for using the National Bonds Financial Health Check. To verify your email address and secure your account, please use the verification code below:
-            </div>
+          <div class="message">
+            Thank you for using the National Bonds Financial Health Check. To
+            verify your email address and secure your account, please use the
+            verification code below:
+          </div>
 
-            <!-- OTP Box -->
-            <div class="otp-box">
-                <div class="otp-label">Your Verification Code</div>
-                <div class="otp-code">{{ otp_code }}</div>
-                <div class="otp-expiry">⏱ This code expires in 5 minutes</div>
+          <!-- Verification Code -->
+          <div class="verification-section">
+            <div class="verification-label">Verification Code</div>
+            <div class="otp-boxes">
+              {% set otp_digits = otp_code|string %} {% for digit in otp_digits
+              %}
+              <div class="otp-box">{{ digit }}</div>
+              {% endfor %}
             </div>
+          </div>
 
-            <div class="message">
-                Enter this code in the application to complete your verification. If you didn't request this code, you can safely ignore this email.
-            </div>
-
-            <!-- Security Warning -->
-            <div class="warning-box">
-                <h3>⚠️ Security Notice</h3>
-                <ul>
-                    <li><strong>Never share this code</strong> with anyone, including National Bonds staff</li>
-                    <li>National Bonds will <strong>never</strong> ask you for this code via phone, email, or text</li>
-                    <li>If you didn't request this code, someone may be trying to access your account</li>
-                    <li>This code can only be used once and expires in 5 minutes</li>
-                </ul>
-            </div>
-
-            <!-- Help Section -->
-            <div class="help-section">
-                <p>Need help or have questions?</p>
-                <p>Contact us at <a href="mailto:support@nationalbonds.ae" class="help-link">support@nationalbonds.ae</a></p>
-            </div>
+          <div class="instruction">
+            Enter this code in the application to complete your verification. If
+            you didn't request this code, you can safely ignore this email.
+          </div>
         </div>
 
         <!-- Footer -->
-        <div class="footer">
-            <p><strong>National Bonds Corporation PJSC</strong></p>
-            <p>P.O. Box 5209, Dubai, United Arab Emirates</p>
-            <p>
-                <a href="https://www.nationalbonds.ae">www.nationalbonds.ae</a> | 
-                <a href="tel:600522265">600 522 265</a>
-            </p>
-            <p style="margin-top: 15px; font-size: 12px; color: #999999;">
-                This is an automated message. Please do not reply to this email.
-            </p>
+        <div
+          class="footer"
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 40px;
+          "
+        >
+          <div class="footer-logo">
+            <img
+              src="https://financial-clinic.netlify.app/homepage/images/nbc-logo2-02-1.png"
+              alt="National Bonds"
+              style="max-width: 180px; height: auto"
+            />
+          </div>
+
+          <div class="social-links" style="flex: 0 0 auto">
+            <div class="social-title">STAY CONNECTED</div>
+            <div class="social-icons">
+              <a
+                href="https://www.facebook.com/NationalBondsUAE"
+                class="social-icon"
+              >
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/grommet-icons_facebook-option.png"
+                  alt="Facebook"
+                />
+              </a>
+              <a
+                href="https://www.instagram.com/nationalbondsuae"
+                class="social-icon"
+              >
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/skill-icons_instagram.png"
+                  alt="Instagram"
+                />
+              </a>
+              <a
+                href="https://www.linkedin.com/company/national-bonds-corporation"
+                class="social-icon"
+              >
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/ri_linkedin-fill.png"
+                  alt="LinkedIn"
+                />
+              </a>
+              <a
+                href="https://www.youtube.com/user/NationalBondsUAE"
+                class="social-icon"
+              >
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/uil_youtube.png"
+                  alt="YouTube"
+                />
+              </a>
+            </div>
+          </div>
+
+          <div
+            class="app-links"
+            style="display: flex; gap: 30px; flex: 0 0 auto"
+          >
+            <div>
+              <div class="app-link-title">DOWNLOAD OUR APP</div>
+              <div style="margin-top: 10px">
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/Vector.png"
+                  alt="Download"
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    filter: brightness(0) saturate(100%) invert(71%) sepia(47%)
+                      saturate(414%) hue-rotate(358deg) brightness(92%)
+                      contrast(86%);
+                  "
+                />
+              </div>
+            </div>
+            <div>
+              <div class="app-link-title">OUR BRANCHES</div>
+              <div style="margin-top: 10px">
+                <img
+                  src="https://financial-clinic.netlify.app/homepage/images/Vector2.png"
+                  alt="Location"
+                  style="
+                    width: 24px;
+                    height: 24px;
+                    filter: brightness(0) saturate(100%) invert(71%) sepia(47%)
+                      saturate(414%) hue-rotate(358deg) brightness(92%)
+                      contrast(86%);
+                  "
+                />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
