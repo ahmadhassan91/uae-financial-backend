@@ -451,7 +451,7 @@ National Bonds Team
                 content = self._get_reminder_content_en(customer_name, resume_link)
             
             # Replace template placeholders with actual URLs
-            content = content.replace('{{frontend_url}}', frontend_url)
+            content = content.replace('{}', frontend_url)
             
             msg.attach(MIMEText(content, 'html', 'utf-8'))
             
@@ -501,7 +501,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{{frontend_url}}/homepage/icons/logo.svg" 
+            <img src="/homepage/icons/logo.svg" 
                  alt="Financial Clinic" 
                  style="height: 50px; max-width: 200px;">
         </div>
@@ -529,7 +529,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{{frontend_url}}/homepage/images/nbc-logo2-02-1.png" 
+            <img src="/homepage/images/nbc-logo2-02-1.png" 
                  alt="National Bonds" 
                  style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
@@ -571,7 +571,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{{frontend_url}}/homepage/icons/logo.svg" 
+            <img src="/homepage/icons/logo.svg" 
                  alt="Financial Clinic" 
                  style="height: 50px; max-width: 200px;">
         </div>
@@ -599,7 +599,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{{frontend_url}}/homepage/images/nbc-logo2-02-1.png" 
+            <img src="/homepage/images/nbc-logo2-02-1.png" 
                  alt="National Bonds" 
                  style="height: 40px; margin-bottom: 10px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
@@ -829,7 +829,7 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <img src="{frontend_url}/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
+            <img src="/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
             <h1>إليك درجة صحتك المالية!</h1>
             <p>هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم</p>
         </div>
@@ -941,98 +941,98 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <img src="{frontend_url}/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
+            <img src="/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
             
         </div>
         <div>
-<span> Dear {profile.get('name', 'Valued Customer') if profile else 'Valued Customer'}</span>
+            <span style="font-size:18px; font-weight:700; color:#3D4D57;font-size:16px; font-weight:600; color:#3D4D57;">Dear {profile.get('name', 'Valued Customer') if profile else 'Valued Customer'}</span>
+        </div>
+        <div style="margin-top:18px;">
+            <span style="font-size:20px; font-weight:600; color:#3D4D57; display:block; margin-bottom:8px;">Congratulations you’ve just completed your Financial Checkup!</span>
+            <span style="font-size:16px; color:#3D4D57; font-weight:600;display:block; margin-bottom:8px;">Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.</span>
+            <span style="font-size:16px; color:#3D4D57; display:block;font-weight:600; margin-bottom:8px;">Inside your report, you’ll find:</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:left;">
+            <span style="font-size:16px; font-weight:700; color:#3D4D57;">Your Financial Health Score:</span>
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">a transparent breakdown of how you’re doing across key areas like savings, income, debt, and protection.</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:left;">
+            <span style="font-size:16px; font-weight:700; color:#3D4D57;">Personalized Recommendations:</span>
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">simple, actionable ways to improve your score and achieve your goals.</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:left;">
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">Take a few minutes to review your results, it’s the first step toward a stronger, more confident financial future.</span>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="margin-bottom: 20px; "font-size:16px; font-weight:600; color:#3D4D57;">
+                {f'<a href="{download_url}" class="cta-button" style="background: #3FAB4C; margin: 5px; text-decoration: none; color:white; font-weight:600;" download="financial_clinic_report.pdf">DOWNLOAD MY FINANCIAL HEALTH REPORT</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer; color:#1A237E; font-weight:600;" title="Check your email attachments to download the PDF report">📄 DOWNLOAD MY FINANCIAL HEALTH REPORT</a>'}
+                {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 Your detailed PDF report is attached to this email. Please check your email attachments to download it.</p>'}
+            </div>
+            
+        </div>
+        <div>
+          <span style="text-align:left; font-size:16px; font-weight:600; color:#3D4D57;">Your Personalized Financial Path</span>
+            </div>
+            <div>
+            <span style="font-size:16px; font-weight:600; color:#3D4D57;">Based on your score, we’ve selected products tailored to your goals and current financial stage:</span>
+            </div>
+            <div>
+          <!-- Add this block where you want the product cards to appear in your email template -->
+<div style="display: flex; justify-content: center; gap: 24px; margin: 40px 0; flex-wrap: wrap;">
+    <!-- Saving Bonds Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms.</div>
+        </div>
+        <img src="/homepage/images/imagemail5.png" alt="Saving Bonds" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
+    <!-- Second Salary Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive anticipated returns included.</div>
+        </div>
+        <img src="/homepage/images/imagemail6.png" alt="Second Salary" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
+    <!-- My Million Card -->
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; width: 220px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; display: flex; flex-direction: column;">
+        <div style="padding: 18px 16px 0 16px;">
+            <div style="font-size: 16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLION</div>
+            <div style="font-size: 14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
+        </div>
+        <img src="/homepage/images/imagemail7.png" alt="My Million" style="width:100%; height:120px; object-fit:cover; border-bottom:1px solid #e5e7eb;">
+        <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
+    </div>
 </div>
-<div>
-<span> Congratulations you’ve just completed your Financial Checkup!</span>
-<div>
-<span> Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.</span>
-</div>
-
-<div>
-<span>Inside your report, you’ll find:</span>
-        </div>
-        <div class="score-display">
-            <div class="score">{round(score)}%</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {score}%;"></div>
-            </div>
-        </div>
-        
-        <div class="content">
-            <div class="section-title">Understanding Your Score</div>
-            <div class="score-bands">
-                <div class="band band-red">
-                    <div class="band-range">1-29</div>
-                    <div class="band-label">At Risk</div>
-                    <div class="band-desc">Focus on building basic financial habits</div>
-                </div>
-                <div class="band band-orange">
-                    <div class="band-range">30-59</div>
-                    <div class="band-label">Needs Improvement</div>
-                    <div class="band-desc">Good foundation, room for growth</div>
-                </div>
-                <div class="band band-yellow">
-                    <div class="band-range">60-79</div>
-                    <div class="band-label">Good</div>
-                    <div class="band-desc">Strong financial health</div>
-                </div>
-                <div class="band band-green">
-                    <div class="band-range">80-100</div>
-                    <div class="band-label">Excellent</div>
-                    <div class="band-desc">Outstanding financial wellness</div>
-                </div>
-            </div>
-            
-            <div class="section-title">Financial Pillar Scores</div>
-            <div class="section-subtitle">Your performance across the 7 key areas of financial health</div>
-            {categories_html_en}
-            
-            <div class="section-title">Your Personalized Action Plan</div>
-            <div class="section-subtitle">Small changes make big differences. Here's how to strengthen your score.</div>
-            <div class="action-plan-box">
-                <div style="font-weight: 600; margin-bottom: 10px;">Recommendation Categories:</div>
-                <ul>{insights_html_en}</ul>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <div style="margin-bottom: 20px;">
-                    {f'<a href="{download_url}" class="cta-button" style="background: #3FAB4C; margin: 5px; text-decoration: none; color:white;" download="financial_clinic_report.pdf">DOWNLOAD DETAILED REPORT</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer;" title="Check your email attachments to download the PDF report">📄 DOWNLOAD DETAILED REPORT</a>'}
-                    {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 Your detailed PDF report is attached to this email. Please check your email attachments to download it.</p>'}
-                </div>
-                <div>
-
-                <span>Your Personalized Financial Path</span>
-                </div>
-                <div>
-               <span> Based on your score, we’ve selected products tailored to your goals and current financial stage:</span>
-               </div>
-            </div>
-            
-        </div>
-        
         <div class="footer" style="background:#fff; border-top:1px solid #e5e7eb; padding:30px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:16px;">
-                <img src="{frontend_url}/homepage/logos/nbc-logo2-02-1.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
+                <img src="/homepage/logos/nbc-logo2-02-1.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
                 <div style="font-size:18px; font-weight:600; color:#374151;"> NATIONAL BONDS </div>
             </div>
             <div style="text-align:center; flex:1; min-width:220px;">
                 <div style="display:flex; justify-content:center; gap:18px; margin-bottom:8px;">
-                    <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="height:28px;" />
-                    <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="height:28px;" />
-                    <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="height:28px;" />
-                    <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="height:28px;" />
+                    <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
+                        <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
+                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                        </a>
                 </div>
                 <div style="font-size:12px; color:#6b7280;">STAY CONNECTED</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; min-width:180px;">
                 <div style="display:flex; gap:24px; margin-bottom:8px;">
-                    <img src="{frontend_url}/homepage/images/Vector.png" alt="Download App" style="height:28px;" />
-                    <img src="{frontend_url}/homepage/images/Vector2.png" alt="Branches" style="height:28px;" />
+                    <img src="homepage/images/Vector.png" alt="Download App" style="height:28px;" />
+                    <img src="/homepage/images/Vector2.png" alt="Branches" style="height:28px;" />
                 </div>
                 <div style="display:flex; gap:24px;">
                     <span style="font-size:12px; color:#6b7280;">DOWNLOAD OUR APP</span>
@@ -1312,7 +1312,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
@@ -1340,23 +1340,23 @@ If you didn't request this code, please ignore this email."""
             <!-- Footer -->
             <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
                 <div class="footer-logo">
-                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                    <img src="/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
                 </div>
 
                 <div style="flex: 0 0 auto; text-align: center;">
                     <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">ابق على تواصل</div>
                     <div style="display: flex; justify-content: center; gap: 15px;">
                         <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                     </div>
                 </div>
@@ -1365,13 +1365,13 @@ If you didn't request this code, please ignore this email."""
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">حمل تطبيقنا</div>
                         <div style="margin-top: 10px;">
-                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">فروعنا</div>
                         <div style="margin-top: 10px;">
-                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                 </div>
@@ -1419,7 +1419,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="{frontend_url}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
@@ -1447,23 +1447,23 @@ If you didn't request this code, please ignore this email."""
             <!-- Footer -->
             <div class="footer" style="display: flex; justify-content: space-between; align-items: center; padding: 30px 40px;">
                 <div class="footer-logo">
-                    <img src="{frontend_url}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
+                    <img src="/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="max-width: 180px; height: auto;" />
                 </div>
 
                 <div style="flex: 0 0 auto; text-align: center;">
                     <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">STAY CONNECTED</div>
                     <div style="display: flex; justify-content: center; gap: 15px;">
                         <a href="https://www.facebook.com/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/grommet-icons_facebook-option.png" alt="Facebook" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.instagram.com/nationalbondsuae" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/skill-icons_instagram.png" alt="Instagram" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.linkedin.com/company/national-bonds-corporation" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/ri_linkedin-fill.png" alt="LinkedIn" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                         <a href="https://www.youtube.com/user/NationalBondsUAE" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #b8985f; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; background-color: transparent; padding: 8px;">
-                            <img src="{frontend_url}/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
+                            <img src="/homepage/images/uil_youtube.png" alt="YouTube" style="width: 24px; height: 24px; object-fit: contain;" />
                         </a>
                     </div>
                 </div>
@@ -1472,13 +1472,13 @@ If you didn't request this code, please ignore this email."""
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">DOWNLOAD OUR APP</div>
                         <div style="margin-top: 10px;">
-                            <img src="{frontend_url}/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="/homepage/images/Vector.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">OUR BRANCHES</div>
                         <div style="margin-top: 10px;">
-                            <img src="{frontend_url}/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="/homepage/images/Vector2.png" alt="Location" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                 </div>
