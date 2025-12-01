@@ -1,515 +1,523 @@
 <!DOCTYPE html>
-<html lang="{{ 'ar' if language == 'ar' else 'en' }}" dir="{{ 'rtl' if language == 'ar' else 'ltr' }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ 'تقرير الصحة المالية جاهز' if language == 'ar' else 'Your Financial Health Report is Ready' }}</title>
+<html
+  lang="{{ 'ar' if language == 'ar' else 'en' }}"
+  dir="{{ 'rtl' if language == 'ar' else 'ltr' }}"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {{ 'تقرير الصحة المالية جاهز' if language == 'ar' else 'Your Financial
+      Health Report is Ready' }}
+    </title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Poppins', Arial, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-        .email-container {
-            max-width: 720px;
-            margin: 0 auto;
-            background-color: #ffffff;
-        }
-        /* Hero Section */
-        .hero {
-            position: relative;
-            width: 100%;
-            height: 450px;
-            background-image: url('https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg?auto=compress&cs=tinysrgb&w=1260');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            align-items: center;
-            justify-content: {{ 'flex-start' if language == 'ar' else 'flex-end' }};
-            padding: 40px;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to {{ 'left' if language == 'ar' else 'right' }}, rgba(0,0,0,0.5), transparent);
-        }
-        .hero-title {
-            position: relative;
-            z-index: 1;
-            color: #ffffff;
-            font-size: 32px;
-            font-weight: bold;
-            text-align: {{ 'left' if language == 'ar' else 'right' }};
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            max-width: 400px;
-            line-height: 1.3;
-        }
-        /* Content Section */
-        .content {
-            padding: 40px;
-            color: #333333;
-        }
-        .greeting {
-            font-size: 16px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        .paragraph {
-            font-size: 16px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        .strong-text {
-            font-weight: 600;
-            color: #437749;
-        }
-        /* Score Display */
-        .score-box {
-            background: linear-gradient(135deg, #437749 0%, #3fab4c 100%);
-            border-radius: 12px;
-            padding: 30px;
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+      }
+      body {
+          font-family: 'Poppins', Arial, sans-serif;
+          background-color: #f5f5f5;
+          margin: 0;
+          padding: 0;
+      }
+      .email-container {
+          max-width: 720px;
+          margin: 0 auto;
+          background-color: #ffffff;
+      }
+      /* Hero Section */
+      .hero {
+          position: relative;
+          width: 100%;
+          height: 450px;
+          background-image: url('https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg?auto=compress&cs=tinysrgb&w=1260');
+          background-size: cover;
+          background-position: center;
+          display: flex;
+          align-items: center;
+          justify-content: {{ 'flex-start' if language == 'ar' else 'flex-end' }};
+          padding: 40px;
+      }
+      .hero::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(to {{ 'left' if language == 'ar' else 'right' }}, rgba(0,0,0,0.5), transparent);
+      }
+      .hero-title {
+          position: relative;
+          z-index: 1;
+          color: #ffffff;
+          font-size: 32px;
+          font-weight: bold;
+          text-align: {{ 'left' if language == 'ar' else 'right' }};
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+          max-width: 400px;
+          line-height: 1.3;
+      }
+      /* Content Section */
+      .content {
+          padding: 40px;
+          color: #333333;
+      }
+      .greeting {
+          font-size: 16px;
+          margin-bottom: 20px;
+          font-weight: 600;
+      }
+      .paragraph {
+          font-size: 16px;
+          line-height: 1.6;
+          margin-bottom: 20px;
+      }
+      .strong-text {
+          font-weight: 600;
+          color: #437749;
+      }
+      /* Score Display */
+      .score-box {
+          background: linear-gradient(135deg, #437749 0%, #3fab4c 100%);
+          border-radius: 12px;
+          padding: 30px;
+          text-align: center;
+          margin: 30px 0;
+          box-shadow: 0 4px 12px rgba(67, 119, 73, 0.2);
+      }
+      .score-number {
+          font-size: 72px;
+          font-weight: bold;
+          color: #ffffff;
+          line-height: 1;
+          margin-bottom: 10px;
+      }
+      .score-label {
+          font-size: 18px;
+          color: #ffffff;
+          opacity: 0.95;
+      }
+      /* CTA Button */
+      .cta-container {
+          text-align: center;
+          margin: 40px 0;
+      }
+      .cta-button {
+          display: inline-block;
+          background-color: #3fab4c;
+          color: #ffffff;
+          padding: 16px 40px;
+          text-decoration: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          box-shadow: 0 4px 12px rgba(63, 171, 76, 0.3);
+          transition: all 0.3s ease;
+      }
+      .cta-button:hover {
+          background-color: #437749;
+          box-shadow: 0 6px 16px rgba(67, 119, 73, 0.4);
+      }
+      /* Benefits List */
+      .benefits-list {
+          background-color: #f8fbfd;
+          border: 1px solid #bdcdd6;
+          border-radius: 8px;
+          padding: 24px;
+          margin: 30px 0;
+      }
+      .benefits-list h3 {
+          font-size: 18px;
+          color: #437749;
+          margin-bottom: 16px;
+      }
+      .benefits-list ul {
+          list-style: none;
+          padding: 0;
+      }
+      .benefits-list li {
+          font-size: 15px;
+          line-height: 1.8;
+          color: #767f87;
+          padding-{{ language == 'ar' ? 'right' : 'left' }}: 24px;
+          position: relative;
+          margin-bottom: 12px;
+      }
+      .benefits-list li::before {
+          content: '✓';
+          position: absolute;
+          {{ 'right' if language == 'ar' else 'left' }}: 0;
+          color: #3fab4c;
+          font-weight: bold;
+          font-size: 18px;
+      }
+      /* Product Cards */
+      .products-section {
+          margin: 40px 0;
+      }
+      .products-title {
+          font-size: 20px;
+          color: #437749;
+          margin-bottom: 16px;
+          font-weight: 600;
+      }
+      .products-subtitle {
+          font-size: 15px;
+          color: #767f87;
+          margin-bottom: 30px;
+          line-height: 1.6;
+      }
+      .products-grid {
+          display: flex;
+          gap: 20px;
+          justify-content: center;
+          flex-wrap: wrap;
+      }
+      .product-card {
+          width: 200px;
+          border: 1px solid #bdcdd6;
+          border-radius: 8px;
+          overflow: hidden;
+          background-color: #ffffff;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .product-header {
+          padding: 16px;
+          border-bottom: 1px solid #bdcdd6;
+          text-align: center;
+      }
+      .product-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #437749;
+          margin-bottom: 8px;
+      }
+      .product-description {
+          font-size: 12px;
+          color: #767f87;
+          line-height: 1.4;
+      }
+      .product-image {
+          height: 140px;
+          background-size: cover;
+          background-position: center;
+      }
+      .product-button {
+          display: block;
+          background-color: #767f87;
+          color: #ffffff;
+          padding: 12px;
+          text-decoration: none;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 600;
+          transition: background-color 0.3s ease;
+      }
+      .product-button:hover {
+          background-color: #437749;
+      }
+      /* Footer */
+      .footer {
+          border-top: 1px solid #bdcdd6;
+          padding: 40px;
+          background-color: #f8fbfd;
+      }
+      .footer-logo {
+          text-align: center;
+          margin-bottom: 30px;
+      }
+      .footer-logo img {
+          height: 60px;
+      }
+      .footer-content {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 20px;
+      }
+      .footer-section {
+          text-align: center;
+      }
+      .footer-label {
+          font-size: 11px;
+          color: #767f87;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 10px;
+          font-weight: 600;
+      }
+      .social-icons {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+      }
+      .social-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #437749;
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: bold;
+          transition: background-color 0.3s ease;
+      }
+      .social-icon:hover {
+          background-color: #3fab4c;
+      }
+      .footer-link {
+          color: #437749;
+          text-decoration: none;
+          font-size: 13px;
+          font-weight: 500;
+      }
+      .footer-link:hover {
+          text-decoration: underline;
+      }
+      .disclaimer {
+          text-align: center;
+          font-size: 11px;
+          color: #a1aeb7;
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #c2d1d9;
+      }
+      /* Responsive */
+      @media only screen and (max-width: 600px) {
+          .hero {
+              height: 300px;
+              padding: 20px;
+          }
+          .hero-title {
+              font-size: 24px;
+          }
+          .content {
+              padding: 24px;
+          }
+          .score-number {
+              font-size: 56px;
+          }
+          .products-grid {
+              flex-direction: column;
+              align-items: center;
+          }
+          .footer-content {
+              flex-direction: column;
+          }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Hero Section -->
+      <div class="hero">
+        <h1 class="hero-title">
+          {% if language == 'ar' %} تقرير الصحة المالية الخاص بك جاهز! {% else
+          %} Your Financial Health Report is Ready! {% endif %}
+        </h1>
+      </div>
+
+      <!-- Content Section -->
+      <div class="content">
+        <p class="greeting">
+          {% if language == 'ar' %} عزيزي {{ customer_name }}, {% else %} Dear
+          {{ customer_name }}, {% endif %}
+        </p>
+
+        <p class="paragraph">
+          {% if language == 'ar' %} تهانينا، لقد أكملت للتو فحص صحتك المالية! {%
+          else %} Congratulations—you've just completed your Financial Checkup!
+          {% endif %}
+        </p>
+
+        <p class="paragraph">
+          {% if language == 'ar' %} تقريرك الشخصي للصحة المالية جاهز، مما يمنحك
+          لمحة واضحة عن وضعك المالي الحالي وخطوات عملية لتعزيزه. {% else %} Your
+          personalized Financial Health Report is ready, giving you a clear
+          snapshot of your current financial wellbeing and practical steps to
+          strengthen it. {% endif %}
+        </p>
+
+        <!-- Score Display -->
+        <div class="score-box">
+          <div class="score-number">{{ overall_score }}</div>
+          <div class="score-label">
+            {% if language == 'ar' %} نتيجة الصحة المالية الإجمالية من 100 {%
+            else %} Overall Financial Health Score out of 100 {% endif %}
+          </div>
+        </div>
+
+        <!-- Benefits List -->
+        <div class="benefits-list">
+          <h3>
+            {% if language == 'ar' %} داخل تقريرك، ستجد: {% else %} Inside your
+            report, you'll find: {% endif %}
+          </h3>
+          <ul>
+            <li>
+              {% if language == 'ar' %}
+              <span class="strong-text">نتيجة الصحة المالية:</span> تفصيل شفاف
+              لأدائك في المجالات الرئيسية مثل الادخار، الدخل، الديون، والحماية
+              {% else %}
+              <span class="strong-text">Your Financial Health Score:</span> a
+              transparent breakdown of how you're doing across key areas like
+              savings, income, debt, and protection {% endif %}
+            </li>
+            <li>
+              {% if language == 'ar' %}
+              <span class="strong-text">توصيات شخصية:</span> طرق بسيطة وقابلة
+              للتنفيذ لتحسين نتيجتك وتحقيق أهدافك {% else %}
+              <span class="strong-text">Personalized Recommendations:</span>
+              simple, actionable ways to improve your score and achieve your
+              goals {% endif %}
+            </li>
+            <li>
+              {% if language == 'ar' %}
+              <span class="strong-text">خطة عمل 90 يوماً:</span> خطوات واضحة
+              لبناء مستقبل مالي أقوى {% else %}
+              <span class="strong-text">90-Day Action Plan:</span> clear steps
+              to build a stronger financial future {% endif %}
+            </li>
+          </ul>
+        </div>
+
+        <p class="paragraph">
+          {% if language == 'ar' %} خذ بضع دقائق لمراجعة نتائجك—إنها الخطوة
+          الأولى نحو مستقبل مالي أقوى وأكثر ثقة. {% else %} Take a few minutes
+          to review your results—it's the first step toward a stronger, more
+          confident financial future. {% endif %}
+        </p>
+
+        <!-- CTA Button -->
+        <div class="cta-container">
+          <a href="{{ download_url }}" class="cta-button">
+            {% if language == 'ar' %} تحميل تقرير الصحة المالية {% else %}
+            Download My Financial Health Report {% endif %}
+          </a>
+        </div>
+
+        <!-- Products Section (if products are provided) -->
+        {% if products and products|length > 0 %}
+        <div class="products-section">
+          <h2 class="products-title">
+            {% if language == 'ar' %} مسارك المالي الشخصي {% else %} Your
+            Personalized Financial Path {% endif %}
+          </h2>
+          <p class="products-subtitle">
+            {% if language == 'ar' %} بناءً على نتيجتك، اخترنا منتجات مصممة
+            خصيصاً لأهدافك ومرحلتك المالية الحالية: {% else %} Based on your
+            score, we've selected products tailored to your goals and current
+            financial stage: {% endif %}
+          </p>
+
+          <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+              <div class="product-header">
+                <h3 class="product-title">{{ product.title }}</h3>
+                <p class="product-description">{{ product.description }}</p>
+              </div>
+              <div
+                class="product-image"
+                style="background-image: url('{{ product.image_url }}');"
+              ></div>
+              <a href="{{ product.link }}" class="product-button">
+                {% if language == 'ar' %} اعرف المزيد {% else %} KNOW MORE {%
+                endif %}
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <!-- Financial Clinic Logo -->
+        <div class="footer-logo">
+          <img
+            src="{{ base_url }}/homepage/icons/logo.svg"
+            alt="Financial Clinic"
+            style="height: 50px; margin-bottom: 20px"
+          />
+        </div>
+
+        <div class="footer-content">
+          <div class="footer-section">
+            <p class="footer-label">
+              {% if language == 'ar' %} ابق على اتصال {% else %} STAY CONNECTED
+              {% endif %}
+            </p>
+            <div class="social-icons">
+              <a href="https://facebook.com/nationalbonds" class="social-icon"
+                >f</a
+              >
+              <a
+                href="https://linkedin.com/company/national-bonds"
+                class="social-icon"
+                >in</a
+              >
+              <a href="https://twitter.com/nationalbonds" class="social-icon"
+                >X</a
+              >
+              <a
+                href="https://www.youtube.com/user/NationalBondsDubai/videos"
+                class="social-icon"
+                >Y</a
+              >
+            </div>
+          </div>
+
+          <div class="footer-section">
+            <a
+              href=" https://apps.apple.com/ae/app/national-bonds/id1461657357"
+              class="footer-link"
+            >
+              {% if language == 'ar' %} حمل تطبيقنا {% else %} DOWNLOAD OUR APP
+              {% endif %}
+            </a>
+          </div>
+
+          <div class="footer-section">
+            <a href="https://nationalbonds.ae/branches" class="footer-link">
+              {% if language == 'ar' %} فروعنا {% else %} OUR BRANCHES {% endif
+              %}
+            </a>
+          </div>
+        </div>
+
+        <!-- National Bonds Logo at bottom -->
+        <div
+          style="
             text-align: center;
-            margin: 30px 0;
-            box-shadow: 0 4px 12px rgba(67, 119, 73, 0.2);
-        }
-        .score-number {
-            font-size: 72px;
-            font-weight: bold;
-            color: #ffffff;
-            line-height: 1;
-            margin-bottom: 10px;
-        }
-        .score-label {
-            font-size: 18px;
-            color: #ffffff;
-            opacity: 0.95;
-        }
-        /* CTA Button */
-        .cta-container {
-            text-align: center;
-            margin: 40px 0;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #3fab4c;
-            color: #ffffff;
-            padding: 16px 40px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(63, 171, 76, 0.3);
-            transition: all 0.3s ease;
-        }
-        .cta-button:hover {
-            background-color: #437749;
-            box-shadow: 0 6px 16px rgba(67, 119, 73, 0.4);
-        }
-        /* Benefits List */
-        .benefits-list {
-            background-color: #f8fbfd;
-            border: 1px solid #bdcdd6;
-            border-radius: 8px;
-            padding: 24px;
-            margin: 30px 0;
-        }
-        .benefits-list h3 {
-            font-size: 18px;
-            color: #437749;
-            margin-bottom: 16px;
-        }
-        .benefits-list ul {
-            list-style: none;
-            padding: 0;
-        }
-        .benefits-list li {
-            font-size: 15px;
-            line-height: 1.8;
-            color: #767f87;
-            padding-{{ language == 'ar' ? 'right' : 'left' }}: 24px;
-            position: relative;
-            margin-bottom: 12px;
-        }
-        .benefits-list li::before {
-            content: '✓';
-            position: absolute;
-            {{ 'right' if language == 'ar' else 'left' }}: 0;
-            color: #3fab4c;
-            font-weight: bold;
-            font-size: 18px;
-        }
-        /* Product Cards */
-        .products-section {
-            margin: 40px 0;
-        }
-        .products-title {
-            font-size: 20px;
-            color: #437749;
-            margin-bottom: 16px;
-            font-weight: 600;
-        }
-        .products-subtitle {
-            font-size: 15px;
-            color: #767f87;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-        .products-grid {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .product-card {
-            width: 200px;
-            border: 1px solid #bdcdd6;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #ffffff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .product-header {
-            padding: 16px;
-            border-bottom: 1px solid #bdcdd6;
-            text-align: center;
-        }
-        .product-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #437749;
-            margin-bottom: 8px;
-        }
-        .product-description {
-            font-size: 12px;
-            color: #767f87;
-            line-height: 1.4;
-        }
-        .product-image {
-            height: 140px;
-            background-size: cover;
-            background-position: center;
-        }
-        .product-button {
-            display: block;
-            background-color: #767f87;
-            color: #ffffff;
-            padding: 12px;
-            text-decoration: none;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            transition: background-color 0.3s ease;
-        }
-        .product-button:hover {
-            background-color: #437749;
-        }
-        /* Footer */
-        .footer {
-            border-top: 1px solid #bdcdd6;
-            padding: 40px;
-            background-color: #f8fbfd;
-        }
-        .footer-logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .footer-logo img {
-            height: 60px;
-        }
-        .footer-content {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .footer-section {
-            text-align: center;
-        }
-        .footer-label {
-            font-size: 11px;
-            color: #767f87;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        .social-icons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-        .social-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background-color: #437749;
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .social-icon:hover {
-            background-color: #3fab4c;
-        }
-        .footer-link {
-            color: #437749;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .footer-link:hover {
-            text-decoration: underline;
-        }
-        .disclaimer {
-            text-align: center;
-            font-size: 11px;
-            color: #a1aeb7;
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #c2d1d9;
-        }
-        /* Responsive */
-        @media only screen and (max-width: 600px) {
-            .hero {
-                height: 300px;
-                padding: 20px;
-            }
-            .hero-title {
-                font-size: 24px;
-            }
-            .content {
-                padding: 24px;
-            }
-            .score-number {
-                font-size: 56px;
-            }
-            .products-grid {
-                flex-direction: column;
-                align-items: center;
-            }
-            .footer-content {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <!-- Hero Section -->
-        <div class="hero">
-            <h1 class="hero-title">
-                {% if language == 'ar' %}
-                    تقرير الصحة المالية الخاص بك جاهز!
-                {% else %}
-                    Your Financial Health Report is Ready!
-                {% endif %}
-            </h1>
+          "
+        >
+          <img
+            src="{{ base_url }}/homepage/images/nbc-logo2-02-1.png"
+            alt="National Bonds"
+            style="height: 80px; opacity: 0.9"
+          />
         </div>
 
-        <!-- Content Section -->
-        <div class="content">
-            <p class="greeting">
-                {% if language == 'ar' %}
-                    عزيزي {{ customer_name }},
-                {% else %}
-                    Dear {{ customer_name }},
-                {% endif %}
-            </p>
-
-            <p class="paragraph">
-                {% if language == 'ar' %}
-                    تهانينا، لقد أكملت للتو فحص صحتك المالية!
-                {% else %}
-                    Congratulations—you've just completed your Financial Checkup!
-                {% endif %}
-            </p>
-
-            <p class="paragraph">
-                {% if language == 'ar' %}
-                    تقريرك الشخصي للصحة المالية جاهز، مما يمنحك لمحة واضحة عن وضعك المالي الحالي وخطوات عملية لتعزيزه.
-                {% else %}
-                    Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.
-                {% endif %}
-            </p>
-
-            <!-- Score Display -->
-            <div class="score-box">
-                <div class="score-number">{{ overall_score }}</div>
-                <div class="score-label">
-                    {% if language == 'ar' %}
-                        نتيجة الصحة المالية الإجمالية من 100
-                    {% else %}
-                        Overall Financial Health Score out of 100
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Benefits List -->
-            <div class="benefits-list">
-                <h3>
-                    {% if language == 'ar' %}
-                        داخل تقريرك، ستجد:
-                    {% else %}
-                        Inside your report, you'll find:
-                    {% endif %}
-                </h3>
-                <ul>
-                    <li>
-                        {% if language == 'ar' %}
-                            <span class="strong-text">نتيجة الصحة المالية:</span> تفصيل شفاف لأدائك في المجالات الرئيسية مثل الادخار، الدخل، الديون، والحماية
-                        {% else %}
-                            <span class="strong-text">Your Financial Health Score:</span> a transparent breakdown of how you're doing across key areas like savings, income, debt, and protection
-                        {% endif %}
-                    </li>
-                    <li>
-                        {% if language == 'ar' %}
-                            <span class="strong-text">توصيات شخصية:</span> طرق بسيطة وقابلة للتنفيذ لتحسين نتيجتك وتحقيق أهدافك
-                        {% else %}
-                            <span class="strong-text">Personalized Recommendations:</span> simple, actionable ways to improve your score and achieve your goals
-                        {% endif %}
-                    </li>
-                    <li>
-                        {% if language == 'ar' %}
-                            <span class="strong-text">خطة عمل 90 يوماً:</span> خطوات واضحة لبناء مستقبل مالي أقوى
-                        {% else %}
-                            <span class="strong-text">90-Day Action Plan:</span> clear steps to build a stronger financial future
-                        {% endif %}
-                    </li>
-                </ul>
-            </div>
-
-            <p class="paragraph">
-                {% if language == 'ar' %}
-                    خذ بضع دقائق لمراجعة نتائجك—إنها الخطوة الأولى نحو مستقبل مالي أقوى وأكثر ثقة.
-                {% else %}
-                    Take a few minutes to review your results—it's the first step toward a stronger, more confident financial future.
-                {% endif %}
-            </p>
-
-            <!-- CTA Button -->
-            <div class="cta-container">
-                <a href="{{ download_url }}" class="cta-button">
-                    {% if language == 'ar' %}
-                        تحميل تقرير الصحة المالية
-                    {% else %}
-                        Download My Financial Health Report
-                    {% endif %}
-                </a>
-            </div>
-
-            <!-- Products Section (if products are provided) -->
-            {% if products and products|length > 0 %}
-            <div class="products-section">
-                <h2 class="products-title">
-                    {% if language == 'ar' %}
-                        مسارك المالي الشخصي
-                    {% else %}
-                        Your Personalized Financial Path
-                    {% endif %}
-                </h2>
-                <p class="products-subtitle">
-                    {% if language == 'ar' %}
-                        بناءً على نتيجتك، اخترنا منتجات مصممة خصيصاً لأهدافك ومرحلتك المالية الحالية:
-                    {% else %}
-                        Based on your score, we've selected products tailored to your goals and current financial stage:
-                    {% endif %}
-                </p>
-
-                <div class="products-grid">
-                    {% for product in products %}
-                    <div class="product-card">
-                        <div class="product-header">
-                            <h3 class="product-title">{{ product.title }}</h3>
-                            <p class="product-description">{{ product.description }}</p>
-                        </div>
-                        <div class="product-image" style="background-image: url('{{ product.image_url }}');"></div>
-                        <a href="{{ product.link }}" class="product-button">
-                            {% if language == 'ar' %}
-                                اعرف المزيد
-                            {% else %}
-                                KNOW MORE
-                            {% endif %}
-                        </a>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
+        <div class="disclaimer">
+          {% if language == 'ar' %} هذا التقرير لأغراض إعلامية فقط ولا يشكل
+          نصيحة مالية. © {{ current_year }} السندات الوطنية. جميع الحقوق محفوظة.
+          {% else %} This report is for informational purposes only and does not
+          constitute financial advice. © {{ current_year }} National Bonds. All
+          rights reserved. {% endif %}
         </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <!-- Financial Clinic Logo -->
-            <div class="footer-logo">
-                <img src="{{ base_url }}/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 50px; margin-bottom: 20px;" />
-            </div>
-
-            <div class="footer-content">
-                <div class="footer-section">
-                    <p class="footer-label">
-                        {% if language == 'ar' %}
-                            ابق على اتصال
-                        {% else %}
-                            STAY CONNECTED
-                        {% endif %}
-                    </p>
-                    <div class="social-icons">
-                        <a href="https://facebook.com/nationalbonds" class="social-icon">f</a>
-                        <a href="https://linkedin.com/company/national-bonds" class="social-icon">in</a>
-                        <a href="https://twitter.com/nationalbonds" class="social-icon">X</a>
-                        <a href="https://youtube.com/nationalbonds" class="social-icon">Y</a>
-                    </div>
-                </div>
-
-                <div class="footer-section">
-                    <a href="https://nationalbonds.ae/app" class="footer-link">
-                        {% if language == 'ar' %}
-                            حمل تطبيقنا
-                        {% else %}
-                            DOWNLOAD OUR APP
-                        {% endif %}
-                    </a>
-                </div>
-
-                <div class="footer-section">
-                    <a href="https://nationalbonds.ae/branches" class="footer-link">
-                        {% if language == 'ar' %}
-                            فروعنا
-                        {% else %}
-                            OUR BRANCHES
-                        {% endif %}
-                    </a>
-                </div>
-            </div>
-
-            <!-- National Bonds Logo at bottom -->
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #c2d1d9;">
-                <img src="{{ base_url }}/homepage/images/nbc-logo2-02-1.png" alt="National Bonds" style="height: 80px; opacity: 0.9;" />
-            </div>
-
-            <div class="disclaimer">
-                {% if language == 'ar' %}
-                    هذا التقرير لأغراض إعلامية فقط ولا يشكل نصيحة مالية. © {{ current_year }} السندات الوطنية. جميع الحقوق محفوظة.
-                {% else %}
-                    This report is for informational purposes only and does not constitute financial advice. © {{ current_year }} National Bonds. All rights reserved.
-                {% endif %}
-            </div>
-        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
