@@ -405,9 +405,40 @@ async def get_children_breakdown(
                 label = str(child_count)
                 if child_count >= 5:
                     label = "5+"
+                
+                # Calculate average score for this group
+                # We need to query again or aggregate in the main query. 
+                # For simplicity/correctness with current structure, let's do a subquery or separate aggregation
+                # But since we are iterating, let's just get the average score for this group
+                
+                # Optimized approach: Get sum of scores and count in the main query
+                pass
+
+        # Re-query to get avg scores
+        score_query = db.query(
+            FinancialClinicProfile.children,
+            func.count(FinancialClinicResponse.id).label('count'),
+            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        score_query = apply_date_range_filter(score_query, date_range, start_date, end_date)
+        score_query = apply_demographic_filters(score_query, filters, db)
+        
+        results = score_query.group_by(FinancialClinicProfile.children).all()
+        
+        breakdown = []
+        for child_count, count, avg_score in results:
+            if child_count is not None:
+                label = str(child_count)
+                if child_count >= 5:
+                    label = "5+"
                 breakdown.append({
                     "count_label": label,
                     "count": count,
+                    "average_score": round(float(avg_score), 2) if avg_score else 0,
                     "sort_key": child_count
                 })
         
@@ -462,7 +493,20 @@ async def get_income_breakdown(
         query = apply_date_range_filter(query, date_range, start_date, end_date)
         query = apply_demographic_filters(query, filters, db)
         
-        results = query.group_by(FinancialClinicProfile.income_range).all()
+        # Re-query to get avg scores
+        score_query = db.query(
+            FinancialClinicProfile.income_range,
+            func.count(FinancialClinicResponse.id).label('count'),
+            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+        ).join(
+            FinancialClinicResponse,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        score_query = apply_date_range_filter(score_query, date_range, start_date, end_date)
+        score_query = apply_demographic_filters(score_query, filters, db)
+        
+        results = score_query.group_by(FinancialClinicProfile.income_range).all()
         
         breakdown = []
         # Define sort order for income ranges
@@ -477,11 +521,12 @@ async def get_income_breakdown(
             "Above AED 100,000": 8
         }
         
-        for income_range, count in results:
+        for income_range, count, avg_score in results:
             if income_range:
                 breakdown.append({
                     "range": income_range,
                     "count": count,
+                    "average_score": round(float(avg_score), 2) if avg_score else 0,
                     "sort_order": income_order.get(income_range, 99)
                 })
                 
@@ -1193,7 +1238,7 @@ async def get_filter_options(
         
         # Return ALL possible options from the survey form
         # These match exactly what users can select in /financial-clinic/page.tsx
-        all_age_groups = ["<18", "18-25", "25-35", "35-45", "45-60", "65+"]
+        all_age_groups = ["< 18", "18-25", "26-35", "36-45", "46-60", "60+"]
         all_genders = ["Male", "Female"]
         all_nationalities = ["Emirati", "Non-Emirati"]
         all_emirates = [
@@ -1247,7 +1292,7 @@ async def get_filter_options(
         return {
             "error": str(e),
             "traceback": traceback.format_exc(),
-            "age_groups": ["<18", "18-25", "25-35", "35-45", "45-60", "65+"],
+            "age_groups": ["< 18", "18-25", "26-35", "36-45", "46-60", "60+"],
             "genders": ["Male", "Female"],
             "nationalities": ["Emirati", "Non-Emirati"],
             "emirates": ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Al Ain", "Ras Al Khaimah / Fujairah / UAQ / Outside UAE"],
@@ -1662,18 +1707,18 @@ async def get_age_breakdown(
                         age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
                         
                         # Categorize into age groups
-                        if age < 25:
-                            age_group = "18-24"
-                        elif age < 35:
-                            age_group = "25-34"
-                        elif age < 45:
-                            age_group = "35-44"
-                        elif age < 55:
-                            age_group = "45-54"
-                        elif age < 65:
-                            age_group = "55-64"
+                        if age < 18:
+                            age_group = "< 18"
+                        elif age <= 25:
+                            age_group = "18-25"
+                        elif age <= 35:
+                            age_group = "26-35"
+                        elif age <= 45:
+                            age_group = "36-45"
+                        elif age <= 60:
+                            age_group = "46-60"
                         else:
-                            age_group = "65+"
+                            age_group = "60+"
                         
                         if age_group not in age_group_data:
                             age_group_data[age_group] = {"scores": [], "count": 0}
@@ -1694,7 +1739,7 @@ async def get_age_breakdown(
             })
         
         # Sort by age group
-        age_order = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+        age_order = ["< 18", "18-25", "26-35", "36-45", "46-60", "60+"]
         age_groups.sort(key=lambda x: age_order.index(x["age_group"]) if x["age_group"] in age_order else 999)
         
         return {
