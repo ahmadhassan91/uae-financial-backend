@@ -501,7 +501,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="/homepage/icons/logo.svg" 
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -570,7 +570,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="/homepage/icons/logo.svg" 
+            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -1506,7 +1506,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
