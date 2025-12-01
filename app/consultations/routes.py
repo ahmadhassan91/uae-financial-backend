@@ -103,15 +103,24 @@ async def list_consultation_requests(
     status: Optional[str] = Query(None),
     source: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    income_range: Optional[str] = Query(None),
+    nationality: Optional[str] = Query(None),
+    age_group: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """List consultation requests for admin review."""
+    """List consultation requests for admin review with demographic filters."""
     try:
-        # Build base query
-        query = db.query(ConsultationRequest)
+        from app.models import FinancialClinicProfile, FinancialClinicResponse, CompanyTracker
         
-        # Apply filters
+        # Build base query - join with profile to enable demographic filtering
+        query = db.query(ConsultationRequest).outerjoin(
+            FinancialClinicProfile,
+            ConsultationRequest.email == FinancialClinicProfile.email
+        )
+        
+        # Apply consultation request filters
         if status:
             query = query.filter(ConsultationRequest.status == status)
         
@@ -128,10 +137,67 @@ async def list_consultation_requests(
                 )
             )
         
-        # Order by most recent first
+        # Apply demographic filters (from profile)
+        if income_range:
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+        
+        if nationality:
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+        
+        if company_id:
+            # Join with FinancialClinicResponse to get company_tracker_id
+            query = query.outerjoin(
+                FinancialClinicResponse,
+                FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+            ).filter(FinancialClinicResponse.company_tracker_id == company_id)
+        
+        # Order by most recent first and get results
         consultation_requests = query.order_by(
             desc(ConsultationRequest.created_at)
         ).offset(skip).limit(limit).all()
+        
+        # Apply age filtering in Python if needed
+        if age_group:
+            def calculate_age(dob_str):
+                if not dob_str:
+                    return None
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return None
+            
+            # Filter results by age
+            filtered_requests = []
+            for request in consultation_requests:
+                # Get profile for this request
+                profile = db.query(FinancialClinicProfile).filter(
+                    FinancialClinicProfile.email == request.email
+                ).first()
+                
+                if not profile or not profile.date_of_birth:
+                    continue
+                
+                age = calculate_age(profile.date_of_birth)
+                if age is None:
+                    continue
+                
+                if age_group == "< 18" and age < 18:
+                    filtered_requests.append(request)
+                elif age_group == "18-25" and 18 <= age <= 25:
+                    filtered_requests.append(request)
+                elif age_group == "26-35" and 26 <= age <= 35:
+                    filtered_requests.append(request)
+                elif age_group == "36-45" and 36 <= age <= 45:
+                    filtered_requests.append(request)
+                elif age_group == "46-60" and 46 <= age <= 60:
+                    filtered_requests.append(request)
+                elif age_group == "60+" and age > 60:
+                    filtered_requests.append(request)
+            
+            consultation_requests = filtered_requests
         
         return consultation_requests
         

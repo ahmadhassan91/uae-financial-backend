@@ -6,7 +6,7 @@ from app.auth.dependencies import get_current_admin_user
 from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile, CompanyTracker
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
-from sqlalchemy import func, and_, or_
+from sqlalchemy import func, and_, or_, desc
 import csv
 import io
 import traceback
@@ -2097,6 +2097,8 @@ async def get_submissions(
     status_band: Optional[str] = None,
     nationality: Optional[str] = None,
     company_id: Optional[int] = None,
+    income_range: Optional[str] = None,
+    age_group: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     current_user: User = Depends(get_current_admin_user),
@@ -2137,6 +2139,9 @@ async def get_submissions(
         if company_id:
             query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
         
+        if income_range:
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+        
         if date_from:
             date_from_dt = datetime.fromisoformat(date_from)
             query = query.filter(FinancialClinicResponse.created_at >= date_from_dt)
@@ -2145,15 +2150,60 @@ async def get_submissions(
             date_to_dt = datetime.fromisoformat(date_to)
             query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
         
-        # Get total count
-        total_count = query.count()
-        total_pages = (total_count + page_size - 1) // page_size
-        
-        # Get paginated results
-        offset = (page - 1) * page_size
-        results = query.order_by(
-            FinancialClinicResponse.created_at.desc()
-        ).offset(offset).limit(page_size).all()
+        # Get total count (before age filtering since age is calculated in Python)
+        if age_group:
+            # For age filtering, we need to get all results first then filter in Python
+            # This is because date_of_birth is stored as string in DD/MM/YYYY format
+            all_results = query.order_by(desc(FinancialClinicResponse.created_at)).all()
+            
+            # Helper function to calculate age
+            def calculate_age(dob_str):
+                if not dob_str:
+                    return None
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return None
+            
+            # Filter by age group in Python
+            filtered_results = []
+            for response, profile in all_results:
+                age = calculate_age(profile.date_of_birth)
+                if age is None:
+                    continue
+                    
+                if age_group == "< 18" and age < 18:
+                    filtered_results.append((response, profile))
+                elif age_group == "18-25" and 18 <= age <= 25:
+                    filtered_results.append((response, profile))
+                elif age_group == "26-35" and 26 <= age <= 35:
+                    filtered_results.append((response, profile))
+                elif age_group == "36-45" and 36 <= age <= 45:
+                    filtered_results.append((response, profile))
+                elif age_group == "46-60" and 46 <= age <= 60:
+                    filtered_results.append((response, profile))
+                elif age_group == "60+" and age > 60:
+                    filtered_results.append((response, profile))
+            
+            total_count = len(filtered_results)
+            total_pages = (total_count + page_size - 1) // page_size
+            
+            # Apply pagination
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            results = filtered_results[start_idx:end_idx]
+        else:
+            # Normal pagination without age filtering
+            total_count = query.count()
+            total_pages = (total_count + page_size - 1) // page_size
+            
+            # Get paginated results
+            results = query.order_by(
+                desc(FinancialClinicResponse.created_at)
+            ).offset((page - 1) * page_size).limit(page_size).all()
         
         # Helper function to calculate age from DOB string (DD/MM/YYYY)
         def calculate_age(dob_str):
