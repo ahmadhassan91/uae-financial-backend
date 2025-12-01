@@ -1153,7 +1153,7 @@ Next Steps:
         from datetime import datetime
         
         # Create downloads directory if it doesn't exist
-        downloads_dir = "/home/clustox/Desktop/uae-financial-backend/uae-financial-backend/downloads"
+        downloads_dir = settings.DOWNLOAD_DIR
         os.makedirs(downloads_dir, exist_ok=True)
         
         # Generate unique token for file

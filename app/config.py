@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     
     # File Upload
     UPLOAD_DIR: str = "./uploads"
+    DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
     # Frontend URLs
@@ -94,5 +95,6 @@ class Settings(BaseSettings):
 # Create global settings instance
 settings = Settings()
 
-# Ensure upload directory exists
+# Ensure upload and download directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.DOWNLOAD_DIR, exist_ok=True)

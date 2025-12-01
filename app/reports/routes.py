@@ -392,13 +392,15 @@ async def get_delivery_stats(
         )
 
 
+from app.config import settings
+
 @router.get("/download-public/{file_token}")
 async def download_public_report(file_token: str):
     """Public download endpoint for PDF reports via email links."""
     import os
     
     # Define downloads directory
-    downloads_dir = "/home/clustox/Desktop/uae-financial-backend/uae-financial-backend/downloads"
+    downloads_dir = settings.DOWNLOAD_DIR
     
     # Look for file matching the token
     for filename in os.listdir(downloads_dir):
