@@ -215,7 +215,7 @@ National Bonds Team
         products_en = [
     {
         'title': 'SAVING BONDS',
-        'description': 'A saving plan with a clear path to achieve your goals, and build a better financial future.',
+        'description': 'Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms. ',
         'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" />',
         'link': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png'
     },
@@ -978,39 +978,40 @@ National Bonds Team
          
         <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0 40px 0;">
             <tr>
-                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                <td style="width:30%; padding:10px; vertical-align:top;">
                     <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
                     <div style="padding:18px 16px 0 16px;">
                             <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
-                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">A saving plan with a clear path to achieve your goals, and build a better financial future.</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms. </div>
                         </div>
-                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" style="width:100%; width: 200px;
-    height: 150px;object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" style="width:100%; width: 285px;
+    height: 185px;object-fit:cover; border-bottom:1px solid #e5e7eb;" />
                         
                         <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
                     </div>
                 </td>
-                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                <td style="width:30%; padding:10px; vertical-align:top;">
                     <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
                      <div style="padding:18px 16px 0 16px;">
                             <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
-                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive accumulated returns in the UAE.</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive anticipated returns included.</div>
                         </div>
-                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" style="width:100%; width: 200px;
-    height: 150px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
-                       
+                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" style="width:100%; width: 285px;
+    height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+
                         <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
                     </div>
                 </td>
-                <td style="width:33.33%; padding:10px; vertical-align:top;">
+                <td style="width:30%; padding:10px; vertical-align:top;">
                     <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
                      <div style="padding:18px 16px 0 16px;">
-                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLION</div>
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLIONS</div>
                             <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
-                        
-                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Million" style="width:100%; width: 200px; height: 150px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
-                         <a href="https://nationalbonds.ae/products/my-million" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
                         </div>
+                        <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Millions" style="width:100%; width: 285px;
+    height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+
+                        <a href="https://nationalbonds.ae/products/my-millions" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
                     </div>
                 </td>
             </tr>
@@ -1018,7 +1019,7 @@ National Bonds Team
 <div style="display: flex;
     width: 100%;
     justify-content: center">
- <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="National Bonds" style="height:48px; margin-right:12px;" />
+ <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="National Bonds" style="height:48px; margin-left:45%;" />
 </div>
 
                 <table class="footer" width="100%" cellpadding="0" cellspacing="0" style="background:#fff; border-top:1px solid #e5e7eb;">
@@ -1051,23 +1052,23 @@ National Bonds Team
                                     </a>
                                 </td>
                             </tr></table>
-                            <div style="font-size:8px; color:#6b7280;">STAY CONNECTED</div>
+                            <div style="font-size:10px; color:#6b7280;">STAY CONNECTED</div>
                         </td>
                         <!-- App/Branches Right -->
                         <td align="center" style="vertical-align:middle; padding-right:30px;">
                             <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
                                 <tr>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
-                                        <span style="display:inline-block; width:40px; height:40px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="height:20px; width:20px; display:block;" />
-                                        </span>
-                                        <div style="font-size:8px; color:#6b7280;">DOWNLOAD OUR APP</div>
+                                       <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
                                     </td>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
-                                        <span style="display:inline-block; width:40px; height:40px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="height:20px; width:20px; display:block;" />
-                                        </span>
-                                        <div style="font-size:8px; color:#6b7280;">OUR BRANCHES</div>
+                                       <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
                                     </td>
                                 </tr>
                             </table>
@@ -1346,7 +1347,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="/homepage/icons/logo.svg" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
@@ -1424,32 +1425,25 @@ If you didn't request this code, please ignore this email."""
     </div>
 
     <!-- RIGHT: App + Branches -->
-    <div >
-
-        <!-- DOWNLOAD -->
-        <div>
-            <div >
-                DOWNLOAD OUR APP
-            </div>
-
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" 
-                 alt="Download App" 
-                 style="height:28px;" />
-        </div>
-
-        <!-- BRANCHES -->
-        <div>
-            <div 
-            >
-                OUR BRANCHES
-            </div>
-
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" 
-                 alt="Branches" 
-                 style="height:28px;" />
-        </div>
-
-    </div>
+   <!-- App/Branches Right -->
+                        <td align="center" style="vertical-align:middle; padding-right:30px;">
+                            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                <tr>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
+                                    </td>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
 
 </div>
 
@@ -1593,31 +1587,25 @@ If you didn't request this code, please ignore this email."""
     </div>
 
     <!-- RIGHT: App + Branches -->
-    <div >
-
-        <!-- DOWNLOAD -->
-        <div>
-            <div >
-                DOWNLOAD OUR APP
-            </div>
-
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" 
-                 alt="Download App" 
-                 style="height:28px;" />
-        </div>
-
-        <!-- BRANCHES -->
-        <div>
-            <div >
-                OUR BRANCHES
-            </div>
-
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" 
-                 alt="Branches" 
-                 style="height:28px;" />
-        </div>
-
-    </div>
+    <!-- App/Branches Right -->
+                        <td align="center" style="vertical-align:middle; padding-right:30px;">
+                            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                <tr>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
+                                    </td>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
 
 </div>
 
