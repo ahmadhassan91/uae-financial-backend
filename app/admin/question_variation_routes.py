@@ -508,8 +508,11 @@ async def test_question_variation(
         ))
         db.commit()
         
+        # Convert validation dataclass to dict for Pydantic serialization
+        from dataclasses import asdict
+        
         return VariationTestResult(
-            validation=validation,
+            validation=asdict(validation),
             profile_matches=profile_matches,
             estimated_usage=len([m for m in profile_matches if m["matches"]]) if profile_matches else 0
         )
