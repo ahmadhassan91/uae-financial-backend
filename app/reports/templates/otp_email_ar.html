@@ -178,9 +178,22 @@
         text-align: center;
         margin-top: 20px;
       }
+      @media only screen and (max-width: 768px) {
+        .email-container {
+          width: 95% !important;
+        }
+        .footer-logo-img {
+          height: 120px !important;
+          width: 150px !important;
+        }
+      }
       @media only screen and (max-width: 600px) {
         .email-wrapper {
           padding: 20px 0;
+        }
+        .email-container {
+          width: 100% !important;
+          border-radius: 0;
         }
         .content {
           padding: 30px 20px;
@@ -188,16 +201,45 @@
         .header {
           padding: 20px;
         }
+        .greeting {
+          font-size: 14px;
+        }
+        .message {
+          font-size: 14px;
+        }
         .otp-box {
-          width: 50px;
-          height: 60px;
-          font-size: 28px;
+          width: 45px;
+          height: 55px;
+          font-size: 24px;
+          margin: 0 2px;
+          line-height: 51px;
         }
         .otp-boxes {
           justify-content: center !important;
           align-items: center;
           text-align: center;
           gap: 8px;
+        }
+        .instruction {
+          font-size: 13px;
+        }
+        .footer-table {
+          padding: 20px 10px !important;
+        }
+        .footer-logo-cell {
+          display: block !important;
+          width: 100% !important;
+          text-align: center !important;
+          padding: 0 0 20px 0 !important;
+        }
+        .footer-icons-cell {
+          display: block !important;
+          width: 100% !important;
+        }
+        .footer-logo-img {
+          height: 80px !important;
+          width: 100px !important;
+          margin: 0 auto !important;
         }
       }
     </style>
@@ -290,6 +332,7 @@
             padding: 32px 24px;
             border-top: 1px solid #e5e7eb;
           "
+          class="footer-table"
         >
           <tr>
             <!-- Logo/Branding -->
@@ -297,15 +340,22 @@
               align="right"
               style="vertical-align: middle; padding-right: 20px"
               width="20%"
+              class="footer-logo-cell"
             >
               <img
                 src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
                 alt="National Bonds"
                 style="height: 60px; width: auto; display: block"
+                class="footer-logo-img"
               />
             </td>
             <!-- All Icons in One Line -->
-            <td align="center" style="vertical-align: middle" width="80%">
+            <td
+              align="center"
+              style="vertical-align: middle"
+              width="80%"
+              class="footer-icons-cell"
+            >
               <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
                 <tr>
                   <!-- Branches Icon -->
@@ -354,7 +404,8 @@
                       vertical-align: top;
                     "
                   >
-                    <span
+                    <a
+                      href="https://apps.apple.com/ae/app/national-bonds/id1461657357"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -363,6 +414,7 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
+                        text-decoration: none;
                       "
                     >
                       <img
@@ -370,7 +422,7 @@
                         alt="Download App"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
-                    </span>
+                    </a>
                     <div
                       style="
                         font-size: 11px;
@@ -447,7 +499,7 @@
                     "
                   >
                     <a
-                      href="https://twitter.com/NationalBondsUAE"
+                      href="https://x.com/nationalbonds"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -474,7 +526,7 @@
                     "
                   >
                     <a
-                      href="https://www.instagram.com/nationalbondsuae"
+                      href="https://www.instagram.com/nationalbonds/"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -501,7 +553,7 @@
                     "
                   >
                     <a
-                      href="https://www.facebook.com/NationalBondsUAE"
+                      href="https://www.facebook.com/nationalbonds"
                       style="
                         display: inline-block;
                         width: 40px;

@@ -1032,12 +1032,12 @@ National Bonds Team
                         <td align="center" style="vertical-align:middle;padding-right:80px;">
                             <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
                                 <td style="padding:0 9px;">
-                                    <a href="https://www.facebook.com/NationalBondsUAE">
+                                    <a href="https://www.facebook.com/nationalbonds">
                                         <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
-                                    <a href="https://www.instagram.com/nationalbondsuae">
+                                    <a href="https://www.instagram.com/nationalbonds/">
                                         <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
@@ -1047,7 +1047,7 @@ National Bonds Team
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
-                                    <a href="https://www.youtube.com/user/NationalBondsUAE">
+                                    <a href="https://www.youtube.com/user/NationalBondsDubai/videos">
                                         <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
@@ -1390,7 +1390,7 @@ If you didn't request this code, please ignore this email."""
         </div>
 
         <div ">
-            <a href="https://www.facebook.com/NationalBondsUAE" 
+            <a href="https://https://www.facebook.com/nationalbonds" 
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
@@ -1398,7 +1398,7 @@ If you didn't request this code, please ignore this email."""
                      alt="Facebook" style="width: 24px; height: 24px;" />
             </a>
 
-            <a href="https://www.instagram.com/nationalbondsuae" 
+            <a href="https://www.instagram.com/nationalbonds/" 
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
@@ -1414,7 +1414,7 @@ If you didn't request this code, please ignore this email."""
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
-            <a href="https://www.youtube.com/user/NationalBondsUAE" 
+            <a href="https://www.youtube.com/user/NationalBondsDubai/videos" 
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
@@ -1552,7 +1552,7 @@ If you didn't request this code, please ignore this email."""
         </div>
 
         <div s>
-            <a href="https://www.facebook.com/NationalBondsUAE" 
+            <a href="https://https://www.facebook.com/nationalbonds" 
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
@@ -1576,7 +1576,7 @@ If you didn't request this code, please ignore this email."""
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
-            <a href="https://www.youtube.com/user/NationalBondsUAE" 
+            <a href="https://www.youtube.com/user/NationalBondsDubai/videos" 
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
