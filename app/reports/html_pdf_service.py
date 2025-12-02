@@ -43,6 +43,37 @@ class HTMLPDFService:
         category_data = category_map.get(category, {'en': category, 'ar': category})
         return category_data['ar'] if language == 'ar' else category_data['en']
     
+    def _get_score_color(self, score: float) -> str:
+        """
+        Get color based on score range.
+        Matches frontend color scheme from FinancialClinicResults.tsx
+        
+        Args:
+            score: Score value (0-100)
+            
+        Returns:
+            Hex color code
+        """
+        if score >= 80:
+            return '#6cc922'  # Excellent - Green
+        elif score >= 60:
+            return '#fca924'  # Good - Yellow/Orange
+        elif score >= 30:
+            return '#fe6521'  # Fair - Orange
+        else:
+            return '#f00c01'  # Needs Improvement - Red
+    
+    def _get_status_label(self, score: float, language: str) -> str:
+        """Get status label based on score."""
+        if score >= 80:
+            return 'ممتاز' if language == 'ar' else 'EXCELLENT'
+        elif score >= 60:
+            return 'جيد' if language == 'ar' else 'GOOD'
+        elif score >= 30:
+            return 'مقبول' if language == 'ar' else 'FAIR'
+        else:
+            return 'يحتاج إلى تحسين' if language == 'ar' else 'NEEDS IMPROVEMENT'
+    
     def _get_category_description(self, category: str, language: str) -> str:
         """Get category description."""
         descriptions = {
@@ -105,6 +136,9 @@ class HTMLPDFService:
             bytes: Generated PDF content
         """
         try:
+            import logging
+            logger = logging.getLogger(__name__)
+            
             # Load template
             template = self.jinja_env.get_template('financial_clinic_pdf_template.html')
             
@@ -117,12 +151,37 @@ class HTMLPDFService:
             financial_clinic_logo_base64 = self._get_logo_base64(str(financial_clinic_logo))
             national_bonds_logo_base64 = self._get_logo_base64(str(national_bonds_logo))
             
-            # Prepare category translations and descriptions
+            # Prepare category translations, descriptions, and colors
             category_translations = {}
             category_descriptions = {}
-            for category_name in result_data.get('category_scores', {}).keys():
+            category_scores_with_colors = {}
+            
+            for category_name, category_data in result_data.get('category_scores', {}).items():
                 category_translations[category_name] = self._translate_category(category_name, language)
                 category_descriptions[category_name] = self._get_category_description(category_name, language)
+                
+                # Handle different data structures
+                if isinstance(category_data, dict):
+                    score = category_data.get('score', 0)
+                    max_possible = category_data.get('max_possible', 100)
+                    
+                    # Calculate percentage and add color
+                    percentage = (score / max_possible * 100) if max_possible > 0 else 0
+                    
+                    category_scores_with_colors[category_name] = {
+                        **category_data,
+                        'color': self._get_score_color(percentage)
+                    }
+                    logger.info(f"Category {category_name}: score={score}, max={max_possible}, percentage={percentage:.1f}%, color={self._get_score_color(percentage)}")
+                else:
+                    # If category_data is just a number (score)
+                    percentage = float(category_data) if category_data else 0
+                    category_scores_with_colors[category_name] = {
+                        'score': category_data,
+                        'max_possible': 100,
+                        'color': self._get_score_color(percentage)
+                    }
+                    logger.info(f"Category {category_name}: score={category_data}, percentage={percentage:.1f}%, color={self._get_score_color(percentage)}")
             
             # Prepare insights with translated categories
             insights = []
@@ -132,12 +191,19 @@ class HTMLPDFService:
                     'text': insight.get('text_ar' if language == 'ar' else 'text', insight.get('text', ''))
                 })
             
+            # Get score and calculate color/status
+            total_score = result_data.get('total_score', 0)
+            status_color = self._get_score_color(total_score)
+            status_label = self._get_status_label(total_score, language)
+            
             # Render HTML
             html_content = template.render(
                 language=language,
                 customer_name=customer_name,
-                total_score=result_data.get('total_score', 0),
-                category_scores=result_data.get('category_scores', {}),
+                total_score=total_score,
+                status_color=status_color,
+                status_label=status_label,
+                category_scores=category_scores_with_colors,
                 category_translations=category_translations,
                 category_descriptions=category_descriptions,
                 insights=insights,
