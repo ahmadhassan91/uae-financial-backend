@@ -205,5 +205,7 @@ class HTMLPDFService:
             return pdf_content
             
         except Exception as e:
+            import traceback
             print(f"Error generating PDF: {e}")
+            print(traceback.format_exc())
             raise Exception(f"Failed to generate PDF: {str(e)}")
