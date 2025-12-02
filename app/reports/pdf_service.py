@@ -1068,6 +1068,48 @@ class PDFReportService:
             alignment=alignment
         )
         
+        # Header with logos
+        try:
+            import urllib.request
+            
+            # Download and add logos
+            financial_clinic_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+            national_bonds_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+            
+            # Create temporary files for logos
+            import tempfile
+            
+            # Download Financial Clinic logo
+            fc_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+            urllib.request.urlretrieve(financial_clinic_logo_url, fc_logo_temp.name)
+            fc_logo = Image(fc_logo_temp.name, width=1.2*inch, height=0.5*inch)
+            
+            # Download National Bonds logo
+            nb_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+            urllib.request.urlretrieve(national_bonds_logo_url, nb_logo_temp.name)
+            nb_logo = Image(nb_logo_temp.name, width=1.5*inch, height=0.6*inch)
+            
+            # Create header table with logos on left and right
+            header_data = [[fc_logo, nb_logo]]
+            header_table = Table(header_data, colWidths=[2.75*inch, 2.75*inch])
+            header_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]))
+            
+            elements.append(header_table)
+            elements.append(Spacer(1, 0.3*inch))
+            
+        except Exception as e:
+            print(f"Error loading logos: {e}")
+            # Continue without logos if there's an error
+            pass
+        
         # Title Section - Updated to match new design
         if language == "ar":
             title_text = process_arabic_text("إليك درجة صحتك المالية!")

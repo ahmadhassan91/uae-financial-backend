@@ -36,14 +36,19 @@
 
       /* Header */
       .header {
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 50px;
         padding: 30px 20px 20px;
       }
 
-      .logo {
-        height: 45px;
-        margin-bottom: 15px;
+      .logo-left {
+        height: 50px;
+      }
+
+      .logo-right {
+        height: 60px;
       }
 
       /* Hero Section */
@@ -394,12 +399,17 @@
   </head>
   <body class="{{ 'rtl' if language == 'ar' else '' }}">
     <div class="container">
-      <!-- Header with Logo -->
+      <!-- Header with Logos -->
       <div class="header">
         <img
-          src="data:image/svg+xml;base64,{{ financial_clinic_logo_base64 }}"
+          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
           alt="Financial Clinic"
-          class="logo"
+          class="logo-left"
+        />
+        <img
+          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+          alt="National Bonds"
+          class="logo-right"
         />
       </div>
 
