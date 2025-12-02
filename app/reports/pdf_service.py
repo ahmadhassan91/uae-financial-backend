@@ -9,7 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
 from reportlab.platypus.flowables import HRFlowable
-from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.shapes import Drawing, Rect
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.legends import Legend
@@ -1071,20 +1071,70 @@ class PDFReportService:
         # Title Section - Updated to match new design
         if language == "ar":
             title_text = process_arabic_text("إليك درجة صحتك المالية!")
-            subtitle_text = process_arabic_text("هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم")
+            subtitle_text = process_arabic_text("هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم.")
+            subtitle_text2 = process_arabic_text("تعكس نتيجتك كيفية أدائك عبر المجالات الرئيسية.")
+            subtitle_text3 = process_arabic_text("استمر في تحسين عاداتك، وسوف تنمو رفاهيتك المالية بشكل أقوى مع مرور الوقت.")
         else:
             title_text = "Here's your Financial Health Score!"
-            subtitle_text = "This is your snapshot, a clear view of how healthy your finances are today."
+            subtitle_text = "This is your snapshot; a clear view of how healthy your finances are today."
+            subtitle_text2 = "Your score reflects how you're doing across key areas."
+            subtitle_text3 = "Keep improving your habits, and your financial wellbeing will grow stronger over time."
         
-        elements.append(Paragraph(title_text, title_style))
-        elements.append(Paragraph(subtitle_text, subtitle_style))
-        elements.append(Spacer(1, 0.15*inch))
+        # Update title style to match image - green color
+        title_style_updated = ParagraphStyle(
+            'CustomTitleUpdated',
+            parent=styles['Heading1'],
+            fontSize=24,
+            textColor=colors.HexColor('#2d7a3e'),
+            spaceAfter=12,
+            alignment=TA_CENTER,
+            fontName=title_font
+        )
+        
+        # Update subtitle style - gray color, smaller
+        subtitle_style_updated = ParagraphStyle(
+            'SubtitleUpdated',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.HexColor('#9ca3af'),
+            spaceAfter=6,
+            alignment=TA_CENTER,
+            fontName=body_font
+        )
+        
+        elements.append(Paragraph(title_text, title_style_updated))
+        elements.append(Paragraph(subtitle_text, subtitle_style_updated))
+        elements.append(Paragraph(subtitle_text2, subtitle_style_updated))
+        elements.append(Paragraph(subtitle_text3, subtitle_style_updated))
+        elements.append(Spacer(1, 0.2*inch))
         
         # Main Score Display - Clean large display matching new design
         total_score = result.get('total_score', 0)
+        status_band = result.get('status_band', 'Good')
         
-        # Use consistent green color for score (matching #2e9e42)
-        score_color = colors.HexColor('#2e9e42')
+        # Determine color and label based on score
+        if total_score >= 85:
+            score_color = colors.HexColor('#10b981')  # Green - Excellent
+            status_label = 'EXCELLENT' if language == 'en' else 'ممتاز'
+        elif total_score >= 60:
+            score_color = colors.HexColor('#fbbf24')  # Yellow - Good
+            status_label = 'GOOD' if language == 'en' else 'جيد'
+        elif total_score >= 30:
+            score_color = colors.HexColor('#f97316')  # Orange - Fair
+            status_label = 'FAIR' if language == 'en' else 'مقبول'
+        else:
+            score_color = colors.HexColor('#dc2626')  # Red - Needs Improvement
+            status_label = 'NEEDS IMPROVEMENT' if language == 'en' else 'يحتاج تحسين'
+        
+        # Status label style
+        status_style = ParagraphStyle(
+            'StatusStyle',
+            fontSize=20,
+            textColor=score_color,
+            alignment=TA_CENTER,
+            fontName='Helvetica-Bold',
+            spaceAfter=8
+        )
         
         # Large score display with simple clean style
         score_style = ParagraphStyle(
@@ -1094,12 +1144,141 @@ class PDFReportService:
             alignment=TA_CENTER, 
             fontName='Helvetica-Bold',
             leading=80,
-            spaceAfter=20
+            spaceAfter=15
         )
         
+        elements.append(Paragraph(f"<b>{status_label}</b>", status_style))
         elements.append(Paragraph(f"<b>{round(total_score)}%</b>", score_style))
-        elements.append(Spacer(1, 0.3*inch))
         
+        # Add progress bar matching the image design
+        # Create progress bar drawing
+        progress_width = 5 * inch
+        progress_height = 0.15 * inch
+        progress_drawing = Drawing(progress_width, progress_height)
+        
+        # Background bar (gray)
+        bg_bar = Rect(0, 0, progress_width, progress_height)
+        bg_bar.fillColor = colors.HexColor('#e5e7eb')
+        bg_bar.strokeColor = None
+        progress_drawing.add(bg_bar)
+        
+        # Filled bar (colored based on score)
+        fill_width = (total_score / 100) * progress_width
+        fill_bar = Rect(0, 0, fill_width, progress_height)
+        fill_bar.fillColor = score_color
+        fill_bar.strokeColor = None
+        progress_drawing.add(fill_bar)
+        
+        # Center the progress bar
+        progress_table = Table([[progress_drawing]], colWidths=[progress_width])
+        progress_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        elements.append(progress_table)
+        elements.append(Spacer(1, 0.3*inch))
+         # Understanding Your Score section - 4 bands layout matching image
+        understanding_header_text = process_arabic_text("فهم نتيجتك") if language == 'ar' else "Understanding Your Score"
+        understanding_header_style = ParagraphStyle(
+            'UnderstandingHeader',
+            fontSize=14,
+            textColor=colors.HexColor('#1f2937'),
+            alignment=TA_CENTER,
+            fontName=title_font,
+            spaceAfter=12,
+            spaceBefore=15
+        )
+        elements.append(Paragraph(understanding_header_text, understanding_header_style))
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # 4 Score bands with colors matching the image design
+        # Create a single row table with 4 colored cells showing ranges
+        if language == 'ar':
+            band_ranges = ['1-29', '30-59', '60-79', '85-100']
+        else:
+            band_ranges = ['1-29', '30-59', '60-79', '85-100']
+        
+        band_cell_style = ParagraphStyle(
+            'BandCell',
+            fontSize=14,
+            fontName='Helvetica-Bold',
+            alignment=TA_CENTER
+        )
+        
+        band_row = [Paragraph(f"<b>{r}</b>", band_cell_style) for r in band_ranges]
+        bands_table = Table([band_row], colWidths=[1.375*inch] * 4)
+        bands_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            # Red - Needs Improvement
+            ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#dc2626')),
+            ('TEXTCOLOR', (0, 0), (0, 0), colors.white),
+            # Orange - Fair
+            ('BACKGROUND', (1, 0), (1, 0), colors.HexColor('#f97316')),
+            ('TEXTCOLOR', (1, 0), (1, 0), colors.white),
+            # Yellow - Good
+            ('BACKGROUND', (2, 0), (2, 0), colors.HexColor('#fbbf24')),
+            ('TEXTCOLOR', (2, 0), (2, 0), colors.HexColor('#374151')),
+            # Green - Excellent
+            ('BACKGROUND', (3, 0), (3, 0), colors.HexColor('#10b981')),
+            ('TEXTCOLOR', (3, 0), (3, 0), colors.white),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ]))
+        elements.append(bands_table)
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # Labels below the bands
+        label_style = ParagraphStyle(
+            'LabelStyle',
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#4b5563'),
+            spaceAfter=3
+        )
+        
+        desc_style = ParagraphStyle(
+            'DescStyle',
+            fontSize=8,
+            fontName='Helvetica',
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#9ca3af')
+        )
+        
+        if language == 'ar':
+            labels = [
+                [Paragraph('<b>' + process_arabic_text('يحتاج إلى تحسين') + '</b>', label_style),
+                 Paragraph('<b>' + process_arabic_text('مقبول') + '</b>', label_style),
+                 Paragraph('<b>' + process_arabic_text('جيد') + '</b>', label_style),
+                 Paragraph('<b>' + process_arabic_text('ممتاز') + '</b>', label_style)],
+                [Paragraph(process_arabic_text('ركز على بناء عادات مالية أساسية'), desc_style),
+                 Paragraph(process_arabic_text('أساس جيد، مجال للنمو'), desc_style),
+                 Paragraph(process_arabic_text('صحة مالية قوية'), desc_style),
+                 Paragraph(process_arabic_text('رفاهية مالية متميزة'), desc_style)]
+            ]
+        else:
+            labels = [
+                [Paragraph('<b>Needs Improvement</b>', label_style),
+                 Paragraph('<b>Fair</b>', label_style),
+                 Paragraph('<b>Good</b>', label_style),
+                 Paragraph('<b>Excellent</b>', label_style)],
+                [Paragraph('Focus on building basic<br/>financial habits', desc_style),
+                 Paragraph('Good foundation,<br/>room for growth', desc_style),
+                 Paragraph('Strong financial<br/>health', desc_style),
+                 Paragraph('Outstanding financial<br/>wellness', desc_style)]
+            ]
+        
+        labels_table = Table(labels, colWidths=[1.375*inch] * 4)
+        labels_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ]))
+        elements.append(labels_table)
+        elements.append(Spacer(1, 0.3*inch))
         # Financial Pillar Scores - matching the new clean design
         category_header_text = process_arabic_text("درجات الركائز المالية") if language == 'ar' else "Financial Pillar Scores"
         elements.append(Paragraph(category_header_text, heading_style))
@@ -1265,86 +1444,7 @@ class PDFReportService:
             elements.append(action_plan_table)
             elements.append(Spacer(1, 0.3*inch))
         
-        # Understanding Your Score section - 4 bands layout
-        understanding_header_text = process_arabic_text("فهم نتيجتك") if language == 'ar' else "Understanding Your Score"
-        elements.append(Paragraph(understanding_header_text, heading_style))
-        elements.append(Spacer(1, 0.15*inch))
-        
-        # 4 Score bands with colors matching the new design
-        bands_data = []
-        if language == 'ar':
-            table_cell_style = ParagraphStyle(
-                'TableCellArabic',
-                parent=body_style,
-                fontSize=9,
-                fontName=body_font,
-                alignment=TA_CENTER
-            )
-            
-            bands_raw = [
-                ['1-29', 'في خطر', 'ركز على بناء عادات مالية أساسية', '#ee3b37'],
-                ['30-59', 'يحتاج إلى تحسين', 'أساس جيد، مجال للنمو', '#fead2a'],
-                ['60-79', 'جيد', 'صحة مالية قوية', '#e7e229'],
-                ['80-100', 'ممتاز', 'رفاهية مالية متميزة', '#57b957']
-            ]
-            
-            for row in bands_raw:
-                processed_row = [
-                    Paragraph(f"<b>{row[0]}</b>", table_cell_style),
-                    Paragraph(f"<b>{process_arabic_text(row[1])}</b>", table_cell_style),
-                    Paragraph(process_arabic_text(row[2]), table_cell_style)
-                ]
-                bands_data.append(processed_row)
-        else:
-            table_cell_style = ParagraphStyle(
-                'TableCellEnglish',
-                parent=body_style,
-                fontSize=9,
-                fontName='Helvetica',
-                alignment=TA_CENTER
-            )
-            
-            bands_raw = [
-                ['1-29', 'At Risk', 'Focus on building basic financial habits', '#ee3b37'],
-                ['30-59', 'Needs Improvement', 'Good foundation, room for growth', '#fead2a'],
-                ['60-79', 'Good', 'Strong financial health', '#e7e229'],
-                ['80-100', 'Excellent', 'Outstanding financial wellness', '#57b957']
-            ]
-            
-            for row in bands_raw:
-                processed_row = [
-                    Paragraph(f"<b>{row[0]}</b>", table_cell_style),
-                    Paragraph(f"<b>{row[1]}</b>", table_cell_style),
-                    Paragraph(row[2], table_cell_style)
-                ]
-                bands_data.append(processed_row)
-        
-        # Create colored cells table
-        bands_table = Table(bands_data, colWidths=[1.3*inch, 1.3*inch, 2.9*inch])
-        bands_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            # Red - At Risk
-            ('BACKGROUND', (0, 0), (2, 0), colors.HexColor('#ee3b37')),
-            ('TEXTCOLOR', (0, 0), (2, 0), colors.white),
-            # Orange - Needs Improvement
-            ('BACKGROUND', (0, 1), (2, 1), colors.HexColor('#fead2a')),
-            ('TEXTCOLOR', (0, 1), (2, 1), colors.white),
-            # Yellow - Good
-            ('BACKGROUND', (0, 2), (2, 2), colors.HexColor('#e7e229')),
-            ('TEXTCOLOR', (0, 2), (2, 2), colors.HexColor('#374151')),
-            # Green - Excellent
-            ('BACKGROUND', (0, 3), (2, 3), colors.HexColor('#57b957')),
-            ('TEXTCOLOR', (0, 3), (2, 3), colors.white),
-            ('GRID', (0, 0), (-1, -1), 1, colors.white),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ]))
-        
-        elements.append(bands_table)
-        elements.append(Spacer(1, 0.4*inch))
+       
         
         # Footer note matching web page
         footer_note_raw = 'هذه التوصيات مصممة خصيصاً بناءً على ملفك الشخصي وإجاباتك' if language == 'ar' else 'These recommendations are tailored based on your profile and responses'
