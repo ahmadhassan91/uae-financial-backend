@@ -1,611 +1,594 @@
 <!DOCTYPE html>
-<html
-  lang="{{ 'ar' if language == 'ar' else 'en' }}"
-  dir="{{ 'rtl' if language == 'ar' else 'ltr' }}"
->
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% if language == 'ar' %}تقرير الصحة المالية{% else %}Financial Health
-      Report{% endif %}
-    </title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+<html lang="{{ 'ar' if language == 'ar' else 'en' }}" dir="{{ 'rtl' if language == 'ar' else 'ltr' }}">
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>
+    {% if language == 'ar' %}تقرير الصحة المالية{% else %}Financial Health
+    Report{% endif %}
+  </title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @page {
+      size: A4;
+      margin: 8mm;
+    }
+
+    body {
+      font-family: "Poppins", Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+      line-height: 1.2;
+      font-size: 7px;
+    }
+
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 4px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+      padding: 0;
+    }
+
+    .logo-left {
+      height: 22px;
+      object-fit: contain;
+    }
+
+    .logo-right {
+      height: 25px;
+      object-fit: contain;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .hero-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d7a3e;
+      margin-bottom: 3px;
+      line-height: 1.1;
+    }
+
+    .hero-subtitle {
+      font-size: 6.5px;
+      color: #9ca3af;
+      margin-bottom: 1px;
+      line-height: 1.2;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Score Display */
+    .score-section {
+      text-align: center;
+      margin: 8px 0;
+      padding: 6px 8px;
+      background-color: #ffffff;
+    }
+
+    .score-label {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .score-number {
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      max-width: 280px;
+      height: 7px;
+      background-color: #e5e7eb;
+      border-radius: 3.5px;
+      position: relative;
+      margin: 5px auto;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3.5px;
+      transition: width 0.3s ease;
+      background-image: repeating-linear-gradient(45deg,
+          transparent,
+          transparent 6px,
+          rgba(255, 255, 255, 0.1) 6px,
+          rgba(255, 255, 255, 0.1) 12px);
+    }
+
+    /* Understanding Score Card */
+    .understanding-card {
+      margin: 8px auto;
+      padding: 6px 8px;
+      border: 0.5px solid #c2d1d9;
+      border-radius: 5px;
+      background-color: #ffffff;
+      max-width: 100%;
+    }
+
+    .understanding-title {
+      font-size: 8px;
+      font-weight: 600;
+      color: #1f2937;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .score-bands {
+      display: flex;
+      width: 100%;
+      border-radius: 18px;
+      overflow: hidden;
+      margin-bottom: 4px;
+      height: 20px;
+    }
+
+    .score-band {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 7px;
+    }
+
+    .band-poor {
+      background-color: #dc2626;
+      border-top-left-radius: 18px;
+      border-bottom-left-radius: 18px;
+    }
+
+    .band-fair {
+      background-color: #f97316;
+    }
+
+    .band-good {
+      background-color: #fbbf24;
+    }
+
+    .band-excellent {
+      background-color: #10b981;
+      border-top-right-radius: 18px;
+      border-bottom-right-radius: 18px;
+    }
+
+    .band-labels {
+      display: flex;
+      justify-content: space-between;
+      gap: 2px;
+      margin-top: 3px;
+    }
+
+    .band-label {
+      flex: 1;
+      text-align: center;
+    }
+
+    .band-label-title {
+      font-size: 5.5px;
+      font-weight: 600;
+      color: #4b5563;
+      margin-bottom: 1px;
+    }
+
+    .band-label-desc {
+      font-size: 5px;
+      color: #9ca3af;
+      line-height: 1.1;
+    }
+
+    /* Section Title */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #2d7a3e;
+      text-align: center;
+      margin: 8px 0 3px;
+    }
+
+    .section-subtitle {
+      font-size: 6.5px;
+      color: #9ca3af;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    /* Pillar Scores */
+    .pillar-item {
+      margin-bottom: 5px;
+      padding-bottom: 4px;
+      border-bottom: 0.5px solid #e5e7eb;
+    }
+
+    .pillar-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .pillar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pillar-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pillar-title {
+      font-size: 7px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 1px;
+    }
+
+    .pillar-description {
+      font-size: 5.5px;
+      color: #9ca3af;
+      line-height: 1.1;
+    }
+
+    .pillar-progress {
+      flex-shrink: 0;
+      width: 120px;
+      height: 5px;
+      background: #e5e7eb;
+      border-radius: 2.5px;
+      overflow: hidden;
+    }
+
+    .pillar-progress-fill {
+      height: 100%;
+      background: #10b981;
+      border-radius: 2.5px;
+      transition: width 0.3s ease;
+      background-image: repeating-linear-gradient(45deg,
+          transparent,
+          transparent 4px,
+          rgba(255, 255, 255, 0.15) 4px,
+          rgba(255, 255, 255, 0.15) 8px);
+    }
+
+    /* RTL Pillar Progress */
+    .rtl .pillar-progress {
+      margin-left: 0;
+    }
+
+    .rtl .pillar-header {
+      flex-direction: row-reverse;
+    }
+
+    /* Recommendations */
+    .recommendations-card {
+      background-color: #f9fafb;
+      border: 0.5px solid #d1d5db;
+      border-radius: 4px;
+      padding: 5px 6px;
+      margin: 6px 0;
+    }
+
+    .recommendations-title {
+      font-size: 7px;
+      font-weight: 600;
+      color: #2d7a3e;
+      margin-bottom: 3px;
+    }
+
+    .recommendation-item {
+      margin-bottom: 2px;
+      display: flex;
+      gap: 3px;
+      align-items: flex-start;
+    }
+
+    .recommendation-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .recommendation-number {
+      font-size: 6px;
+      font-weight: 400;
+      color: #4b5563;
+      flex-shrink: 0;
+      min-width: 8px;
+    }
+
+    .recommendation-text {
+      font-size: 6px;
+      color: #4b5563;
+      line-height: 1.2;
+    }
+
+    .recommendation-category {
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    /* RTL Recommendations */
+    .rtl .recommendation-item {
+      flex-direction: row-reverse;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 8px;
+      padding-top: 5px;
+      border-top: 0.5px solid #e5e7eb;
+      text-align: center;
+    }
+
+    .footer-logo {
+      height: 25px;
+      opacity: 0.9;
+      margin-bottom: 3px;
+    }
+
+    .footer-text {
+      font-size: 5px;
+      color: #9ca3af;
+      margin-top: 2px;
+      line-height: 1.1;
+    }
+
+    /* Print Styles */
+    @media print {
       body {
-        font-family: "Poppins", Arial, sans-serif;
-        background-color: #ffffff;
-        color: #333333;
-        line-height: 1.6;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
 
       .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 40px;
+        max-width: 100%;
+        padding: 4px;
       }
 
-      /* Header */
-      .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 40px;
-        padding: 0;
-      }
-
-      .logo-left {
-        height: 45px;
-        object-fit: contain;
-      }
-
-      .logo-right {
-        height: 50px;
-        object-fit: contain;
-      }
-
-      @media (min-width: 768px) {
-        .logo-right {
-          height: 60px;
-        }
-      }
-
-      /* Hero Section */
-      .hero {
-        text-align: center;
-        margin-bottom: 40px;
-      }
-
-      .hero-title {
-        font-size: 36px;
-        font-weight: 600;
-        color: #2d7a3e;
-        margin-bottom: 20px;
-        line-height: 1.3;
-      }
-
-      .hero-subtitle {
-        font-size: 13px;
-        color: #9ca3af;
-        margin-bottom: 8px;
-        line-height: 1.6;
-        max-width: 700px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      /* Score Display */
-      .score-section {
-        text-align: center;
-        margin: 50px 0;
-        padding: 30px 40px;
-        background-color: #ffffff;
-      }
-
-      .score-label {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .score-number {
-        font-size: 100px;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 25px;
-      }
-
-      .progress-bar {
-        width: 100%;
-        max-width: 500px;
-        height: 16px;
-        background-color: #e5e7eb;
-        border-radius: 8px;
-        position: relative;
-        margin: 20px auto;
-        overflow: hidden;
-      }
-
-      .progress-fill {
-        height: 100%;
-        border-radius: 8px;
-        transition: width 0.3s ease;
-        background-image: repeating-linear-gradient(
-          45deg,
-          transparent,
-          transparent 10px,
-          rgba(255, 255, 255, 0.1) 10px,
-          rgba(255, 255, 255, 0.1) 20px
-        );
-      }
-
-      /* Understanding Score Card */
-      .understanding-card {
-        margin: 50px auto;
-        padding: 40px 45px;
-        border: 1px solid #c2d1d9;
-        border-radius: 12px;
-        background-color: #ffffff;
-        max-width: 750px;
-      }
-
-      .understanding-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #1f2937;
-        text-align: center;
-        margin-bottom: 25px;
-      }
-
-      .score-bands {
-        display: flex;
-        width: 100%;
-        border-radius: 40px;
-        overflow: hidden;
-        margin-bottom: 20px;
-        height: 50px;
-      }
-
-      .score-band {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 18px;
-      }
-
-      .band-poor {
-        background-color: #dc2626;
-        border-top-left-radius: 40px;
-        border-bottom-left-radius: 40px;
-      }
-
-      .band-fair {
-        background-color: #f97316;
-      }
-
-      .band-good {
-        background-color: #fbbf24;
-      }
-
-      .band-excellent {
-        background-color: #10b981;
-        border-top-right-radius: 40px;
-        border-bottom-right-radius: 40px;
-      }
-
-      .band-labels {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        margin-top: 15px;
-      }
-
-      .band-label {
-        flex: 1;
-        text-align: center;
-      }
-
-      .band-label-title {
-        font-size: 12px;
-        font-weight: 600;
-        color: #4b5563;
-        margin-bottom: 4px;
-      }
-
-      .band-label-desc {
-        font-size: 11px;
-        color: #9ca3af;
-        line-height: 1.4;
-      }
-
-      /* Section Title */
-      .section-title {
-        font-size: 32px;
-        font-weight: 600;
-        color: #2d7a3e;
-        text-align: center;
-        margin: 60px 0 15px;
-      }
-
-      .section-subtitle {
-        font-size: 14px;
-        color: #9ca3af;
-        text-align: center;
-        margin-bottom: 40px;
-      }
-
-      /* Pillar Scores */
       .pillar-item {
-        margin-bottom: 35px;
-        padding-bottom: 25px;
-        border-bottom: 1px solid #e5e7eb;
+        page-break-inside: avoid;
       }
 
-      .pillar-item:last-child {
-        border-bottom: none;
-      }
-
-      .pillar-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 30px;
-      }
-
-      .pillar-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .pillar-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 6px;
-      }
-
-      .pillar-description {
-        font-size: 12px;
-        color: #9ca3af;
-        line-height: 1.4;
-      }
-
-      .pillar-progress {
-        flex-shrink: 0;
-        width: 300px;
-        height: 12px;
-        background: #e5e7eb;
-        border-radius: 6px;
-        overflow: hidden;
-      }
-
-      .pillar-progress-fill {
-        height: 100%;
-        background: #10b981;
-        border-radius: 6px;
-        transition: width 0.3s ease;
-        background-image: repeating-linear-gradient(
-          45deg,
-          transparent,
-          transparent 8px,
-          rgba(255, 255, 255, 0.15) 8px,
-          rgba(255, 255, 255, 0.15) 16px
-        );
-      }
-
-      /* RTL Pillar Progress */
-      .rtl .pillar-progress {
-        margin-left: 0;
-      }
-
-      .rtl .pillar-header {
-        flex-direction: row-reverse;
-      }
-
-      /* Recommendations */
-      .recommendations-card {
-        background-color: #f9fafb;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 30px 35px;
-        margin: 30px 0;
-      }
-
-      .recommendations-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: #2d7a3e;
-        margin-bottom: 15px;
-      }
-
-      .recommendation-item {
-        margin-bottom: 12px;
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-      }
-
-      .recommendation-item:last-child {
-        margin-bottom: 0;
-      }
-
-      .recommendation-number {
-        font-size: 14px;
-        font-weight: 400;
-        color: #4b5563;
-        flex-shrink: 0;
-        min-width: 18px;
-      }
-
-      .recommendation-text {
-        font-size: 13px;
-        color: #4b5563;
-        line-height: 1.6;
-      }
-
-      .recommendation-category {
-        font-weight: 600;
-        color: #1f2937;
-      }
-
-      /* RTL Recommendations */
-      .rtl .recommendation-item {
-        flex-direction: row-reverse;
-      }
-
-      /* Footer */
       .footer {
-        margin-top: 80px;
-        padding-top: 40px;
-        border-top: 2px solid #e5e7eb;
-        text-align: center;
+        page-break-inside: avoid;
       }
+    }
 
-      .footer-logo {
-        height: 70px;
-        opacity: 0.9;
-        margin-bottom: 20px;
-      }
+    /* RTL Support */
+    .rtl {
+      direction: rtl;
+      text-align: right;
+    }
 
-      .footer-text {
-        font-size: 11px;
-        color: #9ca3af;
-        margin-top: 15px;
-      }
+    .rtl .hero,
+    .rtl .score-section,
+    .rtl .understanding-title,
+    .rtl .section-title,
+    .rtl .section-subtitle {
+      text-align: center;
+    }
 
-      /* Print Styles */
-      @media print {
-        body {
-          print-color-adjust: exact;
-          -webkit-print-color-adjust: exact;
-        }
+    .rtl .pillar-title,
+    .rtl .pillar-description,
+    .rtl .recommendations-title {
+      text-align: right;
+    }
+  </style>
+</head>
 
-        .container {
-          max-width: 100%;
-          padding: 20px;
-        }
+<body class="{{ 'rtl' if language == 'ar' else '' }}">
+  <div class="container">
+    <!-- Header with Logos -->
+    <div class="header">
+      <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+        alt="Financial Clinic" class="logo-left" />
+      <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" alt="National Bonds"
+        class="logo-right" />
+    </div>
 
-        .pillar-item {
-          page-break-inside: avoid;
-        }
-      }
-
-      /* RTL Support */
-      .rtl {
-        direction: rtl;
-        text-align: right;
-      }
-
-      .rtl .hero,
-      .rtl .score-section,
-      .rtl .understanding-title,
-      .rtl .section-title,
-      .rtl .section-subtitle {
-        text-align: center;
-      }
-
-      .rtl .pillar-title,
-      .rtl .pillar-description,
-      .rtl .recommendations-title {
-        text-align: right;
-      }
-    </style>
-  </head>
-  <body class="{{ 'rtl' if language == 'ar' else '' }}">
-    <div class="container">
-      <!-- Header with Logos -->
-      <div class="header">
-        <img
-          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
-          alt="Financial Clinic"
-          class="logo-left"
-        />
-        <img
-          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
-          alt="National Bonds"
-          class="logo-right"
-        />
-      </div>
-
-      <!-- Hero Section -->
-      <div class="hero">
-        <h1 class="hero-title">
-          {% if language == 'ar' %} إليك درجة صحتك المالية! {% else %} Here's
-          your Financial Health Score! {% endif %}
-        </h1>
-        <p class="hero-subtitle">
-          {% if language == 'ar' %} هذه لمحة سريعة، نظرة واضحة على مدى صحة
-          أموالك اليوم. {% else %} This is your snapshot; a clear view of how
-          healthy your finances are today. {% endif %}
-        </p>
-        <p class="hero-subtitle">
-          {% if language == 'ar' %} تعكس نتيجتك كيفية أدائك عبر المجالات
-          الرئيسية. {% else %} Your score reflects how you're doing across key
-          areas. {% endif %}
-        </p>
-        <p class="hero-subtitle">
-          {% if language == 'ar' %} استمر في تحسين عاداتك، وسوف تنمو رفاهيتك
-          المالية بشكل أقوى مع مرور الوقت. {% else %} Keep improving your
-          habits, and your financial wellbeing will grow stronger over time. {%
-          endif %}
-        </p>
-      </div>
-
-      <!-- Score Display -->
-      <div class="score-section">
-        <div class="score-label" style="color: {{ status_color }}">
-          {{ status_label }}
-        </div>
-        <div class="score-number" style="color: {{ status_color }}">
-          {{ total_score|round|int }}%
-        </div>
-        <div class="progress-bar">
-          <div
-            class="progress-fill"
-            style="width: {{ total_score }}%; background-color: {{ status_color }};"
-          ></div>
-        </div>
-      </div>
-
-      <!-- Understanding Your Score -->
-      <div class="understanding-card">
-        <h2 class="understanding-title">
-          {% if language == 'ar' %}فهم نتيجتك{% else %}Understanding Your
-          Score{% endif %}
-        </h2>
-
-        <div class="score-bands">
-          <div class="score-band band-poor">1-29</div>
-          <div class="score-band band-fair">30-59</div>
-          <div class="score-band band-good">60-79</div>
-          <div class="score-band band-excellent">85-100</div>
-        </div>
-
-        <div class="band-labels">
-          <div class="band-label">
-            <div class="band-label-title">
-              {% if language == 'ar' %}يحتاج إلى تحسين{% else %}Needs
-              Improvement{% endif %}
-            </div>
-            <div class="band-label-desc">
-              {% if language == 'ar' %}ركز على بناء عادات مالية أساسية{% else
-              %}Focus on building basic financial habits{% endif %}
-            </div>
-          </div>
-          <div class="band-label">
-            <div class="band-label-title">
-              {% if language == 'ar' %}مقبول{% else %}Fair{% endif %}
-            </div>
-            <div class="band-label-desc">
-              {% if language == 'ar' %}أساس جيد، مجال للنمو{% else %}Good
-              foundation, room for growth{% endif %}
-            </div>
-          </div>
-          <div class="band-label">
-            <div class="band-label-title">
-              {% if language == 'ar' %}جيد{% else %}Good{% endif %}
-            </div>
-            <div class="band-label-desc">
-              {% if language == 'ar' %}صحة مالية قوية{% else %}Strong financial
-              health{% endif %}
-            </div>
-          </div>
-          <div class="band-label">
-            <div class="band-label-title">
-              {% if language == 'ar' %}ممتاز{% else %}Excellent{% endif %}
-            </div>
-            <div class="band-label-desc">
-              {% if language == 'ar' %}رفاهية مالية متميزة{% else %}Outstanding
-              financial wellness{% endif %}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Financial Pillar Scores -->
-      <h2 class="section-title">
-        {% if language == 'ar' %}درجات الركائز المالية{% else %}Financial Pillar
-        Scores{% endif %}
-      </h2>
-      <p class="section-subtitle">
-        {% if language == 'ar' %} أدائك عبر 7 مجالات رئيسية للصحة المالية {%
-        else %} Your performance across the 7 key areas of financial health {%
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1 class="hero-title">
+        {% if language == 'ar' %} إليك درجة صحتك المالية! {% else %} Here's
+        your Financial Health Score! {% endif %}
+      </h1>
+      <p class="hero-subtitle">
+        {% if language == 'ar' %} هذه لمحة سريعة، نظرة واضحة على مدى صحة
+        أموالك اليوم. {% else %} This is your snapshot; a clear view of how
+        healthy your finances are today. {% endif %}
+      </p>
+      <p class="hero-subtitle">
+        {% if language == 'ar' %} تعكس نتيجتك كيفية أدائك عبر المجالات
+        الرئيسية. {% else %} Your score reflects how you're doing across key
+        areas. {% endif %}
+      </p>
+      <p class="hero-subtitle">
+        {% if language == 'ar' %} استمر في تحسين عاداتك، وسوف تنمو رفاهيتك
+        المالية بشكل أقوى مع مرور الوقت. {% else %} Keep improving your
+        habits, and your financial wellbeing will grow stronger over time. {%
         endif %}
       </p>
+    </div>
 
-      {% for category_name, category_data in category_scores.items() %}
-      <div class="pillar-item">
-        <div class="pillar-header">
-          <div class="pillar-info">
-            <div class="pillar-title">
-              {{ category_translations[category_name] }}
-            </div>
-            <div class="pillar-description">
-              {{ category_descriptions[category_name] }}
-            </div>
-          </div>
-          <div class="pillar-progress">
-            <div
-              class="pillar-progress-fill"
-              style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%;"
-            ></div>
-          </div>
-        </div>
+    <!-- Score Display -->
+    <div class="score-section">
+      <div class="score-label" style="color: {{ status_color }}">
+        {{ status_label }}
       </div>
-      {% endfor %}
-
-      <!-- Personalized Action Plan -->
-      <h2 class="section-title">
-        {% if language == 'ar' %}خطة عملك الشخصية{% else %}Your Personalized
-        Action Plan{% endif %}
-      </h2>
-      <p class="section-subtitle">
-        {% if language == 'ar' %} التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك
-        كيفية تقوية نتيجتك. {% else %} Small changes make big differences.
-        Here's how to strengthen your score. {% endif %}
-      </p>
-
-      <div class="recommendations-card">
-        <h3 class="recommendations-title">
-          {% if language == 'ar' %}فئات التوصيات:{% else %}Recommendation
-          Categories:{% endif %}
-        </h3>
-
-        {% if insights and insights|length > 0 %} {% for insight in insights[:5]
-        %}
-        <div class="recommendation-item">
-          <div class="recommendation-number">
-            {{ loop.index }}{% if language == 'ar' %}.{% endif %}
-          </div>
-          <div class="recommendation-text">
-            <span class="recommendation-category"
-              >{{ insight.category_translated }}:</span
-            >
-            {{ insight.text }}
-          </div>
-        </div>
-        {% endfor %} {% else %}
-        <div class="recommendation-text" style="text-align: center">
-          {% if language == 'ar' %} لا توجد توصيات. أنت تقوم بعمل رائع! {% else
-          %} No recommendations. You're doing great! {% endif %}
-        </div>
-        {% endif %}
+      <div class="score-number" style="color: {{ status_color }}">
+        {{ total_score|round|int }}%
       </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <img
-          src="data:image/png;base64,{{ national_bonds_logo_base64 }}"
-          alt="National Bonds"
-          class="footer-logo"
-        />
-        <p class="footer-text">
-          {% if language == 'ar' %} هذا التقرير لأغراض إعلامية فقط ولا يشكل
-          نصيحة مالية. © {{ current_year }} السندات الوطنية. جميع الحقوق محفوظة.
-          {% else %} This report is for informational purposes only and does not
-          constitute financial advice. © {{ current_year }} National Bonds. All
-          rights reserved. {% endif %}
-        </p>
-        <p class="footer-text" style="margin-top: 10px">
-          {% if language == 'ar' %} للمزيد من المعلومات، قم بزيارة
-          www.nationalbonds.ae {% else %} For more information, visit
-          www.nationalbonds.ae {% endif %}
-        </p>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ total_score }}%; background-color: {{ status_color }};"></div>
       </div>
     </div>
-  </body>
+
+    <!-- Understanding Your Score -->
+    <div class="understanding-card">
+      <h2 class="understanding-title">
+        {% if language == 'ar' %}فهم نتيجتك{% else %}Understanding Your
+        Score{% endif %}
+      </h2>
+
+      <div class="score-bands">
+        <div class="score-band band-poor">1-29</div>
+        <div class="score-band band-fair">30-59</div>
+        <div class="score-band band-good">60-79</div>
+        <div class="score-band band-excellent">85-100</div>
+      </div>
+
+      <div class="band-labels">
+        <div class="band-label">
+          <div class="band-label-title">
+            {% if language == 'ar' %}يحتاج إلى تحسين{% else %}Needs
+            Improvement{% endif %}
+          </div>
+          <div class="band-label-desc">
+            {% if language == 'ar' %}ركز على بناء عادات مالية أساسية{% else
+            %}Focus on building basic financial habits{% endif %}
+          </div>
+        </div>
+        <div class="band-label">
+          <div class="band-label-title">
+            {% if language == 'ar' %}مقبول{% else %}Fair{% endif %}
+          </div>
+          <div class="band-label-desc">
+            {% if language == 'ar' %}أساس جيد، مجال للنمو{% else %}Good
+            foundation, room for growth{% endif %}
+          </div>
+        </div>
+        <div class="band-label">
+          <div class="band-label-title">
+            {% if language == 'ar' %}جيد{% else %}Good{% endif %}
+          </div>
+          <div class="band-label-desc">
+            {% if language == 'ar' %}صحة مالية قوية{% else %}Strong financial
+            health{% endif %}
+          </div>
+        </div>
+        <div class="band-label">
+          <div class="band-label-title">
+            {% if language == 'ar' %}ممتاز{% else %}Excellent{% endif %}
+          </div>
+          <div class="band-label-desc">
+            {% if language == 'ar' %}رفاهية مالية متميزة{% else %}Outstanding
+            financial wellness{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Pillar Scores -->
+    <h2 class="section-title">
+      {% if language == 'ar' %}درجات الركائز المالية{% else %}Financial Pillar
+      Scores{% endif %}
+    </h2>
+    <p class="section-subtitle">
+      {% if language == 'ar' %} أدائك عبر 7 مجالات رئيسية للصحة المالية {%
+      else %} Your performance across the 7 key areas of financial health {%
+      endif %}
+    </p>
+
+    {% for category_name, category_data in category_scores.items() %}
+    <div class="pillar-item">
+      <div class="pillar-header">
+        <div class="pillar-info">
+          <div class="pillar-title">
+            {{ category_translations[category_name] }}
+          </div>
+          <div class="pillar-description">
+            {{ category_descriptions[category_name] }}
+          </div>
+        </div>
+        <div class="pillar-progress">
+          <div class="pillar-progress-fill"
+            style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%;"></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <!-- Personalized Action Plan -->
+    <h2 class="section-title">
+      {% if language == 'ar' %}خطة عملك الشخصية{% else %}Your Personalized
+      Action Plan{% endif %}
+    </h2>
+    <p class="section-subtitle">
+      {% if language == 'ar' %} التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك
+      كيفية تقوية نتيجتك. {% else %} Small changes make big differences.
+      Here's how to strengthen your score. {% endif %}
+    </p>
+
+    <div class="recommendations-card">
+      <h3 class="recommendations-title">
+        {% if language == 'ar' %}فئات التوصيات:{% else %}Recommendation
+        Categories:{% endif %}
+      </h3>
+
+      {% if insights and insights|length > 0 %} {% for insight in insights[:5]
+      %}
+      <div class="recommendation-item">
+        <div class="recommendation-number">
+          {{ loop.index }}{% if language == 'ar' %}.{% endif %}
+        </div>
+        <div class="recommendation-text">
+          <span class="recommendation-category">{{ insight.category_translated }}:</span>
+          {{ insight.text }}
+        </div>
+      </div>
+      {% endfor %} {% else %}
+      <div class="recommendation-text" style="text-align: center">
+        {% if language == 'ar' %} لا توجد توصيات. أنت تقوم بعمل رائع! {% else
+        %} No recommendations. You're doing great! {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <img src="data:image/png;base64,{{ national_bonds_logo_base64 }}" alt="National Bonds" class="footer-logo" />
+      <p class="footer-text">
+        {% if language == 'ar' %} هذا التقرير لأغراض إعلامية فقط ولا يشكل
+        نصيحة مالية. © {{ current_year }} السندات الوطنية. جميع الحقوق محفوظة.
+        {% else %} This report is for informational purposes only and does not
+        constitute financial advice. © {{ current_year }} National Bonds. All
+        rights reserved. {% endif %}
+      </p>
+      <p class="footer-text" style="margin-top: 10px">
+        {% if language == 'ar' %} للمزيد من المعلومات، قم بزيارة
+        www.nationalbonds.ae {% else %} For more information, visit
+        www.nationalbonds.ae {% endif %}
+      </p>
+    </div>
+  </div>
+</body>
+
 </html>
