@@ -268,3 +268,29 @@ class ReportGenerationService:
         }
         
         return metadata
+    
+    def generate_financial_clinic_pdf(
+        self,
+        survey_data: Dict[str, Any],
+        language: str = "en"
+    ) -> bytes:
+        """
+        Generate PDF report for Financial Clinic assessment.
+        
+        Args:
+            survey_data: Dictionary containing 'result' and 'profile' keys
+            language: Language code ('en' or 'ar')
+            
+        Returns:
+            PDF content as bytes
+        """
+        # Extract result and profile from survey_data
+        result = survey_data.get('result', {})
+        profile = survey_data.get('profile', {})
+        
+        # Use the PDF service to generate the report
+        return self.pdf_service.generate_financial_clinic_pdf(
+            result=result,
+            profile=profile,
+            language=language
+        )

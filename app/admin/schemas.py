@@ -11,38 +11,66 @@ from pydantic import BaseModel, Field, validator
 
 # Question Variation Schemas
 class QuestionVariationCreate(BaseModel):
-    """Schema for creating a new question variation."""
+    """Schema for creating a new bilingual question variation."""
     base_question_id: str = Field(..., description="Base question ID")
     variation_name: str = Field(..., min_length=1, max_length=100, description="Variation name")
-    language: str = Field("en", pattern="^(en|ar)$", description="Language code")
-    text: str = Field(..., min_length=1, description="Question text")
-    options: List[Dict[str, Any]] = Field(..., description="Question options")
+    language: str = Field("en", pattern="^(en|ar|both)$", description="Language code (deprecated, use both)")
+    
+    # Bilingual text fields
+    text_en: str = Field(..., min_length=1, description="Question text in English")
+    text_ar: str = Field(..., min_length=1, description="Question text in Arabic")
+    
+    # Legacy single text field (optional for backward compatibility)
+    text: Optional[str] = Field(None, min_length=1, description="Question text (deprecated)")
+    
+    # Bilingual options: [{"value": 1, "label_en": "...", "label_ar": "..."}]
+    options: List[Dict[str, Any]] = Field(..., description="Question options (bilingual)")
     demographic_rules: Optional[Dict[str, Any]] = Field(None, description="Demographic targeting rules")
     company_ids: Optional[List[int]] = Field(None, description="Company IDs this applies to")
     
     @validator('options')
     def validate_options(cls, v):
-        """Validate options structure."""
+        """Validate bilingual options structure."""
         if not isinstance(v, list) or len(v) == 0:
             raise ValueError("Options must be a non-empty list")
         
         for i, option in enumerate(v):
             if not isinstance(option, dict):
                 raise ValueError(f"Option {i} must be a dictionary")
-            if 'value' not in option or 'label' not in option:
-                raise ValueError(f"Option {i} must have 'value' and 'label' fields")
+            
+            # Check for required fields
+            if 'value' not in option:
+                raise ValueError(f"Option {i} must have 'value' field")
+            
+            # Support both legacy (label) and new bilingual (label_en, label_ar) formats
+            has_legacy = 'label' in option
+            has_bilingual = 'label_en' in option and 'label_ar' in option
+            
+            if not has_legacy and not has_bilingual:
+                raise ValueError(f"Option {i} must have either 'label' or both 'label_en' and 'label_ar' fields")
+            
             if not isinstance(option['value'], int):
                 raise ValueError(f"Option {i} value must be an integer")
-            if not isinstance(option['label'], str) or not option['label'].strip():
-                raise ValueError(f"Option {i} label must be a non-empty string")
+            
+            # Validate labels
+            if has_bilingual:
+                if not isinstance(option['label_en'], str) or not option['label_en'].strip():
+                    raise ValueError(f"Option {i} label_en must be a non-empty string")
+                if not isinstance(option['label_ar'], str) or not option['label_ar'].strip():
+                    raise ValueError(f"Option {i} label_ar must be a non-empty string")
+            elif has_legacy:
+                if not isinstance(option['label'], str) or not option['label'].strip():
+                    raise ValueError(f"Option {i} label must be a non-empty string")
         
         return v
 
 
 class QuestionVariationUpdate(BaseModel):
-    """Schema for updating a question variation."""
+    """Schema for updating a bilingual question variation."""
     variation_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    text: Optional[str] = Field(None, min_length=1)
+    text_en: Optional[str] = Field(None, min_length=1, description="Question text in English")
+    text_ar: Optional[str] = Field(None, min_length=1, description="Question text in Arabic")
+    text: Optional[str] = Field(None, min_length=1, description="Question text (deprecated)")
     options: Optional[List[Dict[str, Any]]] = None
     demographic_rules: Optional[Dict[str, Any]] = None
     company_ids: Optional[List[int]] = None
@@ -57,12 +85,14 @@ class QuestionVariationUpdate(BaseModel):
 
 
 class QuestionVariationResponse(BaseModel):
-    """Schema for question variation response."""
+    """Schema for bilingual question variation response."""
     id: int
     base_question_id: str
     variation_name: str
     language: str
-    text: str
+    text_en: Optional[str] = None
+    text_ar: Optional[str] = None
+    text: Optional[str] = None  # Backward compatibility
     options: List[Dict[str, Any]]
     demographic_rules: Optional[Dict[str, Any]]
     company_ids: Optional[List[int]]
@@ -335,3 +365,120 @@ class ExportResponse(BaseModel):
     record_count: Optional[int]
     created_at: datetime
     expires_at: Optional[datetime]
+
+
+# Variation Set Schemas
+class VariationSetCreate(BaseModel):
+    """Schema for creating a new variation set."""
+    name: str = Field(..., min_length=1, max_length=255, description="Set name")
+    description: Optional[str] = Field(None, description="Set description")
+    set_type: str = Field(..., pattern="^(industry|demographic|language|custom)$", description="Set type")
+    is_template: bool = Field(False, description="Whether this is a template set")
+    is_active: bool = Field(True, description="Whether this set is active")
+    
+    # All 15 question variation IDs
+    q1_variation_id: int = Field(..., gt=0, description="Question 1 variation ID")
+    q2_variation_id: int = Field(..., gt=0, description="Question 2 variation ID")
+    q3_variation_id: int = Field(..., gt=0, description="Question 3 variation ID")
+    q4_variation_id: int = Field(..., gt=0, description="Question 4 variation ID")
+    q5_variation_id: int = Field(..., gt=0, description="Question 5 variation ID")
+    q6_variation_id: int = Field(..., gt=0, description="Question 6 variation ID")
+    q7_variation_id: int = Field(..., gt=0, description="Question 7 variation ID")
+    q8_variation_id: int = Field(..., gt=0, description="Question 8 variation ID")
+    q9_variation_id: int = Field(..., gt=0, description="Question 9 variation ID")
+    q10_variation_id: int = Field(..., gt=0, description="Question 10 variation ID")
+    q11_variation_id: int = Field(..., gt=0, description="Question 11 variation ID")
+    q12_variation_id: int = Field(..., gt=0, description="Question 12 variation ID")
+    q13_variation_id: int = Field(..., gt=0, description="Question 13 variation ID")
+    q14_variation_id: int = Field(..., gt=0, description="Question 14 variation ID")
+    q15_variation_id: int = Field(..., gt=0, description="Question 15 variation ID")
+
+
+class VariationSetUpdate(BaseModel):
+    """Schema for updating an existing variation set."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255, description="Set name")
+    description: Optional[str] = Field(None, description="Set description")
+    set_type: Optional[str] = Field(None, pattern="^(industry|demographic|language|custom)$", description="Set type")
+    is_template: Optional[bool] = Field(None, description="Whether this is a template set")
+    is_active: Optional[bool] = Field(None, description="Whether this set is active")
+    
+    # All 15 question variation IDs (optional for partial updates)
+    q1_variation_id: Optional[int] = Field(None, gt=0, description="Question 1 variation ID")
+    q2_variation_id: Optional[int] = Field(None, gt=0, description="Question 2 variation ID")
+    q3_variation_id: Optional[int] = Field(None, gt=0, description="Question 3 variation ID")
+    q4_variation_id: Optional[int] = Field(None, gt=0, description="Question 4 variation ID")
+    q5_variation_id: Optional[int] = Field(None, gt=0, description="Question 5 variation ID")
+    q6_variation_id: Optional[int] = Field(None, gt=0, description="Question 6 variation ID")
+    q7_variation_id: Optional[int] = Field(None, gt=0, description="Question 7 variation ID")
+    q8_variation_id: Optional[int] = Field(None, gt=0, description="Question 8 variation ID")
+    q9_variation_id: Optional[int] = Field(None, gt=0, description="Question 9 variation ID")
+    q10_variation_id: Optional[int] = Field(None, gt=0, description="Question 10 variation ID")
+    q11_variation_id: Optional[int] = Field(None, gt=0, description="Question 11 variation ID")
+    q12_variation_id: Optional[int] = Field(None, gt=0, description="Question 12 variation ID")
+    q13_variation_id: Optional[int] = Field(None, gt=0, description="Question 13 variation ID")
+    q14_variation_id: Optional[int] = Field(None, gt=0, description="Question 14 variation ID")
+    q15_variation_id: Optional[int] = Field(None, gt=0, description="Question 15 variation ID")
+
+
+class VariationSetResponse(BaseModel):
+    """Schema for variation set response."""
+    id: int
+    name: str
+    description: Optional[str]
+    set_type: str
+    is_template: bool
+    is_active: bool
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    # All 15 question variation IDs
+    q1_variation_id: int
+    q2_variation_id: int
+    q3_variation_id: int
+    q4_variation_id: int
+    q5_variation_id: int
+    q6_variation_id: int
+    q7_variation_id: int
+    q8_variation_id: int
+    q9_variation_id: int
+    q10_variation_id: int
+    q11_variation_id: int
+    q12_variation_id: int
+    q13_variation_id: int
+    q14_variation_id: int
+    q15_variation_id: int
+    
+    # Statistics (optional)
+    companies_using_count: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class VariationSetListResponse(BaseModel):
+    """Schema for paginated variation set list."""
+    variation_sets: List[VariationSetResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
+class VariationSetCloneRequest(BaseModel):
+    """Schema for cloning a variation set."""
+    new_name: str = Field(..., min_length=1, max_length=255, description="New set name")
+    new_description: Optional[str] = Field(None, description="New set description")
+
+
+class CompanySetAssignmentRequest(BaseModel):
+    """Schema for assigning a variation set to a company."""
+    variation_set_id: int = Field(..., gt=0, description="Variation set ID to assign")
+
+
+class CompanySetAssignmentResponse(BaseModel):
+    """Schema for company set assignment response."""
+    company_id: int
+    company_name: str
+    variation_set_id: Optional[int]
+    variation_set_name: Optional[str]
+    updated_at: datetime

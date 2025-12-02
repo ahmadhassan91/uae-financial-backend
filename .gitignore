@@ -53,12 +53,27 @@ logs/
 
 # Uploads
 uploads/
-reports/
+# Generated reports (but keep source code)
+reports/generated/
+*.pdf
+!reports/templates/
+!reports/*.py
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Test scripts and generated files
+check_*.py
+cleanup_*.py
+create_test_*.py
+generate_test_*.py
+quick_cleanup_*.py
+test_*.pdf
+test_*.py
+scripts/populate_*.py
+scripts/verify_*.py
 
 # Alembic
 alembic/versions/*.pyc

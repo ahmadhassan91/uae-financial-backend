@@ -1,6 +1,6 @@
 """Authentication dependencies for FastAPI routes."""
 from typing import Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -9,6 +9,7 @@ from app.auth.utils import verify_token
 
 # HTTP Bearer token scheme
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
@@ -28,8 +29,14 @@ async def get_current_user(
         raise credentials_exception
     
     # Extract user info from token
-    user_id: int = payload.get("sub")
-    if user_id is None:
+    user_id_str = payload.get("sub")
+    if user_id_str is None:
+        raise credentials_exception
+    
+    # Convert to int (JWT sub is stored as string)
+    try:
+        user_id = int(user_id_str)
+    except (ValueError, TypeError):
         raise credentials_exception
     
     # Get user from database
@@ -66,7 +73,7 @@ async def get_current_admin_user(
 
 
 async def get_optional_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """Get current user if token is provided, otherwise return None."""
@@ -77,3 +84,12 @@ async def get_optional_current_user(
         return await get_current_user(credentials, db)
     except HTTPException:
         return None
+
+
+# Alias for compatibility with consent routes
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Get current user if token is provided, otherwise return None (alias)."""
+    return await get_optional_current_user(credentials, db)

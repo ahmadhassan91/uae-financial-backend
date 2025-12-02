@@ -45,30 +45,33 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3002",
         "http://127.0.0.1:3003",
         "http://127.0.0.1:5173",
-        "https://*.herokuapp.com",  # Heroku apps
-        "https://*.netlify.app",    # Netlify apps
+        "https://financial-clinic.netlify.app",  # Current Netlify deployment
         "https://national-bonds-ae.netlify.app",  # Specific Netlify production deployment
         "https://lively-sawine-92b143.netlify.app",  # Previous Netlify deployment
-        "https://*.vercel.app"      # Vercel apps
     ]
     ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0", "*.herokuapp.com"]
     
-    # Email (for notifications)
+    # Email (for notifications and OTP)
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
+    FROM_EMAIL: str = ""
+    FROM_NAME: str = "National Bonds"
     
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # File Upload
     UPLOAD_DIR: str = "./uploads"
+    DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
-    PRODUCTION_BASE_URL: str = "https://financial-health.uae"  # Production URL
+    PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
+    BACKEND_BASE_URL: str = "http://localhost:8000"  # Backend API URL
+    PRODUCTION_BACKEND_URL: str = "https://uae-financial-backend.herokuapp.com"  # Production backend URL
     
     @property
     def base_url(self) -> str:
@@ -76,6 +79,13 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return self.PRODUCTION_BASE_URL
         return self.FRONTEND_BASE_URL
+    
+    @property
+    def api_base_url(self) -> str:
+        """Get the appropriate API base URL for backend endpoints."""
+        if self.ENVIRONMENT == "production":
+            return self.PRODUCTION_BACKEND_URL
+        return self.BACKEND_BASE_URL
     
     class Config:
         env_file = ".env"
@@ -85,5 +95,6 @@ class Settings(BaseSettings):
 # Create global settings instance
 settings = Settings()
 
-# Ensure upload directory exists
+# Ensure upload and download directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.DOWNLOAD_DIR, exist_ok=True)

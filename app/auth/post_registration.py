@@ -90,6 +90,19 @@ class PostRegistrationService:
                     guest_survey_data
                 )
                 self.db.add(survey_response)
+
+            # Link Financial Clinic survey if exists
+            if guest_survey_data.get('survey_response_id'):
+                from app.models import FinancialClinicResponse
+                fc_response = self.db.query(FinancialClinicResponse).filter(
+                    FinancialClinicResponse.id == guest_survey_data['survey_response_id']
+                ).first()
+                if fc_response and fc_response.user_id is None:
+                    fc_response.user_id = new_user.id
+                    # Also link the profile if it exists
+                    if fc_response.profile:
+                        if not fc_response.profile.email:
+                            fc_response.profile.email = email
             
             # Log registration
             audit_log = AuditLog(

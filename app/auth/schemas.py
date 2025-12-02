@@ -165,3 +165,24 @@ class PostRegistrationRequest(BaseModel):
             raise ValueError('Survey data must include responses array')
         
         return v
+
+
+class OTPVerifyResponse(BaseModel):
+    """Schema for OTP verification response."""
+    message: str
+    user: dict
+    session: dict
+
+
+class OTPVerifyRequest(BaseModel):
+    """Schema for OTP verification request."""
+    email: EmailStr
+    code: str
+    survey_response_id: Optional[int] = None
+    profile: Optional[dict] = None
+
+
+class OTPRequest(BaseModel):
+    """Schema for OTP request."""
+    email: EmailStr
+    language: str = "en"

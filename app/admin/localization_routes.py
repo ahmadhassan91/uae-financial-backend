@@ -24,7 +24,7 @@ from app.admin.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/localized-content", tags=["admin", "localization"])
+router = APIRouter(prefix="/admin/localized-content", tags=["admin", "localization"])
 
 
 @router.get("/", response_model=LocalizedContentListResponse)
@@ -437,7 +437,7 @@ async def get_localization_analytics(
 
 
 # Translation Workflow Routes
-workflow_router = APIRouter(prefix="/api/admin/translation-workflows", tags=["admin", "translation-workflows"])
+workflow_router = APIRouter(prefix="/admin/translation-workflows", tags=["admin", "translation-workflows"])
 
 
 @workflow_router.post("/", response_model=TranslationWorkflowResponse)

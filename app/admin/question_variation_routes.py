@@ -6,7 +6,7 @@ question variations with proper validation and analytics.
 """
 import logging
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -21,7 +21,9 @@ from app.models import (
 from app.surveys.question_variation_service import (
     QuestionVariationService, VariationValidationResult
 )
-from app.surveys.question_definitions import question_lookup
+from app.surveys.financial_clinic_questions import (
+    FINANCIAL_CLINIC_QUESTIONS, get_question_by_id
+)
 from app.admin.schemas import (
     QuestionVariationCreate, QuestionVariationUpdate, QuestionVariationResponse,
     QuestionVariationAnalytics, VariationTestRequest, VariationTestResult,
@@ -30,7 +32,7 @@ from app.admin.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/question-variations", tags=["admin", "question-variations"])
+router = APIRouter(prefix="/admin/question-variations", tags=["admin", "question-variations"])
 
 
 @router.get("/", response_model=QuestionVariationListResponse)
@@ -38,7 +40,7 @@ async def list_question_variations(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user),
     base_question_id: Optional[str] = Query(None, description="Filter by base question ID"),
-    language: str = Query("en", description="Filter by language"),
+    language: Optional[str] = Query(None, description="Filter by language (en, ar, both)"),
     company_id: Optional[int] = Query(None, description="Filter by company ID"),
     active_only: bool = Query(True, description="Only return active variations"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -76,16 +78,20 @@ async def list_question_variations(
         variation_responses = []
         for variation in variations:
             # Get usage statistics
-            usage_count = db.query(SurveyResponse).filter(
-                SurveyResponse.question_variations_used.contains({variation.base_question_id: variation.id})
-            ).count()
+            # TODO: Fix JSON query for PostgreSQL - currently disabled due to JSON type mismatch
+            usage_count = 0
+            # usage_count = db.query(SurveyResponse).filter(
+            #     SurveyResponse.question_variations_used.contains({variation.base_question_id: variation.id})
+            # ).count()
             
             variation_response = QuestionVariationResponse(
                 id=variation.id,
                 base_question_id=variation.base_question_id,
                 variation_name=variation.variation_name,
                 language=variation.language,
-                text=variation.text,
+                text_en=variation.text_en,
+                text_ar=variation.text_ar,
+                text=variation.text,  # Backward compatibility
                 options=variation.options,
                 demographic_rules=variation.demographic_rules,
                 company_ids=variation.company_ids,
@@ -143,11 +149,12 @@ async def create_question_variation(
     try:
         service = QuestionVariationService(db)
         
-        # Create variation
+        # Create bilingual variation
         success, message, variation = service.create_question_variation(
             base_question_id=variation_data.base_question_id,
             variation_name=variation_data.variation_name,
-            text=variation_data.text,
+            text_en=variation_data.text_en,
+            text_ar=variation_data.text_ar,
             options=variation_data.options,
             language=variation_data.language,
             demographic_rules=variation_data.demographic_rules,
@@ -179,7 +186,9 @@ async def create_question_variation(
             base_question_id=variation.base_question_id,
             variation_name=variation.variation_name,
             language=variation.language,
-            text=variation.text,
+            text_en=variation.text_en,
+            text_ar=variation.text_ar,
+            text=variation.text,  # Backward compatibility
             options=variation.options,
             demographic_rules=variation.demographic_rules,
             company_ids=variation.company_ids,
@@ -198,6 +207,46 @@ async def create_question_variation(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error creating question variation"
+        )
+
+
+@router.get("/base-questions", response_model=List[Dict[str, Any]])
+async def get_base_questions(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_admin_user)
+):
+    """
+    Get list of base questions available for variation creation.
+    
+    NOTE: This route MUST be defined before /{variation_id} to avoid path conflicts.
+    """
+    try:
+        base_questions = []
+        
+        for question in FINANCIAL_CLINIC_QUESTIONS:
+            # Count existing variations
+            variation_count = db.query(QuestionVariation).filter(
+                QuestionVariation.base_question_id == question.id
+            ).count()
+            
+            base_questions.append({
+                "id": question.id,
+                "question_number": question.number,
+                "text": question.text_en,  # Use English text for display
+                "text_ar": question.text_ar,  # Include Arabic text
+                "category": question.category.value,
+                "factor": question.category.value,  # For backward compatibility
+                "weight": question.weight,
+                "existing_variations": variation_count
+            })
+        
+        return base_questions
+        
+    except Exception as e:
+        logger.error(f"Error getting base questions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving base questions"
         )
 
 
@@ -275,9 +324,9 @@ async def update_question_variation(
             )
         
         # Validate updates if text or options changed
-        if variation_data.text or variation_data.options:
+        if variation_data.text_en or variation_data.text_ar or variation_data.options:
             service = QuestionVariationService(db)
-            base_question = question_lookup.get_question_by_id(variation.base_question_id)
+            base_question = get_question_by_id(variation.base_question_id)
             
             if base_question:
                 validation = service.validate_question_variation(
@@ -411,7 +460,7 @@ async def test_question_variation(
         service = QuestionVariationService(db)
         
         # Get base question
-        base_question = question_lookup.get_question_by_id(test_request.base_question_id)
+        base_question = get_question_by_id(test_request.base_question_id)
         if not base_question:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -459,8 +508,11 @@ async def test_question_variation(
         ))
         db.commit()
         
+        # Convert validation dataclass to dict for Pydantic serialization
+        from dataclasses import asdict
+        
         return VariationTestResult(
-            validation=validation,
+            validation=asdict(validation),
             profile_matches=profile_matches,
             estimated_usage=len([m for m in profile_matches if m["matches"]]) if profile_matches else 0
         )
@@ -553,40 +605,4 @@ async def get_variation_analytics(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving analytics"
-        )
-
-
-@router.get("/base-questions", response_model=List[Dict[str, Any]])
-async def get_base_questions(
-    db: Session = Depends(get_db),
-    admin_user: User = Depends(get_admin_user)
-):
-    """
-    Get list of base questions available for variation creation.
-    """
-    try:
-        base_questions = []
-        
-        for question in question_lookup.get_all_questions():
-            # Count existing variations
-            variation_count = db.query(QuestionVariation).filter(
-                QuestionVariation.base_question_id == question.id
-            ).count()
-            
-            base_questions.append({
-                "id": question.id,
-                "question_number": question.question_number,
-                "text": question.text,
-                "factor": question.factor.value,
-                "weight": question.weight,
-                "existing_variations": variation_count
-            })
-        
-        return base_questions
-        
-    except Exception as e:
-        logger.error(f"Error getting base questions: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving base questions"
         )

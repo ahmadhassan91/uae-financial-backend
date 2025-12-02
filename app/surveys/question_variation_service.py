@@ -14,9 +14,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 
 from app.models import QuestionVariation, CustomerProfile, LocalizedContent
-from app.surveys.question_definitions import (
-    QuestionDefinition, LikertOption, FinancialFactor, 
-    SURVEY_QUESTIONS_V2, question_lookup
+from app.surveys.financial_clinic_questions import (
+    FinancialClinicQuestion, FinancialClinicOption, FinancialClinicCategory,
+    FINANCIAL_CLINIC_QUESTIONS, get_question_by_id
 )
 
 logger = logging.getLogger(__name__)
@@ -59,21 +59,23 @@ class QuestionVariationService:
         self,
         base_question_id: str,
         variation_name: str,
-        text: str,
+        text_en: str,
+        text_ar: str,
         options: List[Dict[str, Any]],
-        language: str = "en",
+        language: str = "en",  # DEPRECATED: kept for compatibility
         demographic_rules: Optional[Dict[str, Any]] = None,
         company_ids: Optional[List[int]] = None
     ) -> Tuple[bool, str, Optional[QuestionVariation]]:
         """
-        Create a new question variation.
+        Create a new bilingual question variation.
         
         Args:
-            base_question_id: ID of the base question
+            base_question_id: ID of the base question (e.g., "fc_q1")
             variation_name: Name for this variation
-            text: Question text
-            options: List of option dictionaries with 'value' and 'label'
-            language: Language code
+            text_en: Question text in English
+            text_ar: Question text in Arabic
+            options: List of option dictionaries with 'value', 'label_en', and 'label_ar'
+            language: Language code (DEPRECATED, kept for compatibility)
             demographic_rules: Optional demographic targeting rules
             company_ids: Optional list of company IDs this applies to
             
@@ -82,40 +84,47 @@ class QuestionVariationService:
         """
         try:
             # Get base question
-            base_question = question_lookup.get_question_by_id(base_question_id)
+            base_question = get_question_by_id(base_question_id)
             if not base_question:
                 return False, f"Base question '{base_question_id}' not found", None
             
-            # Validate variation
-            validation = self.validate_question_variation(
-                base_question, text, options, language
+            # Validate both language versions
+            validation_en = self.validate_question_variation(
+                base_question, text_en, options, "en"
+            )
+            validation_ar = self.validate_question_variation(
+                base_question, text_ar, options, "ar"
             )
             
-            if not validation.is_valid:
-                return False, f"Validation failed: {'; '.join(validation.errors)}", None
+            if not validation_en.is_valid:
+                return False, f"English validation failed: {'; '.join(validation_en.errors)}", None
+            
+            if not validation_ar.is_valid:
+                return False, f"Arabic validation failed: {'; '.join(validation_ar.errors)}", None
             
             # Check for existing variation with same name
             existing = self.db.query(QuestionVariation).filter(
                 and_(
                     QuestionVariation.base_question_id == base_question_id,
-                    QuestionVariation.variation_name == variation_name,
-                    QuestionVariation.language == language
+                    QuestionVariation.variation_name == variation_name
                 )
             ).first()
             
             if existing:
                 return False, f"Variation '{variation_name}' already exists for this question", None
             
-            # Create variation
+            # Create bilingual variation
             variation = QuestionVariation(
                 base_question_id=base_question_id,
                 variation_name=variation_name,
-                language=language,
-                text=text,
+                language="both",  # Mark as bilingual
+                text_en=text_en,
+                text_ar=text_ar,
+                text=text_en,  # For backward compatibility
                 options=options,
                 demographic_rules=demographic_rules,
                 company_ids=company_ids,
-                factor=base_question.factor.value,
+                factor=base_question.category.value,  # Use category instead of factor
                 weight=base_question.weight,
                 is_active=True
             )
@@ -236,7 +245,7 @@ class QuestionVariationService:
     
     def validate_question_variation(
         self,
-        base_question: QuestionDefinition,
+        base_question: FinancialClinicQuestion,
         variation_text: str,
         variation_options: List[Dict[str, Any]],
         language: str = "en"
@@ -265,16 +274,15 @@ class QuestionVariationService:
             if not variation_options or not isinstance(variation_options, list):
                 errors.append("Options must be a non-empty list")
             else:
-                # Validate options structure
-                if len(variation_options) != len(base_question.options):
+                # Validate options structure - Financial Clinic uses 5 options (1-5 Likert scale)
+                if len(variation_options) != 5:
                     errors.append(
-                        f"Number of options ({len(variation_options)}) must match "
-                        f"base question ({len(base_question.options)})"
+                        f"Number of options ({len(variation_options)}) must be 5 for Financial Clinic questions"
                     )
                     consistency_score -= 0.3
                 
-                # Validate option values
-                base_values = {opt.value for opt in base_question.options}
+                # Validate option values (must be 1-5 for Financial Clinic)
+                base_values = {1, 2, 3, 4, 5}
                 variation_values = set()
                 
                 for i, option in enumerate(variation_options):
@@ -282,8 +290,16 @@ class QuestionVariationService:
                         errors.append(f"Option {i} must be a dictionary")
                         continue
                     
-                    if 'value' not in option or 'label' not in option:
-                        errors.append(f"Option {i} must have 'value' and 'label' fields")
+                    # Check for bilingual structure (label_en and label_ar) or legacy structure (label)
+                    if 'value' not in option:
+                        errors.append(f"Option {i} must have 'value' field")
+                        continue
+                    
+                    has_bilingual = 'label_en' in option and 'label_ar' in option
+                    has_legacy = 'label' in option
+                    
+                    if not has_bilingual and not has_legacy:
+                        errors.append(f"Option {i} must have either 'label' or both 'label_en' and 'label_ar' fields")
                         continue
                     
                     try:
@@ -292,8 +308,15 @@ class QuestionVariationService:
                     except (ValueError, TypeError):
                         errors.append(f"Option {i} value must be an integer")
                     
-                    if not option['label'] or not isinstance(option['label'], str):
-                        errors.append(f"Option {i} label must be a non-empty string")
+                    # Validate labels based on language
+                    if language == "en":
+                        label_key = 'label_en' if has_bilingual else 'label'
+                        if not option.get(label_key) or not isinstance(option.get(label_key), str):
+                            errors.append(f"Option {i} {label_key} must be a non-empty string")
+                    elif language == "ar":
+                        label_key = 'label_ar' if has_bilingual else 'label'
+                        if not option.get(label_key) or not isinstance(option.get(label_key), str):
+                            errors.append(f"Option {i} {label_key} must be a non-empty string")
                 
                 # Check value consistency
                 if variation_values != base_values:
@@ -317,8 +340,9 @@ class QuestionVariationService:
                         consistency_score -= 0.05
             
             # Semantic consistency check (basic)
+            base_text = base_question.text_en if language == "en" else base_question.text_ar
             semantic_score = self._check_semantic_consistency(
-                base_question.text, variation_text, language
+                base_text, variation_text, language
             )
             consistency_score *= semantic_score
             
@@ -355,7 +379,7 @@ class QuestionVariationService:
         """
         try:
             # Get base question
-            base_question = question_lookup.get_question_by_id(base_question_id)
+            base_question = get_question_by_id(base_question_id)
             if not base_question:
                 raise ValueError(f"Base question '{base_question_id}' not found")
             

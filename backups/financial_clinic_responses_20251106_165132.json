@@ -1,0 +1,726 @@
+{
+  "timestamp": "20251106_165132",
+  "total_responses": 6,
+  "responses": [
+    {
+      "id": 1,
+      "profile_id": 1,
+      "answers": {
+        "fc_q1": 5,
+        "fc_q2": 4,
+        "fc_q3": 3,
+        "fc_q4": 2,
+        "fc_q5": 4,
+        "fc_q6": 3,
+        "fc_q7": 4,
+        "fc_q8": 3,
+        "fc_q9": 4,
+        "fc_q10": 2,
+        "fc_q11": 3,
+        "fc_q12": 4,
+        "fc_q13": 3,
+        "fc_q14": 3,
+        "fc_q15": 4,
+        "fc_q16": 3
+      },
+      "total_score": 69.0,
+      "status_band": "Good",
+      "category_scores": {
+        "Income Stream": {
+          "score": 13.0,
+          "max_possible": 15,
+          "percentage": 86.67,
+          "status_level": "excellent"
+        },
+        "Savings Habit": {
+          "score": 12.0,
+          "max_possible": 20,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 10.0,
+          "max_possible": 15,
+          "percentage": 66.67,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 13.0,
+          "max_possible": 20,
+          "percentage": 65.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 11.0,
+          "max_possible": 15,
+          "percentage": 73.33,
+          "status_level": "good"
+        },
+        "Protecting Your Family": {
+          "score": 10.0,
+          "max_possible": 15,
+          "percentage": 66.67,
+          "status_level": "good"
+        }
+      },
+      "insights": [
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        },
+        {
+          "category": "Protecting Your Family",
+          "status_level": "good",
+          "text": "You have basic financial protection for your family, but coverage may be limited. Review your insurance needs annually as your circumstances change.",
+          "priority": 6
+        },
+        {
+          "category": "Retirement Planning",
+          "status_level": "good",
+          "text": "You have some plans for retirement but may not be saving enough. Consider increasing your contributions to retirement accounts and reviewing your investment strategy.",
+          "priority": 4
+        },
+        {
+          "category": "Savings Habit",
+          "status_level": "good",
+          "text": "You're saving occasionally, but your savings rate could be higher. Try setting specific savings goals aligned with your financial priorities.",
+          "priority": 3
+        },
+        {
+          "category": "Income Stream",
+          "status_level": "excellent",
+          "text": "Your income stream is healthy and consistent. Continue to focus on long-term wealth building and optimizing your earning potential.",
+          "priority": 1
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 17,
+          "name": "Comprehensive Family Plan",
+          "category": "Protecting Your Family",
+          "description": "Comprehensive protection for your family's financial security.",
+          "priority": 1
+        },
+        {
+          "id": 14,
+          "name": "Golden Years Investment",
+          "category": "Retirement Planning",
+          "description": "Enhance your retirement savings with diversified investment options.",
+          "priority": 1
+        },
+        {
+          "id": 5,
+          "name": "National Bonds Global Savings Club",
+          "category": "Savings Habit",
+          "description": "Join our Global Savings Club to optimize your savings with better returns and exclusive benefits.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-10-16T20:28:55.340732+05:00"
+    },
+    {
+      "id": 2,
+      "profile_id": 1,
+      "answers": {
+        "fc_q1": 3,
+        "fc_q2": 3,
+        "fc_q3": 4,
+        "fc_q4": 4,
+        "fc_q5": 4,
+        "fc_q6": 3,
+        "fc_q7": 4,
+        "fc_q8": 5,
+        "fc_q9": 2,
+        "fc_q10": 4,
+        "fc_q11": 3,
+        "fc_q12": 4,
+        "fc_q13": 3,
+        "fc_q14": 4,
+        "fc_q15": 3,
+        "fc_q16": 4
+      },
+      "total_score": 70.0,
+      "status_band": "Good",
+      "category_scores": {
+        "Income Stream": {
+          "score": 9.0,
+          "max_possible": 15,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Savings Habit": {
+          "score": 16.0,
+          "max_possible": 20,
+          "percentage": 80.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 12.0,
+          "max_possible": 15,
+          "percentage": 80.0,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 11.0,
+          "max_possible": 20,
+          "percentage": 55.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 11.0,
+          "max_possible": 15,
+          "percentage": 73.33,
+          "status_level": "good"
+        },
+        "Protecting Your Family": {
+          "score": 11.0,
+          "max_possible": 15,
+          "percentage": 73.33,
+          "status_level": "good"
+        }
+      },
+      "insights": [
+        {
+          "category": "Income Stream",
+          "status_level": "good",
+          "text": "Your income health is reasonable and can be improved by looking for multiple streams of income to increase financial resilience.",
+          "priority": 1
+        },
+        {
+          "category": "Retirement Planning",
+          "status_level": "good",
+          "text": "You have some plans for retirement but may not be saving enough. Consider increasing your contributions to retirement accounts and reviewing your investment strategy.",
+          "priority": 4
+        },
+        {
+          "category": "Debt Management",
+          "status_level": "good",
+          "text": "You manage your debt moderately well, but there's room for improvement. Consider consolidating high-interest debts or increasing monthly payments.",
+          "priority": 5
+        },
+        {
+          "category": "Protecting Your Family",
+          "status_level": "good",
+          "text": "You have basic financial protection for your family, but coverage may be limited. Review your insurance needs annually as your circumstances change.",
+          "priority": 6
+        },
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 2,
+          "name": "Second Salary",
+          "category": "Income Stream",
+          "description": "Boost your income with our Second Salary plan. Create additional income streams for better financial security.",
+          "priority": 1
+        },
+        {
+          "id": 11,
+          "name": "Financial Wellness Program",
+          "category": "Debt Management",
+          "description": "Optimize your debt management with our comprehensive financial wellness program.",
+          "priority": 1
+        },
+        {
+          "id": 14,
+          "name": "Golden Years Investment",
+          "category": "Retirement Planning",
+          "description": "Enhance your retirement savings with diversified investment options.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-10-16T20:44:13.631742+05:00"
+    },
+    {
+      "id": 3,
+      "profile_id": 2,
+      "answers": {
+        "fc_q1": 3,
+        "fc_q2": 1,
+        "fc_q3": 2,
+        "fc_q4": 4,
+        "fc_q5": 2,
+        "fc_q6": 5,
+        "fc_q7": 1,
+        "fc_q8": 4,
+        "fc_q9": 3,
+        "fc_q10": 2,
+        "fc_q11": 5,
+        "fc_q12": 1,
+        "fc_q13": 2,
+        "fc_q14": 3,
+        "fc_q15": 4,
+        "fc_q16": 2
+      },
+      "total_score": 51.0,
+      "status_band": "Moderate",
+      "category_scores": {
+        "Income Stream": {
+          "score": 5.0,
+          "max_possible": 15,
+          "percentage": 33.33,
+          "status_level": "at_risk"
+        },
+        "Savings Habit": {
+          "score": 10.0,
+          "max_possible": 20,
+          "percentage": 50.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 10.0,
+          "max_possible": 15,
+          "percentage": 66.67,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 13.0,
+          "max_possible": 20,
+          "percentage": 65.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 4.0,
+          "max_possible": 15,
+          "percentage": 26.67,
+          "status_level": "at_risk"
+        },
+        "Protecting Your Family": {
+          "score": 9.0,
+          "max_possible": 15,
+          "percentage": 60.0,
+          "status_level": "good"
+        }
+      },
+      "insights": [
+        {
+          "category": "Retirement Planning",
+          "status_level": "at_risk",
+          "text": "You haven't yet started planning for retirement. Starting today, even with small contributions, can make a significant difference over time.",
+          "priority": 4
+        },
+        {
+          "category": "Income Stream",
+          "status_level": "at_risk",
+          "text": "Your income sources appear limited or inconsistent. Consider building a safety net by diversifying income streams or exploring side opportunities.",
+          "priority": 1
+        },
+        {
+          "category": "Protecting Your Family",
+          "status_level": "good",
+          "text": "You have basic financial protection for your family, but coverage may be limited. Review your insurance needs annually as your circumstances change.",
+          "priority": 6
+        },
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        },
+        {
+          "category": "Savings Habit",
+          "status_level": "good",
+          "text": "You're saving occasionally, but your savings rate could be higher. Try setting specific savings goals aligned with your financial priorities.",
+          "priority": 3
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 13,
+          "name": "Retirement Starter Plan",
+          "category": "Retirement Planning",
+          "description": "Begin your retirement journey today with flexible contribution options.",
+          "priority": 1
+        },
+        {
+          "id": 1,
+          "name": "myPlan starting with AED 100",
+          "category": "Income Stream",
+          "description": "Start your savings journey with as little as AED 100 per month. Build financial stability gradually.",
+          "priority": 1
+        },
+        {
+          "id": 17,
+          "name": "Comprehensive Family Plan",
+          "category": "Protecting Your Family",
+          "description": "Comprehensive protection for your family's financial security.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-10-31T15:40:18.612795+05:00"
+    },
+    {
+      "id": 4,
+      "profile_id": 2,
+      "answers": {
+        "fc_q1": 2,
+        "fc_q2": 1,
+        "fc_q3": 2,
+        "fc_q4": 4,
+        "fc_q5": 4,
+        "fc_q6": 5,
+        "fc_q7": 1,
+        "fc_q8": 4,
+        "fc_q9": 3,
+        "fc_q10": 2,
+        "fc_q11": 5,
+        "fc_q12": 1,
+        "fc_q13": 2,
+        "fc_q14": 3,
+        "fc_q15": 4,
+        "fc_q16": 2
+      },
+      "total_score": 52.0,
+      "status_band": "Moderate",
+      "category_scores": {
+        "Income Stream": {
+          "score": 4.0,
+          "max_possible": 15,
+          "percentage": 26.67,
+          "status_level": "at_risk"
+        },
+        "Savings Habit": {
+          "score": 12.0,
+          "max_possible": 20,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 10.0,
+          "max_possible": 15,
+          "percentage": 66.67,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 13.0,
+          "max_possible": 20,
+          "percentage": 65.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 4.0,
+          "max_possible": 15,
+          "percentage": 26.67,
+          "status_level": "at_risk"
+        },
+        "Protecting Your Family": {
+          "score": 9.0,
+          "max_possible": 15,
+          "percentage": 60.0,
+          "status_level": "good"
+        }
+      },
+      "insights": [
+        {
+          "category": "Income Stream",
+          "status_level": "at_risk",
+          "text": "Your income sources appear limited or inconsistent. Consider building a safety net by diversifying income streams or exploring side opportunities.",
+          "priority": 1
+        },
+        {
+          "category": "Retirement Planning",
+          "status_level": "at_risk",
+          "text": "You haven't yet started planning for retirement. Starting today, even with small contributions, can make a significant difference over time.",
+          "priority": 4
+        },
+        {
+          "category": "Protecting Your Family",
+          "status_level": "good",
+          "text": "You have basic financial protection for your family, but coverage may be limited. Review your insurance needs annually as your circumstances change.",
+          "priority": 6
+        },
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        },
+        {
+          "category": "Savings Habit",
+          "status_level": "good",
+          "text": "You're saving occasionally, but your savings rate could be higher. Try setting specific savings goals aligned with your financial priorities.",
+          "priority": 3
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 1,
+          "name": "myPlan starting with AED 100",
+          "category": "Income Stream",
+          "description": "Start your savings journey with as little as AED 100 per month. Build financial stability gradually.",
+          "priority": 1
+        },
+        {
+          "id": 13,
+          "name": "Retirement Starter Plan",
+          "category": "Retirement Planning",
+          "description": "Begin your retirement journey today with flexible contribution options.",
+          "priority": 1
+        },
+        {
+          "id": 17,
+          "name": "Comprehensive Family Plan",
+          "category": "Protecting Your Family",
+          "description": "Comprehensive protection for your family's financial security.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-10-31T15:40:18.727142+05:00"
+    },
+    {
+      "id": 5,
+      "profile_id": 1,
+      "answers": {
+        "fc_q1": 5,
+        "fc_q2": 2,
+        "fc_q3": 2,
+        "fc_q4": 3,
+        "fc_q5": 3,
+        "fc_q6": 5,
+        "fc_q7": 2,
+        "fc_q8": 2,
+        "fc_q9": 4,
+        "fc_q10": 2,
+        "fc_q11": 2,
+        "fc_q12": 2,
+        "fc_q13": 2,
+        "fc_q14": 2,
+        "fc_q15": 2,
+        "fc_q16": 1
+      },
+      "total_score": 51.0,
+      "status_band": "Moderate",
+      "category_scores": {
+        "Income Stream": {
+          "score": 9.0,
+          "max_possible": 15,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Savings Habit": {
+          "score": 10.0,
+          "max_possible": 20,
+          "percentage": 50.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 9.0,
+          "max_possible": 15,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 12.0,
+          "max_possible": 20,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 6.0,
+          "max_possible": 15,
+          "percentage": 40.0,
+          "status_level": "at_risk"
+        },
+        "Protecting Your Family": {
+          "score": 5.0,
+          "max_possible": 15,
+          "percentage": 33.33,
+          "status_level": "at_risk"
+        }
+      },
+      "insights": [
+        {
+          "category": "Protecting Your Family",
+          "status_level": "at_risk",
+          "text": "You may not have adequate protection for yourself or your family. Explore Takaful (Islamic insurance) and savings plans to safeguard your loved ones.",
+          "priority": 6
+        },
+        {
+          "category": "Retirement Planning",
+          "status_level": "at_risk",
+          "text": "You haven't yet started planning for retirement. Starting today, even with small contributions, can make a significant difference over time.",
+          "priority": 4
+        },
+        {
+          "category": "Income Stream",
+          "status_level": "good",
+          "text": "Your income health is reasonable and can be improved by looking for multiple streams of income to increase financial resilience.",
+          "priority": 1
+        },
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        },
+        {
+          "category": "Savings Habit",
+          "status_level": "good",
+          "text": "You're saving occasionally, but your savings rate could be higher. Try setting specific savings goals aligned with your financial priorities.",
+          "priority": 3
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 16,
+          "name": "Family Protection Essentials",
+          "category": "Protecting Your Family",
+          "description": "Start protecting your family with essential Takaful coverage.",
+          "priority": 1
+        },
+        {
+          "id": 13,
+          "name": "Retirement Starter Plan",
+          "category": "Retirement Planning",
+          "description": "Begin your retirement journey today with flexible contribution options.",
+          "priority": 1
+        },
+        {
+          "id": 2,
+          "name": "Second Salary",
+          "category": "Income Stream",
+          "description": "Boost your income with our Second Salary plan. Create additional income streams for better financial security.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-11-06T01:24:59.884390+05:00"
+    },
+    {
+      "id": 6,
+      "profile_id": 1,
+      "answers": {
+        "fc_q1": 2,
+        "fc_q2": 5,
+        "fc_q3": 2,
+        "fc_q4": 3,
+        "fc_q5": 4,
+        "fc_q6": 1,
+        "fc_q7": 3,
+        "fc_q8": 4,
+        "fc_q9": 3,
+        "fc_q10": 4,
+        "fc_q11": 2,
+        "fc_q12": 3,
+        "fc_q13": 5,
+        "fc_q14": 1,
+        "fc_q15": 3,
+        "fc_q16": 2
+      },
+      "total_score": 60.0,
+      "status_band": "Moderate",
+      "category_scores": {
+        "Income Stream": {
+          "score": 12.0,
+          "max_possible": 15,
+          "percentage": 80.0,
+          "status_level": "good"
+        },
+        "Savings Habit": {
+          "score": 11.0,
+          "max_possible": 20,
+          "percentage": 55.0,
+          "status_level": "good"
+        },
+        "Emergency Savings": {
+          "score": 8.0,
+          "max_possible": 15,
+          "percentage": 53.33,
+          "status_level": "good"
+        },
+        "Debt Management": {
+          "score": 12.0,
+          "max_possible": 20,
+          "percentage": 60.0,
+          "status_level": "good"
+        },
+        "Retirement Planning": {
+          "score": 11.0,
+          "max_possible": 15,
+          "percentage": 73.33,
+          "status_level": "good"
+        },
+        "Protecting Your Family": {
+          "score": 6.0,
+          "max_possible": 15,
+          "percentage": 40.0,
+          "status_level": "at_risk"
+        }
+      },
+      "insights": [
+        {
+          "category": "Protecting Your Family",
+          "status_level": "at_risk",
+          "text": "You may not have adequate protection for yourself or your family. Explore Takaful (Islamic insurance) and savings plans to safeguard your loved ones.",
+          "priority": 6
+        },
+        {
+          "category": "Emergency Savings",
+          "status_level": "good",
+          "text": "You have a partial safety net, but it may not be sufficient for larger financial shocks. Work on increasing your emergency fund to 6 months of expenses.",
+          "priority": 2
+        },
+        {
+          "category": "Savings Habit",
+          "status_level": "good",
+          "text": "You're saving occasionally, but your savings rate could be higher. Try setting specific savings goals aligned with your financial priorities.",
+          "priority": 3
+        },
+        {
+          "category": "Retirement Planning",
+          "status_level": "good",
+          "text": "You have some plans for retirement but may not be saving enough. Consider increasing your contributions to retirement accounts and reviewing your investment strategy.",
+          "priority": 4
+        },
+        {
+          "category": "Income Stream",
+          "status_level": "good",
+          "text": "Your income health is reasonable and can be improved by looking for multiple streams of income to increase financial resilience.",
+          "priority": 1
+        }
+      ],
+      "product_recommendations": [
+        {
+          "id": 16,
+          "name": "Family Protection Essentials",
+          "category": "Protecting Your Family",
+          "description": "Start protecting your family with essential Takaful coverage.",
+          "priority": 1
+        },
+        {
+          "id": 5,
+          "name": "National Bonds Global Savings Club",
+          "category": "Savings Habit",
+          "description": "Join our Global Savings Club to optimize your savings with better returns and exclusive benefits.",
+          "priority": 1
+        },
+        {
+          "id": 14,
+          "name": "Golden Years Investment",
+          "category": "Retirement Planning",
+          "description": "Enhance your retirement savings with diversified investment options.",
+          "priority": 1
+        }
+      ],
+      "questions_answered": 16,
+      "total_questions": 16,
+      "created_at": "2025-11-06T02:13:29.714287+05:00"
+    }
+  ]
+}

@@ -56,7 +56,9 @@ async def create_company(
         phone_number=company.phone_number,
         unique_url=unique_url,
         custom_branding=company.custom_branding,
-        notification_settings=company.notification_settings
+        notification_settings=company.notification_settings,
+        question_variation_mapping=company.question_variation_mapping,
+        variation_set_id=company.variation_set_id
     )
     
     db.add(db_company)
@@ -1260,3 +1262,37 @@ async def export_report_csv(report_data: dict, report_type: str):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+@router.get("/by-url/{company_url}")
+async def get_company_by_url(
+    company_url: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get company information by unique URL. Public endpoint (no auth required).
+    Used for validating company links on the frontend.
+    
+    Returns:
+        Basic company info: name, email, contact person, active status
+    """
+    company = db.query(CompanyTracker).filter(
+        CompanyTracker.unique_url == company_url
+    ).first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    if not company.is_active:
+        raise HTTPException(status_code=403, detail="Company link is no longer active")
+    
+    # Return only public information
+    return {
+        "id": company.id,
+        "company_name": company.company_name,
+        "company_email": company.company_email,
+        "contact_person": company.contact_person,
+        "unique_url": company.unique_url,
+        "is_active": company.is_active,
+        "custom_branding": company.custom_branding
+    }

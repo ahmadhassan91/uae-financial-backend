@@ -26,7 +26,7 @@ from app.admin.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/admin/demographic-rules", tags=["admin", "demographic-rules"])
+router = APIRouter(prefix="/admin/demographic-rules", tags=["admin", "demographic-rules"])
 
 
 @router.get("/", response_model=DemographicRuleListResponse)

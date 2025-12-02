@@ -1,10 +1,18 @@
 """Database models for the UAE Financial Health Check application."""
 from datetime import datetime
 from typing import Optional
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, JSON, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+
+# Import PDPL-compliant consent models
+from app.models_consent import (
+    UserConsent,
+    ConsentAuditLog,
+    DataProcessingActivity,
+    DataSubjectRequest
+)
 
 
 class User(Base):
@@ -15,7 +23,9 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    date_of_birth = Column(DateTime, nullable=True)  # For simple authentication
+    date_of_birth = Column(DateTime, nullable=True)  # For profile data (not auth)
+    email_verified = Column(Boolean, default=False)  # For OTP verification
+    email_verified_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -193,11 +203,19 @@ class CompanyTracker(Base):
     report_branding = Column(JSON, nullable=True)  # Custom report branding
     admin_users = Column(JSON, nullable=True)  # Company admin user IDs
     
+    # Variation Set Assignment
+    variation_set_id = Column(Integer, ForeignKey("variation_sets.id"), nullable=True, index=True)
+    
+    # Question Variation Mapping (API compatibility)
+    question_variation_mapping = Column(JSON, nullable=True)  # {"fc_q3": 123, "fc_q11": 456}
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     company_assessments = relationship("CompanyAssessment", back_populates="company_tracker")
+    variation_set = relationship("VariationSet")
+    incomplete_surveys = relationship("IncompleteSurvey", back_populates="company")
 
 
 class CompanyAssessment(Base):
@@ -252,6 +270,10 @@ class IncompleteSurvey(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     customer_profile_id = Column(Integer, ForeignKey("customer_profiles.id"), nullable=True)
     
+    # Company tracking (for surveys started via company QR codes)
+    company_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=True)
+    company_url = Column(String(255), nullable=True, index=True)
+    
     # Session tracking
     session_id = Column(String(255), unique=True, index=True, nullable=False)
     
@@ -280,6 +302,7 @@ class IncompleteSurvey(Base):
     # Relationships
     user = relationship("User")
     customer_profile = relationship("CustomerProfile")
+    company = relationship("CompanyTracker", back_populates="incomplete_surveys")
 
 
 class AuditLog(Base):
@@ -310,13 +333,18 @@ class QuestionVariation(Base):
     __tablename__ = "question_variations"
     
     id = Column(Integer, primary_key=True, index=True)
-    base_question_id = Column(String(50), nullable=False, index=True)  # e.g., "q1_income_stability"
+    base_question_id = Column(String(50), nullable=False, index=True)  # e.g., "fc_q1"
     variation_name = Column(String(100), nullable=False)  # e.g., "uae_citizen_version"
-    language = Column(String(5), nullable=False, default="en", index=True)
+    language = Column(String(5), nullable=False, default="en", index=True)  # DEPRECATED: kept for compatibility
     
-    # Question content
-    text = Column(Text, nullable=False)
-    options = Column(JSON, nullable=False)  # Array of {value, label}
+    # Question content - BILINGUAL (new structure)
+    text_en = Column(Text, nullable=True)  # English text
+    text_ar = Column(Text, nullable=True)  # Arabic text
+    text = Column(Text, nullable=True)  # DEPRECATED: old single-language field
+    
+    # Options - BILINGUAL (new structure)
+    # Format: [{"value": 1, "label_en": "...", "label_ar": "..."}]
+    options = Column(JSON, nullable=False)  # Array of {value, label_en, label_ar}
     
     # Targeting rules
     demographic_rules = Column(JSON, nullable=True)  # Conditions for when to use
@@ -328,6 +356,55 @@ class QuestionVariation(Base):
     is_active = Column(Boolean, default=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class VariationSet(Base):
+    """Bundles of question variations that can be assigned to companies."""
+    __tablename__ = "variation_sets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    set_type = Column(String(50), nullable=False, index=True)  # 'industry', 'demographic', 'language', 'custom'
+    is_template = Column(Boolean, default=False, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    
+    # Foreign keys for all 15 Financial Clinic questions
+    q1_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q2_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q3_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q4_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q5_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q6_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q7_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q8_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q9_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q10_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q11_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q12_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q13_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q14_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    q15_variation_id = Column(Integer, ForeignKey("question_variations.id"), nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    q1_variation = relationship("QuestionVariation", foreign_keys=[q1_variation_id])
+    q2_variation = relationship("QuestionVariation", foreign_keys=[q2_variation_id])
+    q3_variation = relationship("QuestionVariation", foreign_keys=[q3_variation_id])
+    q4_variation = relationship("QuestionVariation", foreign_keys=[q4_variation_id])
+    q5_variation = relationship("QuestionVariation", foreign_keys=[q5_variation_id])
+    q6_variation = relationship("QuestionVariation", foreign_keys=[q6_variation_id])
+    q7_variation = relationship("QuestionVariation", foreign_keys=[q7_variation_id])
+    q8_variation = relationship("QuestionVariation", foreign_keys=[q8_variation_id])
+    q9_variation = relationship("QuestionVariation", foreign_keys=[q9_variation_id])
+    q10_variation = relationship("QuestionVariation", foreign_keys=[q10_variation_id])
+    q11_variation = relationship("QuestionVariation", foreign_keys=[q11_variation_id])
+    q12_variation = relationship("QuestionVariation", foreign_keys=[q12_variation_id])
+    q13_variation = relationship("QuestionVariation", foreign_keys=[q13_variation_id])
+    q14_variation = relationship("QuestionVariation", foreign_keys=[q14_variation_id])
+    q15_variation = relationship("QuestionVariation", foreign_keys=[q15_variation_id])
 
 
 class DemographicRule(Base):
@@ -469,3 +546,187 @@ class CompanyQuestionSet(Base):
     
     # Relationships
     company_tracker = relationship("CompanyTracker")
+
+
+class Product(Base):
+    """Product recommendations for Financial Clinic system."""
+    __tablename__ = "products"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Product details
+    name = Column(String(200), nullable=False)
+    category = Column(String(100), nullable=False, index=True)  # Income Stream, Savings Habit, etc.
+    status_level = Column(String(50), nullable=False, index=True)  # at_risk, good, excellent
+    description = Column(Text, nullable=False)
+    
+    # Demographic filters (NULL means "applies to all")
+    nationality_filter = Column(String(50), nullable=True, index=True)  # "Emirati", "Non-Emirati", or NULL
+    gender_filter = Column(String(20), nullable=True, index=True)  # "Male", "Female", or NULL
+    children_filter = Column(String(20), nullable=True)  # "0", "1+", or NULL
+    
+    # Priority and status
+    priority = Column(Integer, default=1, index=True)  # Lower number = higher priority
+    active = Column(Boolean, default=True, index=True)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    def matches_demographics(
+        self,
+        nationality: str,
+        gender: Optional[str] = None,
+        children: int = 0
+    ) -> bool:
+        """
+        Check if product matches user demographics.
+        
+        Args:
+            nationality: User nationality ("Emirati" or "Non-Emirati")
+            gender: User gender ("Male" or "Female")
+            children: Number of children (0-5+)
+            
+        Returns:
+            True if product matches all applicable filters
+        """
+        # Check nationality filter
+        if self.nationality_filter and self.nationality_filter != nationality:
+            return False
+        
+        # Check gender filter
+        if self.gender_filter and gender and self.gender_filter != gender:
+            return False
+        
+        # Check children filter
+        if self.children_filter:
+            if self.children_filter == "0" and children > 0:
+                return False
+            if self.children_filter == "1+" and children == 0:
+                return False
+        
+        return True
+
+
+class FinancialClinicProfile(Base):
+    """
+    Financial Clinic customer profile.
+    Stores demographic and contact information for Financial Clinic assessments.
+    This is separate from CustomerProfile to allow standalone Financial Clinic usage.
+    """
+    __tablename__ = "financial_clinic_profiles"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Required Personal Information
+    name = Column(String(200), nullable=False)
+    date_of_birth = Column(String(20), nullable=False)  # Format: DD/MM/YYYY
+    gender = Column(String(20), nullable=False, index=True)  # Male, Female
+    nationality = Column(String(50), nullable=False, index=True)  # Emirati, Non-Emirati
+    
+    # Family Information
+    children = Column(Integer, nullable=False, default=0, index=True)  # 0-5+
+    
+    # Employment & Income
+    employment_status = Column(String(50), nullable=False, index=True)  # Employed, Self-Employed, Unemployed
+    income_range = Column(String(50), nullable=False, index=True)  # Below 5K, 5K-10K, etc.
+    
+    # Location
+    emirate = Column(String(100), nullable=False, index=True)  # Dubai, Abu Dhabi, etc.
+    
+    # Contact Information
+    email = Column(String(255), nullable=False, index=True)
+    mobile_number = Column(String(20), nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    survey_responses = relationship("FinancialClinicResponse", back_populates="profile")
+
+
+class FinancialClinicResponse(Base):
+    """
+    Financial Clinic survey response.
+    Stores answers and calculated results for Financial Clinic assessments.
+    """
+    __tablename__ = "financial_clinic_responses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    profile_id = Column(Integer, ForeignKey("financial_clinic_profiles.id"), nullable=False, index=True)
+    
+    # Company Tracking (optional - for corporate assessments)
+    company_tracker_id = Column(Integer, ForeignKey("company_trackers.id"), nullable=True, index=True)
+    
+    # Survey Data
+    answers = Column(JSON, nullable=False)  # {question_id: answer_value}
+    
+    # Calculated Results
+    total_score = Column(Float, nullable=False, index=True)  # 0-100
+    status_band = Column(String(50), nullable=False, index=True)  # At Risk, Good, Excellent, etc.
+    category_scores = Column(JSON, nullable=False)  # Detailed category breakdown
+    
+    # Recommendations
+    insights = Column(JSON, nullable=True)  # Selected insights
+    product_recommendations = Column(JSON, nullable=True)  # Recommended products
+    
+    # Metadata
+    questions_answered = Column(Integer, nullable=False)
+    total_questions = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime(timezone=True), nullable=True)  # When the survey was completed
+    
+    # Relationships
+    profile = relationship("FinancialClinicProfile", back_populates="survey_responses")
+    company_tracker = relationship("CompanyTracker")
+
+
+class OTPCode(Base):
+    """OTP codes for email verification and authentication."""
+    __tablename__ = "otp_codes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempt_count = Column(Integer, default=0, nullable=False)
+    is_used = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    used_at = Column(DateTime(timezone=True), nullable=True)
+
+
+class ConsultationRequest(Base):
+    """Consultation requests from users who want to book a free consultation."""
+    __tablename__ = "consultation_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Contact information
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    phone_number = Column(String(20), nullable=False)
+    
+    # Request details
+    message = Column(Text, nullable=True)
+    preferred_contact_method = Column(String(20), default="phone", nullable=False)  # phone, email, whatsapp
+    preferred_time = Column(String(20), nullable=True)  # morning, afternoon, evening
+    source = Column(String(50), default="financial_clinic", nullable=False)  # financial_clinic, website, etc.
+    
+    # Status tracking
+    status = Column(String(20), default="pending", nullable=False)  # pending, contacted, scheduled, completed, cancelled
+    notes = Column(Text, nullable=True)  # Admin notes
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    contacted_at = Column(DateTime(timezone=True), nullable=True)
+    scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_consultation_status', 'status'),
+        Index('idx_consultation_source', 'source'),
+        Index('idx_consultation_created_at', 'created_at'),
+        Index('idx_consultation_email', 'email'),
+    )

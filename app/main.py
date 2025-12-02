@@ -19,9 +19,13 @@ from app.companies.url_config_routes import router as url_config_router
 from app.reports.routes import router as reports_router
 from app.localization.routes import router as localization_router
 from app.admin.question_variation_routes import router as admin_question_variation_router
+from app.admin.variation_set_routes import router as admin_variation_set_router
 from app.admin.demographic_rule_routes import router as admin_demographic_rule_router
 from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
+from app.surveys.financial_clinic_routes import router as financial_clinic_router
+from app.consent.routes import router as consent_router
+from app.consultations.routes import router as consultations_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,7 +49,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -116,6 +120,19 @@ async def health_check():
     }
 
 
+# API v1 Health check endpoint
+@app.get("/api/v1/health")
+async def api_v1_health_check():
+    """API v1 health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT,
+        "timestamp": time.time(),
+        "api_version": "v1"
+    }
+
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -128,21 +145,25 @@ async def root():
     }
 
 
-# Include routers
-app.include_router(auth_router)
-app.include_router(customers_router)
-app.include_router(surveys_router)
-app.include_router(incomplete_surveys_router)
-app.include_router(dynamic_questions_router)
-app.include_router(companies_router)
-app.include_router(company_questions_router)
-app.include_router(url_config_router)
-app.include_router(reports_router)
-app.include_router(localization_router)
-app.include_router(admin_question_variation_router)
-app.include_router(admin_demographic_rule_router)
-app.include_router(admin_localization_router)
-app.include_router(simple_admin_router)
+# Include routers with /api/v1 prefix
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(customers_router, prefix="/api/v1")
+app.include_router(surveys_router, prefix="/api/v1")
+app.include_router(incomplete_surveys_router, prefix="/api/v1")
+app.include_router(dynamic_questions_router, prefix="/api/v1")
+app.include_router(financial_clinic_router, prefix="/api/v1")  # Financial Clinic survey system
+app.include_router(consultations_router, prefix="/api/v1")  # Consultation requests
+app.include_router(companies_router, prefix="/api/v1")
+app.include_router(company_questions_router, prefix="/api/v1")
+app.include_router(url_config_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
+app.include_router(localization_router, prefix="/api/v1")
+app.include_router(consent_router, prefix="/api/v1")  # PDPL-compliant consent management
+app.include_router(admin_question_variation_router, prefix="/api/v1")
+app.include_router(admin_variation_set_router, prefix="/api/v1")
+app.include_router(admin_demographic_rule_router, prefix="/api/v1")
+app.include_router(admin_localization_router, prefix="/api/v1")
+app.include_router(simple_admin_router, prefix="/api/v1")
 
 
 # Startup event
