@@ -393,9 +393,9 @@
       }
     }
 
-    /* RTL Support - Restored original layout */
+    /* RTL Support - Minimal for Heroku compatibility (no direction/unicode-bidi) */
     .rtl {
-      direction: rtl;
+      /* NO direction: rtl or unicode-bidi - causes Heroku pango/cairo crash */
       text-align: right;
       font-family: "Tajawal", "Almarai", "Arial", sans-serif;
     }
@@ -431,14 +431,12 @@
 <body class="{{ 'rtl' if language == 'ar' else '' }}">
   <div class="container">
     <!-- Header with Logos -->
-    {% if language != 'ar' %}
     <div class="header">
       <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
         alt="Financial Clinic" class="logo-left" />
       <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" alt="National Bonds"
         class="logo-right" />
     </div>
-    {% endif %}
 
     <!-- Hero Section -->
     <div class="hero">
@@ -538,8 +536,8 @@
       Scores{% endif %}
     </h2>
     <p class="section-subtitle">
-      {% if language == 'ar' %} أدائك عبر 7 مجالات رئيسية للصحة المالية {%
-      else %} Your performance across the 7 key areas of financial health {%
+      {% if language == 'ar' %} أدائك عبر مجالات رئيسية للصحة المالية {%
+      else %} Your performance across the key areas of financial health {%
       endif %}
     </p>
 
