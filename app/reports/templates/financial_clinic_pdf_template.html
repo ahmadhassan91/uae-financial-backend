@@ -393,12 +393,11 @@
       }
     }
 
-    /* RTL Support */
+    /* RTL Support - Simplified for WeasyPrint stability */
     .rtl {
       direction: rtl;
       text-align: right;
       font-family: "Tajawal", "Almarai", "Arial", sans-serif;
-      /* Arabic fonts */
     }
 
     .rtl .hero,
@@ -415,14 +414,32 @@
       text-align: right;
     }
 
+    /* Avoid flexbox issues in RTL */
     .rtl .pillar-header {
-      gap: 0;
-      /* Reset gap if used */
+      display: block;
     }
 
     .rtl .pillar-info {
+      display: inline-block;
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    .rtl .pillar-score-container {
+      display: inline-block;
+      width: 100%;
+    }
+
+    .rtl .recommendation-number {
+      float: right;
       margin-left: 12px;
-      /* Add spacing between info and progress bar in RTL */
+      margin-right: 0;
+    }
+
+    .rtl .recommendation-content {
+      overflow: hidden;
+      /* Clears float */
+      text-align: right;
     }
   </style>
 </head>
