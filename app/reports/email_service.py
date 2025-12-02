@@ -1147,30 +1147,53 @@ Next Steps:
         return color_map.get(status_level.lower(), '#6b7280')  # Gray as default
     
     def _store_pdf_for_download(self, pdf_content: bytes, identifier: str) -> str:
-        """Store PDF file in downloads directory and return download URL."""
+        """Store PDF file (S3 or local) and return download URL."""
         import os
         import hashlib
         from datetime import datetime
-        
-        # Create downloads directory if it doesn't exist
-        downloads_dir = settings.DOWNLOAD_DIR
-        os.makedirs(downloads_dir, exist_ok=True)
+        from app.reports.s3_storage import s3_storage
         
         # Generate unique token for file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         token = hashlib.md5(f"{identifier}_{timestamp}".encode()).hexdigest()[:12]
-        
-        # Save PDF file
         filename = f"{token}_financial_clinic_report.pdf"
-        file_path = os.path.join(downloads_dir, filename)
         
+        # Try S3 storage first
+        if settings.USE_S3_STORAGE:
+            try:
+                # Upload to S3 with reports/ prefix
+                s3_key = f"reports/{filename}"
+                s3_url = s3_storage.upload_pdf(
+                    pdf_content=pdf_content,
+                    file_key=s3_key,
+                    metadata={
+                        'identifier': identifier,
+                        'timestamp': timestamp,
+                        'type': 'financial_clinic_report'
+                    }
+                )
+                
+                if s3_url:
+                    logging.info(f"✅ PDF stored in S3: {s3_url}")
+                    return s3_url
+                else:
+                    logging.warning("⚠️ S3 upload failed, falling back to local storage")
+            except Exception as e:
+                logging.error(f"❌ S3 storage error: {e}, falling back to local storage")
+        
+        # Fallback to local storage
+        downloads_dir = settings.DOWNLOAD_DIR
+        os.makedirs(downloads_dir, exist_ok=True)
+        
+        file_path = os.path.join(downloads_dir, filename)
         with open(file_path, 'wb') as f:
             f.write(pdf_content)
         
-        # Generate download URL
+        # Generate download URL for local storage
         base_url = settings.api_base_url
         download_url = f"{base_url}/api/v1/reports/download-public/{token}"
         
+        logging.info(f"📁 PDF stored locally: {download_url}")
         return download_url
     
     async def send_otp_email(

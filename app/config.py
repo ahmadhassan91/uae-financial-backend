@@ -67,6 +67,13 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = "us-east-1"
+    AWS_S3_BUCKET: str = ""
+    USE_S3_STORAGE: bool = False  # Set to True to use S3 instead of local storage
+    
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
     PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
@@ -86,6 +93,13 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return self.PRODUCTION_BACKEND_URL
         return self.BACKEND_BASE_URL
+    
+    @property
+    def s3_pdf_base_url(self) -> str:
+        """Get S3 base URL for PDF downloads."""
+        if self.AWS_S3_BUCKET:
+            return f"https://{self.AWS_S3_BUCKET}.s3.{self.AWS_REGION}.amazonaws.com"
+        return ""
     
     class Config:
         env_file = ".env"
