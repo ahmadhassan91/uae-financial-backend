@@ -393,9 +393,9 @@
       }
     }
 
-    /* RTL Support - NO direction:rtl due to WeasyPrint bug */
+    /* RTL Support - Restored original layout */
     .rtl {
-      /* direction: rtl; REMOVED - causes AssertionError in WeasyPrint */
+      direction: rtl;
       text-align: right;
       font-family: "Tajawal", "Almarai", "Arial", sans-serif;
     }
@@ -414,28 +414,16 @@
       text-align: right;
     }
 
-    /* No floats, no flex, no direction:rtl - just blocks */
     .rtl .pillar-header {
-      display: block;
+      gap: 0;
     }
 
     .rtl .pillar-info {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .rtl .pillar-score-container {
-      display: block;
+      margin-left: 12px;
     }
 
     .rtl .recommendation-number {
-      display: block;
-      margin-bottom: 3px;
-    }
-
-    .rtl .recommendation-content {
-      display: block;
-      text-align: right;
+      margin-right: 12px;
     }
   </style>
 </head>
@@ -443,12 +431,14 @@
 <body class="{{ 'rtl' if language == 'ar' else '' }}">
   <div class="container">
     <!-- Header with Logos -->
+    {% if language != 'ar' %}
     <div class="header">
       <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
         alt="Financial Clinic" class="logo-left" />
       <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" alt="National Bonds"
         class="logo-right" />
     </div>
+    {% endif %}
 
     <!-- Hero Section -->
     <div class="hero">
