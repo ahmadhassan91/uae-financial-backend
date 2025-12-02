@@ -104,14 +104,14 @@ class EmailReportService:
                 # Extract email from "Name <email@domain.com>" format
                 to_email = to_email.split('<')[1].split('>')[0].strip()
             
-            # Use exact working approach
-            server = smtplib.SMTP('smtp.gmail.com', 587)
+            # Use settings from config
+            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
             server.starttls()
-            server.login('ahmad.hassan@clustox.com', 'uvrf ptoj dogy xzne')
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
             
             # Use as_string() exactly like the working test
             msg_string = msg.as_string()
-            server.sendmail('ahmad.hassan@clustox.com', [to_email], msg_string)
+            server.sendmail(settings.FROM_EMAIL, [to_email], msg_string)
             server.quit()
             
             return {
