@@ -139,6 +139,26 @@ class PDFReportService:
         self.branding = branding_config or BrandingConfig()
         self._setup_custom_styles()
     
+    def _get_score_color(self, score: float) -> str:
+        """
+        Get color based on score range.
+        Matches frontend color scheme from FinancialClinicResults.tsx
+        
+        Args:
+            score: Score value (0-100)
+            
+        Returns:
+            Hex color code
+        """
+        if score >= 80:
+            return '#6cc922'  # Excellent - Green
+        elif score >= 60:
+            return '#fca924'  # Good - Yellow/Orange
+        elif score >= 30:
+            return '#fe6521'  # Fair - Orange
+        else:
+            return '#f00c01'  # Needs Improvement - Red
+    
     def _setup_custom_styles(self):
         """Set up custom paragraph styles for the report."""
         # Title style
@@ -451,14 +471,16 @@ class PDFReportService:
             chart.bars.strokeColor = colors.black
             chart.bars.strokeWidth = 0.5
             
-            # Set individual bar colors
+            # Set individual bar colors to match frontend
             for i, score in enumerate(scores):
                 if score >= 80:
-                    chart.bars[(0, i)].fillColor = HexColor(self.branding.secondary_color)
+                    chart.bars[(0, i)].fillColor = HexColor('#6cc922')  # Excellent - Green
                 elif score >= 60:
-                    chart.bars[(0, i)].fillColor = HexColor('#f59e0b')  # Amber
+                    chart.bars[(0, i)].fillColor = HexColor('#fca924')  # Good - Yellow/Orange
+                elif score >= 30:
+                    chart.bars[(0, i)].fillColor = HexColor('#fe6521')  # Fair - Orange
                 else:
-                    chart.bars[(0, i)].fillColor = HexColor(self.branding.accent_color)
+                    chart.bars[(0, i)].fillColor = HexColor('#f00c01')  # Needs Improvement - Red
             
             drawing.add(chart)
             
@@ -481,12 +503,23 @@ class PDFReportService:
         header_text = "Executive Summary" if language == "en" else "الملخص التنفيذي"
         story.append(Paragraph(header_text, self.styles['SectionHeader']))
         
-        # Overall score
+        # Overall score with dynamic color
         score_text = f"Overall Financial Health Score: {survey_response.overall_score}/100"
         if language == "ar":
             score_text = f"نتيجة الصحة المالية الإجمالية: {survey_response.overall_score}/100"
         
-        story.append(Paragraph(str(survey_response.overall_score), self.styles['ScoreStyle']))
+        # Create dynamic score style with color based on score
+        score_color = self._get_score_color(survey_response.overall_score)
+        dynamic_score_style = ParagraphStyle(
+            name='DynamicScoreStyle',
+            parent=self.styles['Normal'],
+            fontSize=36,
+            textColor=HexColor(score_color),
+            alignment=TA_CENTER,
+            spaceAfter=10
+        )
+        
+        story.append(Paragraph(str(int(survey_response.overall_score)), dynamic_score_style))
         story.append(Paragraph(score_text, self.styles['Normal']))
         story.append(Spacer(1, 15))
         

@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/uae_financial_health"
-    DATABASE_URL_TEST: str = "postgresql://postgres:password@localhost:5432/uae_financial_health_test"
+    DATABASE_URL: str = ""
+    DATABASE_URL_TEST: str = ""
     
     # Heroku provides DATABASE_URL automatically
     @property
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
         return self.DATABASE_URL
     
     # Security
-    SECRET_KEY: str = "your-secret-key-change-in-production"
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
-    FROM_NAME: str = "National Bonds"
+    FROM_NAME: str = "Financial Clinic"
     
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -67,11 +67,18 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = "us-east-1"
+    AWS_S3_BUCKET: str = ""
+    USE_S3_STORAGE: bool = False  # Set to True to use S3 instead of local storage
+    
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
-    PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
+    PRODUCTION_BASE_URL: str = ""  # Will be loaded from .env
     BACKEND_BASE_URL: str = "http://localhost:8000"  # Backend API URL
-    PRODUCTION_BACKEND_URL: str = "https://uae-financial-backend.herokuapp.com"  # Production backend URL
+    PRODUCTION_BACKEND_URL: str = ""  # Will be loaded from .env
     
     @property
     def base_url(self) -> str:
@@ -86,6 +93,13 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return self.PRODUCTION_BACKEND_URL
         return self.BACKEND_BASE_URL
+    
+    @property
+    def s3_pdf_base_url(self) -> str:
+        """Get S3 base URL for PDF downloads."""
+        if self.AWS_S3_BUCKET:
+            return f"https://{self.AWS_S3_BUCKET}.s3.{self.AWS_REGION}.amazonaws.com"
+        return ""
     
     class Config:
         env_file = ".env"

@@ -275,7 +275,6 @@
 
       .pillar-progress-fill {
         height: 100%;
-        background: #10b981;
         border-radius: 6px;
         transition: width 0.3s ease;
         background-image: repeating-linear-gradient(
@@ -541,7 +540,7 @@
           <div class="pillar-progress">
             <div
               class="pillar-progress-fill"
-              style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%;"
+              style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%; background-color: {{ category_data.color }};"
             ></div>
           </div>
         </div>
