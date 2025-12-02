@@ -3,6 +3,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 
 from app.reports.pdf_service import PDFReportService, BrandingConfig
+from app.reports.html_pdf_service import HTMLPDFService
 from app.models import SurveyResponse, CustomerProfile
 
 
@@ -17,6 +18,7 @@ class ReportGenerationService:
     def __init__(self):
         """Initialize the report generation service."""
         self.pdf_service = PDFReportService()
+        self.html_pdf_service = HTMLPDFService()
     
     async def generate_pdf_report(
         self, 
@@ -269,13 +271,13 @@ class ReportGenerationService:
         
         return metadata
     
-    def generate_financial_clinic_pdf(
+    async def generate_financial_clinic_pdf(
         self,
         survey_data: Dict[str, Any],
         language: str = "en"
     ) -> bytes:
         """
-        Generate PDF report for Financial Clinic assessment.
+        Generate PDF report for Financial Clinic assessment using HTML template.
         
         Args:
             survey_data: Dictionary containing 'result' and 'profile' keys
@@ -288,9 +290,12 @@ class ReportGenerationService:
         result = survey_data.get('result', {})
         profile = survey_data.get('profile', {})
         
-        # Use the PDF service to generate the report
-        return self.pdf_service.generate_financial_clinic_pdf(
-            result=result,
-            profile=profile,
-            language=language
+        # Get customer name from profile
+        customer_name = profile.get('name', '')
+        
+        # Use the HTML PDF service to generate the report
+        return await self.html_pdf_service.generate_financial_clinic_pdf(
+            result_data=result,
+            language=language,
+            customer_name=customer_name
         )

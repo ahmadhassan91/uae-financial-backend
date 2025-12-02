@@ -648,7 +648,7 @@ async def generate_pdf_report(
         # Generate PDF using existing service
         logger.info(f"Generating PDF with survey_data keys: {survey_data.keys()}")
         logger.info(f"Language: {request.language}")
-        pdf_content = service.generate_financial_clinic_pdf(
+        pdf_content = await service.generate_financial_clinic_pdf(
             survey_data=survey_data,
             language=request.language
         )
@@ -791,7 +791,7 @@ async def send_email_report(
             )
         
         # Generate PDF
-        pdf_content = report_service.generate_financial_clinic_pdf(
+        pdf_content = await report_service.generate_financial_clinic_pdf(
             survey_data=survey_data,
             language=request.language
         )
