@@ -81,7 +81,7 @@ def setup_arabic_fonts():
                 pdfmetrics.registerFont(TTFont('Arabic-Bold', font_path))
                 return True
         
-        # If DejaVu not found, try Arial Unicode
+        # If DejaVu not foersta, try Arial Unicode
         arial_paths = [
             '/System/Library/Fonts/Supplemental/Arial Unicode.ttf',
             'C:\\Windows\\Fonts\\ARIALUNI.TTF',
@@ -1178,22 +1178,24 @@ class PDFReportService:
         
         elements.append(progress_table)
         elements.append(Spacer(1, 0.3*inch))
-         # Understanding Your Score section - 4 bands layout matching image
+        
+        # Understanding Your Score section - 4 bands layout matching image
+        # Wrap everything in a bordered container
+        understanding_container_data = []
+        
+        # Header
         understanding_header_text = process_arabic_text("فهم نتيجتك") if language == 'ar' else "Understanding Your Score"
         understanding_header_style = ParagraphStyle(
             'UnderstandingHeader',
             fontSize=14,
-            textColor=colors.HexColor('#1f2937'),
+            textColor=colors.HexColor('#6b7280'),
             alignment=TA_CENTER,
             fontName=title_font,
-            spaceAfter=12,
-            spaceBefore=15
+            spaceAfter=15
         )
-        elements.append(Paragraph(understanding_header_text, understanding_header_style))
-        elements.append(Spacer(1, 0.1*inch))
+        understanding_container_data.append([Paragraph(understanding_header_text, understanding_header_style)])
         
         # 4 Score bands with colors matching the image design
-        # Create a single row table with 4 colored cells showing ranges
         if language == 'ar':
             band_ranges = ['1-29', '30-59', '60-79', '85-100']
         else:
@@ -1226,8 +1228,10 @@ class PDFReportService:
             ('TOPPADDING', (0, 0), (-1, -1), 12),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
         ]))
-        elements.append(bands_table)
-        elements.append(Spacer(1, 0.15*inch))
+        understanding_container_data.append([bands_table])
+        
+        # Spacer between bands and labels
+        understanding_container_data.append([Spacer(1, 0.15*inch)])
         
         # Labels below the bands
         label_style = ParagraphStyle(
@@ -1235,7 +1239,7 @@ class PDFReportService:
             fontSize=9,
             fontName='Helvetica-Bold',
             alignment=TA_CENTER,
-            textColor=colors.HexColor('#4b5563'),
+            textColor=colors.HexColor('#6b7280'),
             spaceAfter=3
         )
         
@@ -1277,7 +1281,24 @@ class PDFReportService:
             ('TOPPADDING', (0, 0), (-1, -1), 5),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
         ]))
-        elements.append(labels_table)
+        understanding_container_data.append([labels_table])
+        
+        # Create the bordered container table
+        understanding_container = Table(understanding_container_data, colWidths=[5.5*inch])
+        understanding_container.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#d1d5db')),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+            ('LEFTPADDING', (0, 0), (-1, -1), 25),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 25),
+            ('TOPPADDING', (0, 0), (0, 0), 25),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 25),
+            ('TOPPADDING', (0, 1), (-1, -2), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -2), 10),
+        ]))
+        
+        elements.append(understanding_container)
         elements.append(Spacer(1, 0.3*inch))
         # Financial Pillar Scores - matching the new clean design
         category_header_text = process_arabic_text("درجات الركائز المالية") if language == 'ar' else "Financial Pillar Scores"
@@ -1468,51 +1489,93 @@ class PDFReportService:
         
         elements.append(Spacer(1, 0.2*inch))
         
-        # Your Personalized Action Plan - matching the new box design
+        # Your Personalized Action Plan - matching the image design
         insights = result.get('insights', [])
         if insights:
+            # Action plan header - green color
             action_plan_header_text = process_arabic_text("خطة عملك الشخصية") if language == 'ar' else "Your Personalized Action Plan"
-            elements.append(Paragraph(action_plan_header_text, heading_style))
+            action_plan_header_style = ParagraphStyle(
+                'ActionPlanHeader',
+                fontSize=20,
+                textColor=colors.HexColor('#2d7a3e'),
+                alignment=TA_CENTER,
+                fontName=title_font,
+                spaceAfter=10,
+                spaceBefore=20
+            )
+            elements.append(Paragraph(action_plan_header_text, action_plan_header_style))
             
-            action_plan_subtext_raw = 'التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك كيفية تقوية نتيجتك' if language == 'ar' else "Small changes make big differences. Here's how to strengthen your score."
+            # Subtitle - gray color
+            action_plan_subtext_raw = 'التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك كيفية تقوية نتيجتك.' if language == 'ar' else "Small changes make big differences. Here's how to strengthen your score."
             action_plan_subtext = process_arabic_text(action_plan_subtext_raw) if language == 'ar' else action_plan_subtext_raw
-            elements.append(Paragraph(action_plan_subtext, subtitle_style))
+            action_plan_subtitle_style = ParagraphStyle(
+                'ActionPlanSubtitle',
+                fontSize=11,
+                textColor=colors.HexColor('#9ca3af'),
+                alignment=TA_CENTER,
+                fontName=body_font,
+                spaceAfter=20
+            )
+            elements.append(Paragraph(action_plan_subtext, action_plan_subtitle_style))
             elements.append(Spacer(1, 0.15*inch))
             
             # Create action plan box with numbered list
             action_plan_data = []
             
-            # Add category header
+            # Add category header - green color
             rec_cat_text_raw = 'فئات التوصيات:' if language == 'ar' else 'Recommendation Categories:'
             rec_cat_text = process_arabic_text(rec_cat_text_raw) if language == 'ar' else rec_cat_text_raw
-            action_plan_data.append([Paragraph(f"<b>{rec_cat_text}</b>", body_style)])
+            rec_header_style = ParagraphStyle(
+                'RecHeader',
+                fontSize=11,
+                textColor=colors.HexColor('#2d7a3e'),
+                fontName='Helvetica-Bold',
+                spaceAfter=8
+            )
+            action_plan_data.append([Paragraph(f"<b>{rec_cat_text}</b>", rec_header_style)])
             
-            # Add numbered insights with category
+            # Style for recommendation items
+            rec_item_style = ParagraphStyle(
+                'RecItem',
+                fontSize=10,
+                textColor=colors.HexColor('#4b5563'),
+                fontName=body_font,
+                leading=14,
+                spaceAfter=6
+            )
+            
+            # Add numbered insights with category in bold
             for idx, insight in enumerate(insights[:5], 1):  # Limit to 5
                 if isinstance(insight, dict):
                     category = insight.get('category', '')
                     text = insight.get('text', str(insight))
                     category_text = getCategoryTranslation(category) if language == 'ar' else category
-                    insight_text_raw = f"{idx}. {category_text}: {text}"
+                    
+                    # Format: "1. Category Name : Description text"
+                    if language == 'ar':
+                        insight_text_raw = f"{idx}. <b>{category_text}</b> : {text}"
+                        insight_text = process_arabic_text(insight_text_raw)
+                    else:
+                        insight_text = f"{idx}. <b>{category_text}</b> : {text}"
                 else:
                     insight_text_raw = f"{idx}. {str(insight)}"
+                    insight_text = process_arabic_text(insight_text_raw) if language == 'ar' else insight_text_raw
                 
-                insight_text = process_arabic_text(insight_text_raw) if language == 'ar' else insight_text_raw
-                action_plan_data.append([Paragraph(insight_text, body_style)])
+                action_plan_data.append([Paragraph(insight_text, rec_item_style)])
             
-            action_plan_table = Table(action_plan_data, colWidths=[5*inch])
+            action_plan_table = Table(action_plan_data, colWidths=[5.2*inch])
             action_plan_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT' if language != 'ar' else 'RIGHT'),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafc')),
-                ('LEFTPADDING', (0, 0), (-1, -1), 15),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 15),
-                ('TOPPADDING', (0, 0), (0, 0), 12),  # Extra padding for header
-                ('BOTTOMPADDING', (0, 0), (0, 0), 8),
+                ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#d1d5db')),
+                ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f9fafb')),
+                ('LEFTPADDING', (0, 0), (-1, -1), 20),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 20),
+                ('TOPPADDING', (0, 0), (0, 0), 15),  # Extra padding for header
+                ('BOTTOMPADDING', (0, 0), (0, 0), 10),
                 ('TOPPADDING', (0, 1), (-1, -1), 8),
                 ('BOTTOMPADDING', (0, 1), (-1, -1), 8),
-                ('BOTTOMPADDING', (0, -1), (-1, -1), 12),  # Extra padding for last item
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 15),  # Extra padding for last item
             ]))
             
             elements.append(action_plan_table)
