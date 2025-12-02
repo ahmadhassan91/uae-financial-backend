@@ -393,9 +393,9 @@
       }
     }
 
-    /* RTL Support - Maximum simplicity for WeasyPrint */
+    /* RTL Support - NO direction:rtl due to WeasyPrint bug */
     .rtl {
-      direction: rtl;
+      /* direction: rtl; REMOVED - causes AssertionError in WeasyPrint */
       text-align: right;
       font-family: "Tajawal", "Almarai", "Arial", sans-serif;
     }
@@ -414,7 +414,7 @@
       text-align: right;
     }
 
-    /* No floats, no flex - just blocks */
+    /* No floats, no flex, no direction:rtl - just blocks */
     .rtl .pillar-header {
       display: block;
     }
