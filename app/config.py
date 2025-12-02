@@ -67,6 +67,13 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
+    # AWS S3 Storage
+    USE_S3_STORAGE: bool = False
+    AWS_ACCESS_KEY_ID: str = ""
+    AWS_SECRET_ACCESS_KEY: str = ""
+    AWS_REGION: str = "us-east-1"
+    AWS_S3_BUCKET: str = ""
+    
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
     PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL

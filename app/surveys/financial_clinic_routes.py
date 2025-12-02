@@ -11,7 +11,7 @@ Endpoints for the Financial Clinic survey system:
 - POST /financial-clinic/report/email - Send email report
 """
 from typing import Dict, List, Optional, Any
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -1142,3 +1142,120 @@ async def get_company_financial_clinic_submissions(
         "limit": limit,
         "submissions": submissions
     }
+
+
+@router.get("/export-csv")
+async def export_all_financial_clinic_csv(
+    company_url: Optional[str] = Query(None),
+    start_date: Optional[datetime] = Query(None),
+    end_date: Optional[datetime] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Export Financial Clinic submissions to CSV format.
+    Admin only.
+    
+    Can filter by company_url and date range.
+    Returns CSV file with all submission data including user demographics and mobile numbers.
+    """
+    import csv
+    from fastapi.responses import StreamingResponse
+    
+    from app.models import CompanyTracker, FinancialClinicResponse, FinancialClinicProfile
+    
+    # Build query
+    query = db.query(FinancialClinicResponse)
+    
+    # Filter by company if specified
+    company = None
+    if company_url:
+        company = db.query(CompanyTracker).filter(
+            CompanyTracker.unique_url == company_url
+        ).first()
+        
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        query = query.filter(FinancialClinicResponse.company_tracker_id == company.id)
+    
+    # Filter by date range
+    if start_date:
+        query = query.filter(FinancialClinicResponse.created_at >= start_date)
+    if end_date:
+        query = query.filter(FinancialClinicResponse.created_at <= end_date)
+    
+    # Get all responses
+    responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
+    
+    # Create CSV content
+    output = io.StringIO()
+    
+    fieldnames = [
+        'id', 'name', 'email', 'mobile_number', 'date_of_birth', 'gender', 
+        'nationality', 'children', 'employment_status', 'income_range', 'emirate',
+        'total_score', 'status_band', 'questions_answered', 'created_at'
+    ]
+    
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    
+    for response in responses:
+        profile = db.query(FinancialClinicProfile).filter(
+            FinancialClinicProfile.id == response.profile_id
+        ).first()
+        
+        if profile:
+            row = {
+                'id': response.id,
+                'name': profile.name,
+                'email': profile.email,
+                'mobile_number': profile.mobile_number or '',
+                'date_of_birth': profile.date_of_birth,
+                'gender': profile.gender,
+                'nationality': profile.nationality,
+                'children': profile.children,
+                'employment_status': profile.employment_status,
+                'income_range': profile.income_range,
+                'emirate': profile.emirate,
+                'total_score': response.total_score,
+                'status_band': response.status_band,
+                'questions_answered': response.questions_answered,
+                'created_at': response.created_at.isoformat() if response.created_at else ''
+            }
+            writer.writerow(row)
+    
+    # Prepare response
+    output.seek(0)
+    
+    # Generate filename
+    if company:
+        filename = f"{company.company_name.replace(' ', '_')}_financial_clinic_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    else:
+        filename = f"financial_clinic_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/company/{company_url}/export-csv")
+async def export_company_financial_clinic_csv(
+    company_url: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Export Financial Clinic submissions for a specific company to CSV format.
+    Admin only.
+    
+    Returns CSV file with all submission data including user demographics and mobile numbers.
+    """
+    # Delegate to the general export endpoint with company filter
+    return await export_all_financial_clinic_csv(
+        company_url=company_url,
+        db=db,
+        current_user=current_user
+    )
