@@ -393,7 +393,7 @@
       }
     }
 
-    /* RTL Support - Simplified for WeasyPrint stability */
+    /* RTL Support - Maximum simplicity for WeasyPrint */
     .rtl {
       direction: rtl;
       text-align: right;
@@ -414,31 +414,27 @@
       text-align: right;
     }
 
-    /* Avoid flexbox issues in RTL */
+    /* No floats, no flex - just blocks */
     .rtl .pillar-header {
       display: block;
     }
 
     .rtl .pillar-info {
-      display: inline-block;
-      width: 100%;
+      display: block;
       margin-bottom: 5px;
     }
 
     .rtl .pillar-score-container {
-      display: inline-block;
-      width: 100%;
+      display: block;
     }
 
     .rtl .recommendation-number {
-      float: right;
-      margin-left: 12px;
-      margin-right: 0;
+      display: block;
+      margin-bottom: 3px;
     }
 
     .rtl .recommendation-content {
-      overflow: hidden;
-      /* Clears float */
+      display: block;
       text-align: right;
     }
   </style>
