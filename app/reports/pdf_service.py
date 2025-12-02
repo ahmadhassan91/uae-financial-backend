@@ -9,7 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
 from reportlab.platypus.flowables import HRFlowable
-from reportlab.graphics.shapes import Drawing, Rect
+from reportlab.graphics.shapes import Drawing, Rect, Line
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.legends import Legend
@@ -1281,12 +1281,29 @@ class PDFReportService:
         elements.append(Spacer(1, 0.3*inch))
         # Financial Pillar Scores - matching the new clean design
         category_header_text = process_arabic_text("درجات الركائز المالية") if language == 'ar' else "Financial Pillar Scores"
-        elements.append(Paragraph(category_header_text, heading_style))
+        pillar_header_style = ParagraphStyle(
+            'PillarHeader',
+            fontSize=20,
+            textColor=colors.HexColor('#2d7a3e'),
+            alignment=TA_CENTER,
+            fontName=title_font,
+            spaceAfter=10,
+            spaceBefore=20
+        )
+        elements.append(Paragraph(category_header_text, pillar_header_style))
         
         category_subtext_raw = 'أدائك عبر 7 مجالات رئيسية للصحة المالية' if language == 'ar' else 'Your performance across the 7 key areas of financial health'
         category_subtext = process_arabic_text(category_subtext_raw) if language == 'ar' else category_subtext_raw
-        elements.append(Paragraph(category_subtext, subtitle_style))
-        elements.append(Spacer(1, 0.1*inch))
+        pillar_subtitle_style = ParagraphStyle(
+            'PillarSubtitle',
+            fontSize=11,
+            textColor=colors.HexColor('#9ca3af'),
+            alignment=TA_CENTER,
+            fontName=body_font,
+            spaceAfter=20
+        )
+        elements.append(Paragraph(category_subtext, pillar_subtitle_style))
+        elements.append(Spacer(1, 0.15*inch))
         
         category_scores = result.get('category_scores', {})
         
@@ -1321,23 +1338,36 @@ class PDFReportService:
             cat_data = category_translations.get(cat_name, {'en': cat_name, 'ar': cat_name})
             return process_arabic_text(cat_data['ar']) if language == 'ar' else cat_data['en']
         
-        # Create category table matching the web cards
-        # Create header style with proper font
-        header_style = ParagraphStyle(
-            'HeaderStyle',
-            parent=body_style,
-            fontName=title_font
+        # Category descriptions
+        category_descriptions = {
+            'Income Stream': {'en': 'Stability and diversity of income sources', 'ar': 'استقرار وتنوع مصادر الدخل'},
+            'Monthly Expenses Management': {'en': 'Budgeting and expense control', 'ar': 'الميزانية والتحكم في النفقات'},
+            'Savings Habit': {'en': 'Saving behavior and emergency preparedness', 'ar': 'سلوك الادخار والاستعداد للطوارئ'},
+            'Debt Management': {'en': 'Debt control and credit health', 'ar': 'التحكم في الديون وصحة الائتمان'},
+            'Retirement Planning': {'en': 'Long-term financial security', 'ar': 'الأمن المالي طويل الأجل'},
+            'Protecting Your Assets | Loved Ones': {'en': 'Insurance and risk management', 'ar': 'التأمين وإدارة المخاطر'},
+            'Planning for Your Future | Siblings': {'en': 'Financial planning and family preparation', 'ar': 'التخطيط المالي والإعداد العائلي'}
+        }
+        
+        # Create pillar items with progress bars matching the image
+        pillar_title_style = ParagraphStyle(
+            'PillarTitle',
+            fontSize=11,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#1f2937'),
+            spaceAfter=3
         )
         
-        cat_table_data = []
-        header_row = [
-            Paragraph('<b>' + (process_arabic_text('الفئة') if language == 'ar' else 'Category') + '</b>', header_style),
-            Paragraph('<b>' + (process_arabic_text('النتيجة') if language == 'ar' else 'Score') + '</b>', header_style),
-            Paragraph('<b>' + (process_arabic_text('الحالة') if language == 'ar' else 'Status') + '</b>', header_style)
-        ]
-        cat_table_data.append(header_row)
+        pillar_desc_style = ParagraphStyle(
+            'PillarDesc',
+            fontSize=9,
+            fontName='Helvetica',
+            textColor=colors.HexColor('#9ca3af'),
+            spaceAfter=8
+        )
         
         # Handle category_scores as either list or dict
+        categories_to_display = []
         if isinstance(category_scores, list):
             # List format from Financial Clinic
             for cat_data in category_scores:
@@ -1345,54 +1375,98 @@ class PDFReportService:
                 display_name = process_arabic_text(display_name_raw) if language == 'ar' else display_name_raw
                 cat_score = cat_data.get('score', 0)
                 cat_max = cat_data.get('max_possible', 100)
-                cat_status = cat_data.get('status_level', 'moderate')
+                percentage = (cat_score / cat_max * 100) if cat_max > 0 else 0
                 
-                status_trans = status_translations.get(cat_status.title(), {'en': cat_status, 'ar': cat_status})
-                status_display_raw = status_trans['ar'] if language == 'ar' else status_trans['en']
-                status_display = process_arabic_text(status_display_raw) if language == 'ar' else status_display_raw
+                # Get description
+                cat_name_en = cat_data.get('category', '')
+                desc_data = category_descriptions.get(cat_name_en, {'en': '', 'ar': ''})
+                description = process_arabic_text(desc_data['ar']) if language == 'ar' else desc_data['en']
                 
-                cat_table_data.append([
-                    Paragraph(display_name, body_style),
-                    Paragraph(f"{round(cat_score)} / {round(cat_max)}", body_style),
-                    Paragraph(status_display, body_style)
-                ])
+                categories_to_display.append({
+                    'name': display_name,
+                    'description': description,
+                    'percentage': percentage
+                })
         else:
             # Dict format (legacy)
             for cat_name, cat_data in category_scores.items():
                 cat_translation = category_translations.get(cat_name, {'en': cat_name, 'ar': cat_name})
-                display_name = cat_translation['ar'] if language == 'ar' else cat_translation['en']
+                display_name = process_arabic_text(cat_translation['ar']) if language == 'ar' else cat_translation['en']
                 
                 cat_score = cat_data.get('score', 0)
                 cat_max = cat_data.get('max_possible', 100)
-                cat_status = cat_data.get('status_level', 'Moderate')
+                percentage = (cat_score / cat_max * 100) if cat_max > 0 else 0
                 
-                status_trans = status_translations.get(cat_status, {'en': cat_status, 'ar': cat_status})
-                status_display = status_trans['ar'] if language == 'ar' else status_trans['en']
+                # Get description
+                desc_data = category_descriptions.get(cat_name, {'en': '', 'ar': ''})
+                description = process_arabic_text(desc_data['ar']) if language == 'ar' else desc_data['en']
                 
-                cat_table_data.append([
-                    Paragraph(display_name, body_style),
-                    Paragraph(f"{round(cat_score)} / {round(cat_max)}", body_style),
-                    Paragraph(status_display, body_style)
-                ])
+                categories_to_display.append({
+                    'name': display_name,
+                    'description': description,
+                    'percentage': percentage
+                })
         
-        cat_table = Table(cat_table_data, colWidths=[3*inch, 1.2*inch, 1.3*inch])
-        cat_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e3a8a')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e5e7eb')),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f9fafb')),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LEFTPADDING', (0, 0), (-1, -1), 12),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-        ]))
+        # Display each pillar with progress bar
+        for cat in categories_to_display:
+            # Create a table for each pillar item (name/desc on left, progress bar on right)
+            pillar_name = Paragraph(f"<b>{cat['name']}</b>", pillar_title_style)
+            pillar_desc = Paragraph(cat['description'], pillar_desc_style)
+            
+            # Create progress bar drawing with diagonal stripes
+            progress_width = 2.5 * inch
+            progress_height = 0.12 * inch
+            progress_drawing = Drawing(progress_width, progress_height)
+            
+            # Background bar (gray)
+            bg_bar = Rect(0, 0, progress_width, progress_height)
+            bg_bar.fillColor = colors.HexColor('#e5e7eb')
+            bg_bar.strokeColor = None
+            progress_drawing.add(bg_bar)
+            
+            # Filled bar (green with stripes)
+            fill_width = (cat['percentage'] / 100) * progress_width
+            fill_bar = Rect(0, 0, fill_width, progress_height)
+            fill_bar.fillColor = colors.HexColor('#10b981')
+            fill_bar.strokeColor = None
+            progress_drawing.add(fill_bar)
+            
+            # Add diagonal stripes overlay
+            from reportlab.graphics.shapes import Line
+            stripe_spacing = 0.08 * inch
+            num_stripes = int(fill_width / stripe_spacing) + 2
+            for i in range(num_stripes):
+                x_pos = i * stripe_spacing
+                stripe = Line(x_pos, 0, x_pos + progress_height, progress_height)
+                stripe.strokeColor = colors.HexColor('#ffffff')
+                stripe.strokeWidth = 1
+                stripe.strokeOpacity = 0.15
+                if x_pos < fill_width:
+                    progress_drawing.add(stripe)
+            
+            # Create table row with name/desc and progress bar
+            pillar_row_data = [
+                [pillar_name, progress_drawing],
+                [pillar_desc, '']
+            ]
+            
+            pillar_table = Table(pillar_row_data, colWidths=[3*inch, 2.5*inch])
+            pillar_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            
+            elements.append(pillar_table)
+            
+            # Add separator line
+            elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#e5e7eb'), spaceAfter=10, spaceBefore=5))
         
-        elements.append(cat_table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.2*inch))
         
         # Your Personalized Action Plan - matching the new box design
         insights = result.get('insights', [])

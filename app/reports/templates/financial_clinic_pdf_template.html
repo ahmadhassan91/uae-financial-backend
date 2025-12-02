@@ -254,17 +254,24 @@
       .pillar-progress {
         flex-shrink: 0;
         width: 300px;
-        height: 10px;
+        height: 12px;
         background: #e5e7eb;
-        border-radius: 5px;
+        border-radius: 6px;
         overflow: hidden;
       }
 
       .pillar-progress-fill {
         height: 100%;
         background: #10b981;
-        border-radius: 5px;
+        border-radius: 6px;
         transition: width 0.3s ease;
+        background-image: repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 8px,
+          rgba(255, 255, 255, 0.15) 8px,
+          rgba(255, 255, 255, 0.15) 16px
+        );
       }
 
       /* RTL Pillar Progress */
