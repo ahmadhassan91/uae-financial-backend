@@ -283,10 +283,12 @@
     /* RTL Pillar Progress */
     .rtl .pillar-progress {
       margin-left: 0;
+      margin-right: 12px;
+      /* Replace gap */
     }
 
     .rtl .pillar-header {
-      flex-direction: row-reverse;
+      /* flex-direction: row-reverse; - Removed, let direction: rtl handle it */
     }
 
     /* Recommendations */
@@ -294,7 +296,7 @@
       background-color: #f9fafb;
       border: 0.5px solid #d1d5db;
       border-radius: 6px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       margin: 10px 0;
     }
 
@@ -308,7 +310,7 @@
     .recommendation-item {
       margin-bottom: 4px;
       display: flex;
-      gap: 5px;
+      /* gap: 5px; - Replaced with margin */
       align-items: flex-start;
     }
 
@@ -322,12 +324,21 @@
       color: #4b5563;
       flex-shrink: 0;
       min-width: 12px;
+      margin-right: 5px;
+      /* LTR margin */
+    }
+
+    .rtl .recommendation-number {
+      margin-right: 0;
+      margin-left: 5px;
+      /* RTL margin */
     }
 
     .recommendation-text {
       font-size: 8px;
       color: #4b5563;
-      line-height: 1.4;
+      line-height: 1.5;
+      /* Increased for Arabic */
     }
 
     .recommendation-category {
@@ -337,7 +348,7 @@
 
     /* RTL Recommendations */
     .rtl .recommendation-item {
-      flex-direction: row-reverse;
+      /* flex-direction: row-reverse; - Removed */
     }
 
     /* Footer */
@@ -370,7 +381,7 @@
 
       .container {
         max-width: 100%;
-        padding: 10px;
+        padding: 12px;
       }
 
       .pillar-item {
@@ -386,6 +397,8 @@
     .rtl {
       direction: rtl;
       text-align: right;
+      font-family: "Tajawal", "Almarai", "Arial", sans-serif;
+      /* Arabic fonts */
     }
 
     .rtl .hero,
@@ -400,6 +413,16 @@
     .rtl .pillar-description,
     .rtl .recommendations-title {
       text-align: right;
+    }
+
+    .rtl .pillar-header {
+      gap: 0;
+      /* Reset gap if used */
+    }
+
+    .rtl .pillar-info {
+      margin-left: 12px;
+      /* Add spacing between info and progress bar in RTL */
     }
   </style>
 </head>
