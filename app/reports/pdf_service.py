@@ -1084,12 +1084,11 @@ class PDFReportService:
             urllib.request.urlretrieve(financial_clinic_logo_url, fc_logo_temp.name)
             fc_logo = Image(fc_logo_temp.name, width=1.2*inch, height=0.5*inch)
             
-            # Download National Bonds logo with object-fit: contain behavior
+            # Download National Bonds logo
             nb_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
             urllib.request.urlretrieve(national_bonds_logo_url, nb_logo_temp.name)
-            # Set height to 60px (0.625 inch) and let width scale proportionally
-            nb_logo = Image(nb_logo_temp.name, height=0.625*inch)
-            nb_logo._restrictSize(2*inch, 0.625*inch)  # Max width 2 inches, maintain aspect ratio
+            # Set explicit dimensions for National Bonds logo
+            nb_logo = Image(nb_logo_temp.name, width=1.8*inch, height=0.625*inch)
             
             # Create header table with logos on left and right
             header_data = [[fc_logo, nb_logo]]
