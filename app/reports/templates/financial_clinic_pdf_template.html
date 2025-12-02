@@ -38,17 +38,25 @@
       .header {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        margin-bottom: 50px;
-        padding: 30px 20px 20px;
+        align-items: flex-start;
+        margin-bottom: 40px;
+        padding: 0;
       }
 
       .logo-left {
-        height: 50px;
+        height: 45px;
+        object-fit: contain;
       }
 
       .logo-right {
-        height: 60px;
+        height: 50px;
+        object-fit: contain;
+      }
+
+      @media (min-width: 768px) {
+        .logo-right {
+          height: 60px;
+        }
       }
 
       /* Hero Section */
@@ -125,8 +133,8 @@
       /* Understanding Score Card */
       .understanding-card {
         margin: 50px auto;
-        padding: 35px 40px;
-        border: 2px solid #d1d5db;
+        padding: 40px 45px;
+        border: 1px solid #c2d1d9;
         border-radius: 12px;
         background-color: #ffffff;
         max-width: 750px;

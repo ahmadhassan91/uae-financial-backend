@@ -990,9 +990,9 @@ class PDFReportService:
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
-            rightMargin=60,
-            leftMargin=60,
-            topMargin=60,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=30,
             bottomMargin=50
         )
         
@@ -1084,10 +1084,12 @@ class PDFReportService:
             urllib.request.urlretrieve(financial_clinic_logo_url, fc_logo_temp.name)
             fc_logo = Image(fc_logo_temp.name, width=1.2*inch, height=0.5*inch)
             
-            # Download National Bonds logo
+            # Download National Bonds logo with object-fit: contain behavior
             nb_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
             urllib.request.urlretrieve(national_bonds_logo_url, nb_logo_temp.name)
-            nb_logo = Image(nb_logo_temp.name, width=1.5*inch, height=0.6*inch)
+            # Set height to 60px (0.625 inch) and let width scale proportionally
+            nb_logo = Image(nb_logo_temp.name, height=0.625*inch)
+            nb_logo._restrictSize(2*inch, 0.625*inch)  # Max width 2 inches, maintain aspect ratio
             
             # Create header table with logos on left and right
             header_data = [[fc_logo, nb_logo]]
@@ -1095,15 +1097,15 @@ class PDFReportService:
             header_table.setStyle(TableStyle([
                 ('ALIGN', (0, 0), (0, 0), 'LEFT'),
                 ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 0),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 0),
                 ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
             ]))
             
             elements.append(header_table)
-            elements.append(Spacer(1, 0.3*inch))
+            elements.append(Spacer(1, 0.4*inch))
             
         except Exception as e:
             print(f"Error loading logos: {e}")
@@ -1330,19 +1332,23 @@ class PDFReportService:
         understanding_container.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOX', (0, 0), (-1, -1), 2, colors.HexColor('#d1d5db')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#c2d1d9')),
             ('BACKGROUND', (0, 0), (-1, -1), colors.white),
-            ('LEFTPADDING', (0, 0), (-1, -1), 25),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 25),
-            ('TOPPADDING', (0, 0), (0, 0), 25),
-            ('BOTTOMPADDING', (0, -1), (-1, -1), 25),
-            ('TOPPADDING', (0, 1), (-1, -2), 10),
-            ('BOTTOMPADDING', (0, 1), (-1, -2), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 30),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 30),
+            ('TOPPADDING', (0, 0), (0, 0), 30),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 30),
+            ('TOPPADDING', (0, 1), (-1, -2), 12),
+            ('BOTTOMPADDING', (0, 1), (-1, -2), 12),
         ]))
         
         elements.append(understanding_container)
         elements.append(Spacer(1, 0.3*inch))
-        # Financial Pillar Scores - matching the new clean design
+        
+        # Page break after page 1 (Financial Health Score section)
+        elements.append(PageBreak())
+        
+        # Financial Pillar Scores - matching the new clean design (Page 2)
         category_header_text = process_arabic_text("درجات الركائز المالية") if language == 'ar' else "Financial Pillar Scores"
         pillar_header_style = ParagraphStyle(
             'PillarHeader',
@@ -1531,7 +1537,10 @@ class PDFReportService:
         
         elements.append(Spacer(1, 0.2*inch))
         
-        # Your Personalized Action Plan - matching the image design
+        # Page break after page 2 (Financial Pillar Scores section)
+        elements.append(PageBreak())
+        
+        # Your Personalized Action Plan - matching the image design (Page 3)
         insights = result.get('insights', [])
         if insights:
             # Action plan header - green color
