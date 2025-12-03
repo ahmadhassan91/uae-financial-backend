@@ -97,6 +97,9 @@ class EmailReportService:
     
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
         """Send email using SMTP - exact production approach."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             # Extract recipient email address (remove any formatting)
             to_email = msg['To']
@@ -104,14 +107,25 @@ class EmailReportService:
                 # Extract email from "Name <email@domain.com>" format
                 to_email = to_email.split('<')[1].split('>')[0].strip()
             
+            logger.info(f"📧 Attempting to send email to: {to_email}")
+            logger.info(f"📧 SMTP Host: {settings.SMTP_HOST}, Port: {settings.SMTP_PORT}")
+            logger.info(f"📧 SMTP Username: {settings.SMTP_USERNAME[:5]}***")
+            
             # Use settings from config
             server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+            logger.info("📧 SMTP connection established")
+            
             server.starttls()
+            logger.info("📧 TLS started")
+            
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            logger.info("📧 SMTP login successful")
             
             # Use as_string() exactly like the working test
             msg_string = msg.as_string()
             server.sendmail(settings.FROM_EMAIL, [to_email], msg_string)
+            logger.info(f"✅ Email sent successfully to {to_email}")
+            
             server.quit()
             
             return {
@@ -120,6 +134,7 @@ class EmailReportService:
             }
             
         except Exception as e:
+            logger.error(f"❌ SMTP error: {str(e)}")
             return {
                 'success': False,
                 'message': f"SMTP error: {str(e)}"
@@ -638,6 +653,10 @@ National Bonds Team
             logger = logging.getLogger(__name__)
             logger.info(f"🔍 Email - result type: {type(result)}, profile type: {type(profile)}")
             
+            # Strip whitespace and normalize language parameter (critical fix for production)
+            language = language.strip().lower() if language else "en"
+            logger.info(f"📧 Email - Language after normalization: '{language}'")
+            
             # Ensure profile is None or dict
             if profile is not None and not isinstance(profile, dict):
                 logger.warning(f"⚠️ Profile is not a dict! Type: {type(profile)}, Value: {profile}")
@@ -706,6 +725,16 @@ National Bonds Team
         download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content for Financial Clinic report - Updated to match new design."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
+        logger.info(f"📧 EMAIL HTML - Language: '{language}' (type: {type(language)})")
+        logger.info(f"📧 EMAIL HTML - Is Arabic check: {language == 'ar'}")
+        logger.info(f"📧 EMAIL HTML - Language repr: {repr(language)}")
+        
         # Get frontend URL for images
         frontend_url = settings.base_url
         
@@ -785,6 +814,7 @@ National Bonds Team
                 insights_html_en += f"<li>{idx}. {str(insight)}</li>"
         
         if language == "ar":
+            logger.info("📧 EMAIL HTML - Returning ARABIC template")
             return f"""
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -897,6 +927,7 @@ National Bonds Team
 </html>
 """
         else:
+            logger.info("📧 EMAIL HTML - Returning ENGLISH template")
             return f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1087,6 +1118,9 @@ National Bonds Team
         language: str
     ) -> str:
         """Generate plain text email content for Financial Clinic report."""
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
         score = result.get('total_score', result.get('overall_score', 0))
         user_name = profile.get('name', '') if profile else ''
         

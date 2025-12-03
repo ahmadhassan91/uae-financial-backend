@@ -104,6 +104,9 @@ class HTMLPDFService:
         Returns:
             bytes: Generated PDF content
         """
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
         try:
             # Load template
             template = self.jinja_env.get_template('financial_clinic_pdf_template.html')

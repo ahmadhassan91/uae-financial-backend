@@ -286,6 +286,9 @@ class ReportGenerationService:
         Returns:
             PDF content as bytes
         """
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
         # Extract result and profile from survey_data
         result = survey_data.get('result', {})
         profile = survey_data.get('profile', {})
