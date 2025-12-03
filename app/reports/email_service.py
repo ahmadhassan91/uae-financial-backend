@@ -1214,6 +1214,10 @@ Next Steps:
             Dict with success status and message
         """
         try:
+            # Debug: Log the language parameter
+            print(f"🌐 send_otp_email called with language: {language}")
+            print(f"📧 Recipient: {recipient_email}")
+            print(f"🔢 OTP Code: {otp_code}")
             # Create email message (use simple approach for OTP)
             msg = MIMEMultipart('alternative')
             

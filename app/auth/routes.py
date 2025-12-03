@@ -476,6 +476,10 @@ async def request_otp(
     Rate Limits:
     - Maximum 3 OTPs per email per 15 minutes
     """
+    # Debug: Log the received language
+    print(f"🌐 OTP Request - Language received: {request.language}")
+    print(f"📧 OTP Request - Email: {request.email}")
+    
     # Validate email format (extra validation)
     email = request.email.lower().strip()
     
