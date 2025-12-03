@@ -790,10 +790,17 @@ async def send_email_report(
                 detail="Either survey_response_id or result must be provided"
             )
         
-        # Generate PDF
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = request.language.strip().lower() if request.language else "en"
+        
+        # Log language for debugging
+        logger.info(f"📧 EMAIL - Language parameter: '{request.language}' -> '{language}' (type: {type(language)})")
+        logger.info(f"📧 EMAIL - Is Arabic: {language == 'ar'}")
+        
+        # Generate PDF (use stripped language)
         pdf_content = await report_service.generate_financial_clinic_pdf(
             survey_data=survey_data,
-            language=request.language
+            language=language
         )
         
         # Send email with PDF attachment
@@ -802,7 +809,7 @@ async def send_email_report(
             result=survey_data['result'],
             pdf_content=pdf_content,
             profile=survey_data['profile'],
-            language=request.language
+            language=language
         )
         
         if email_result.get('success'):
