@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
     # Database
-    DATABASE_URL: str = ""
-    DATABASE_URL_TEST: str = ""
+    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/uae_financial_health"
+    DATABASE_URL_TEST: str = "postgresql://postgres:password@localhost:5432/uae_financial_health_test"
     
     # Heroku provides DATABASE_URL automatically
     @property
@@ -24,9 +24,12 @@ class Settings(BaseSettings):
         return self.DATABASE_URL
     
     # Security
-    SECRET_KEY: str = ""
+    SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ADMIN_TOKEN_EXPIRE_MINUTES: int = 120  # 2 hours for admin tokens
+    TOKEN_REFRESH_THRESHOLD_MINUTES: int = 10  # Auto-refresh threshold
+    MAX_TOKEN_REFRESH_COUNT: int = 24  # Max refreshes per day
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # Environment
@@ -34,6 +37,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     
     # CORS and Security
+    CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:5173"]'  # JSON string from env
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Next.js dev
         "http://localhost:3001",  # Next.js dev (alternative port)
@@ -57,7 +61,7 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     FROM_EMAIL: str = ""
-    FROM_NAME: str = "Financial Clinic"
+    FROM_NAME: str = "National Bonds"
     
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -67,18 +71,18 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
-    # AWS S3 Configuration
+    # AWS S3 Storage
+    USE_S3_STORAGE: bool = False
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
     AWS_S3_BUCKET: str = ""
-    USE_S3_STORAGE: bool = False  # Set to True to use S3 instead of local storage
     
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
-    PRODUCTION_BASE_URL: str = ""  # Will be loaded from .env
+    PRODUCTION_BASE_URL: str = "https://financial-clinic.netlify.app"  # Production URL
     BACKEND_BASE_URL: str = "http://localhost:8000"  # Backend API URL
-    PRODUCTION_BACKEND_URL: str = ""  # Will be loaded from .env
+    PRODUCTION_BACKEND_URL: str = "https://uae-financial-backend.herokuapp.com"  # Production backend URL
     
     @property
     def base_url(self) -> str:
@@ -94,16 +98,10 @@ class Settings(BaseSettings):
             return self.PRODUCTION_BACKEND_URL
         return self.BACKEND_BASE_URL
     
-    @property
-    def s3_pdf_base_url(self) -> str:
-        """Get S3 base URL for PDF downloads."""
-        if self.AWS_S3_BUCKET:
-            return f"https://{self.AWS_S3_BUCKET}.s3.{self.AWS_REGION}.amazonaws.com"
-        return ""
-    
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Ignore extra fields from .env that aren't defined
 
 
 # Create global settings instance
