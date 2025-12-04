@@ -37,46 +37,66 @@ class Insight:
 INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
     FinancialClinicCategory.INCOME_STREAM.value: {
         "at_risk": {
+            "income_above_30k": {
+                "en": (
+                    "Your income sources seem limited or inconsistent. Focus on creating stability by building "
+                    "a consistent income stream and a small safety buffer with our regular saving plans"
+                ),
+                "ar": (
+                    "يبدو أن مصادر دخلك محدودة أو غير مستقرة. ركز على خلق الاستقرار من خلال بناء تدفق دخل ثابت "
+                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة"
+                ),
+            },
             "default": {
                 "en": (
                     "Your income sources seem limited or inconsistent. Focus on creating stability by building "
                     "a consistent income stream and a small safety buffer with our regular saving plans starting "
-                    "with AED 100"
+                    "with AED 100 through My Million plan"
                 ),
                 "ar": (
                     "يبدو أن مصادر دخلك محدودة أو غير مستقرة. ركز على خلق الاستقرار من خلال بناء تدفق دخل ثابت "
-                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة التي تبدأ من 100 درهم إماراتي"
+                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة التي تبدأ من 100 درهم إماراتي من خلال خطة مليوني"
                 ),
             },
         },
         "good": {
+            "income_above_30k": {
+                "en": (
+                    "Your income is steady but could be diversified. Explore additional or passive income sources "
+                    "to strengthen financial resilience."
+                ),
+                "ar": (
+                    "دخلك ثابت ولكن يمكن تنويعه. استكشف مصادر دخل إضافية أو سلبية "
+                    "لتعزيز المرونة المالية."
+                ),
+            },
             "default": {
                 "en": (
                     "Your income is steady but could be diversified. Explore additional or passive income sources "
-                    "such as our Second Salary Plan, to strengthen financial resilience."
+                    "such as our Second Salary Plan or My Million plan, to strengthen financial resilience."
                 ),
                 "ar": (
                     "دخلك ثابت ولكن يمكن تنويعه. استكشف مصادر دخل إضافية أو سلبية مثل خطة الراتب الثاني "
-                    "لتعزيز المرونة المالية."
+                    "أو خطة مليوني، لتعزيز المرونة المالية."
                 ),
             },
         },
         "excellent": {
             "income_above_30k": {
                 "en": (
+                    "You have a stable, consistent income. Now focus on long-term growth and wealth-building opportunities."
+                ),
+                "ar": (
+                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وفرص بناء الثروة."
+                ),
+            },
+            "default": {
+                "en": (
                     "You have a stable, consistent income. Now focus on long-term growth and wealth accumulation "
                     "through My Million plan"
                 ),
                 "ar": (
                     "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وتراكم الثروة من خلال خطة مليوني"
-                ),
-            },
-            "default": {
-                "en": (
-                    "You have a stable, consistent income. Now focus on long-term growth and wealth-building opportunities."
-                ),
-                "ar": (
-                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وفرص بناء الثروة."
                 ),
             },
         },
@@ -314,7 +334,7 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "children_zero": {
                 "en": (
                     "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
-                    "You can also strengthen to your family's financial future with My Million plan"
+                    "You can also strengthen your family's financial future with My Million plan"
                 ),
                 "ar": (
                     "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك. "
@@ -323,9 +343,11 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             },
             "else": {
                 "en": (
+                    "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
                     "You can also save to secure your family's financial future with Junior Million plan"
                 ),
                 "ar": (
+                    "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك. "
                     "يمكنك أيضًا الادخار لتأمين مستقبل عائلتك المالي مع خطة مليون جونيور"
                 ),
             },

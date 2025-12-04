@@ -97,6 +97,9 @@ class EmailReportService:
     
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
         """Send email using SMTP - exact production approach."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
         try:
             # Extract recipient email address (remove any formatting)
             to_email = msg['To']
@@ -104,14 +107,25 @@ class EmailReportService:
                 # Extract email from "Name <email@domain.com>" format
                 to_email = to_email.split('<')[1].split('>')[0].strip()
             
+            logger.info(f"📧 Attempting to send email to: {to_email}")
+            logger.info(f"📧 SMTP Host: {settings.SMTP_HOST}, Port: {settings.SMTP_PORT}")
+            logger.info(f"📧 SMTP Username: {settings.SMTP_USERNAME[:5]}***")
+            
             # Use settings from config
             server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
+            logger.info("📧 SMTP connection established")
+            
             server.starttls()
+            logger.info("📧 TLS started")
+            
             server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
+            logger.info("📧 SMTP login successful")
             
             # Use as_string() exactly like the working test
             msg_string = msg.as_string()
             server.sendmail(settings.FROM_EMAIL, [to_email], msg_string)
+            logger.info(f"✅ Email sent successfully to {to_email}")
+            
             server.quit()
             
             return {
@@ -120,6 +134,7 @@ class EmailReportService:
             }
             
         except Exception as e:
+            logger.error(f"❌ SMTP error: {str(e)}")
             return {
                 'success': False,
                 'message': f"SMTP error: {str(e)}"
@@ -216,19 +231,19 @@ National Bonds Team
     {
         'title': 'SAVING BONDS',
         'description': 'Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms. ',
-        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" />',
-        'link': 'https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png'
+        'image_tag': '<img src="https://financial-clinic.s3.amazonaws.com/icons/coins.png" alt="Saving Bonds" />',
+        'link': 'https://financial-clinic.s3.amazonaws.com/icons/coins.png'
     },
     {
         'title': 'SECOND SALARY',
         'description': 'Receive a future monthly income with competitive accumulated returns in the UAE.',
-        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" />',
+        'image_tag': '<img src="https://financial-clinic.s3.amazonaws.com/icons/second.png" alt="Second Salary" />',
         'link': 'https://nationalbonds.ae/products/second-salary'
     },
     {
         'title': 'MY MILLION',
         'description': 'The journey to a million is smooth with this plan.',
-        'image_tag': '<img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Million" />',
+        'image_tag': '<img src="https://financial-clinic.s3.amazonaws.com/icons/my.png" alt="My Million" />',
         'link': 'https://nationalbonds.ae/products/my-million'
     }
 ]
@@ -501,7 +516,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" 
+            <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -529,7 +544,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+            <img src=" https://financial-clinic.s3.amazonaws.com/icons/logo.png" 
                  alt="National Bonds" 
             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
@@ -570,7 +585,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" 
+            <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -598,7 +613,7 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+            <img src=" https://financial-clinic.s3.amazonaws.com/icons/logo.png" 
                  alt="National Bonds" 
             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
@@ -637,6 +652,10 @@ National Bonds Team
             import logging
             logger = logging.getLogger(__name__)
             logger.info(f"🔍 Email - result type: {type(result)}, profile type: {type(profile)}")
+            
+            # Strip whitespace and normalize language parameter (critical fix for production)
+            language = language.strip().lower() if language else "en"
+            logger.info(f"📧 Email - Language after normalization: '{language}'")
             
             # Ensure profile is None or dict
             if profile is not None and not isinstance(profile, dict):
@@ -706,6 +725,16 @@ National Bonds Team
         download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content for Financial Clinic report - Updated to match new design."""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
+        logger.info(f"📧 EMAIL HTML - Language: '{language}' (type: {type(language)})")
+        logger.info(f"📧 EMAIL HTML - Is Arabic check: {language == 'ar'}")
+        logger.info(f"📧 EMAIL HTML - Language repr: {repr(language)}")
+        
         # Get frontend URL for images
         frontend_url = settings.base_url
         
@@ -785,6 +814,7 @@ National Bonds Team
                 insights_html_en += f"<li>{idx}. {str(insight)}</li>"
         
         if language == "ar":
+            logger.info("📧 EMAIL HTML - Returning ARABIC template")
             return f"""
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -794,7 +824,7 @@ National Bonds Team
     <title>تقرير العيادة المالية</title>
     <style>
         body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; background: white; }}
-        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; background: white; }}
+        .container {{ max-width: 945px; margin: 0 auto; padding: 20px; background: white; }}
         .header {{ background-color: white; padding: 30px 20px; text-align: center; }}
         .header h1 {{ color: #374151; font-size: 28px; margin: 0 0 10px 0; }}
         .header p {{ color: #9ca3af; font-size: 14px; margin: 5px 0; }}
@@ -827,76 +857,146 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <img src="/homepage/icons/image3.png" alt="Financial Health" style="max-width: 100px; height: auto; margin-bottom: 20px;" />
-            <h1>إليك درجة صحتك المالية!</h1>
-            <p>هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم</p>
+            <img src="https://financial-clinic.s3.amazonaws.com/icons/man.png" alt="Financial Health" style="width:788px; height: 499px; margin-bottom: 20px;" />
         </div>
-        
-        <div class="score-display">
-            <div class="score">{round(score)}%</div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {score}%;"></div>
+        <div style="text-align:right;">
+            <span style="font-size:18px; font-weight:700; color:#3D4D57;font-size:16px; font-weight:600; color:#3D4D57;">عزيزي {profile.get('name', 'العميل الكريم') if profile else 'العميل الكريم'}</span>
+        </div>
+        <div style="margin-top:18px; text-align:right;">
+            <span style="font-size:20px; font-weight:600; color:#3D4D57; display:block; margin-bottom:8px;">تهانينا، لقد أكملت للتو فحص صحتك المالية!</span>
+            <span style="font-size:16px; color:#3D4D57; font-weight:600;display:block; margin-bottom:8px;">تقريرك الشخصي للصحة المالية جاهز، مما يمنحك لمحة واضحة عن وضعك المالي الحالي وخطوات عملية لتعزيزه.</span>
+            <span style="font-size:16px; color:#3D4D57; display:block;font-weight:600; margin-bottom:8px;">داخل تقريرك، ستجد:</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:right;">
+            <span style="font-size:16px; font-weight:700; color:#3D4D57;">نتيجة الصحة المالية:</span>
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">تفصيل شفاف لأدائك في المجالات الرئيسية مثل الادخار، الدخل، الديون، والحماية.</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:right;">
+            <span style="font-size:16px; font-weight:700; color:#3D4D57;">توصيات شخصية:</span>
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">طرق بسيطة وقابلة للتنفيذ لتحسين نتيجتك وتحقيق أهدافك.</span>
+        </div>
+        <div style="margin:32px 0 24px 0; text-align:right;">
+            <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">خذ بضع دقائق لمراجعة نتائجك—إنها الخطوة الأولى نحو مستقبل مالي أقوى وأكثر ثقة.</span>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+            <div style="margin-bottom: 20px; "font-size:16px; font-weight:600; color:#3D4D57;">
+                {f'<a href="{download_url}" class="cta-button" style="background: #3FAB4C; margin: 5px; text-decoration: none; color:white; font-weight:600;" download="financial_clinic_report.pdf">تحميل تقرير الصحة المالية</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer; color:#1A237E; font-weight:600;" title="تحقق من مرفقات بريدك الإلكتروني لتحميل تقرير PDF">📄 تحميل تقرير الصحة المالية</a>'}
+                {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 تقريرك المفصل بصيغة PDF مرفق بهذا البريد الإلكتروني. يرجى التحقق من مرفقات بريدك الإلكتروني لتحميله.</p>'}
             </div>
         </div>
-        
-        <div class="content">
-            <div class="section-title">فهم نتيجتك</div>
-            <div class="score-bands">
-                <div class="band band-red">
-                    <div class="band-range">1-29</div>
-                    <div class="band-label">في خطر</div>
-                    <div class="band-desc">ركز على بناء عادات مالية أساسية</div>
-                </div>
-                <div class="band band-orange">
-                    <div class="band-range">30-59</div>
-                    <div class="band-label">يحتاج إلى تحسين</div>
-                    <div class="band-desc">أساس جيد، مجال للنمو</div>
-                </div>
-                <div class="band band-yellow">
-                    <div class="band-range">60-79</div>
-                    <div class="band-label">جيد</div>
-                    <div class="band-desc">صحة مالية قوية</div>
-                </div>
-                <div class="band band-green">
-                    <div class="band-range">80-100</div>
-                    <div class="band-label">ممتاز</div>
-                    <div class="band-desc">رفاهية مالية متميزة</div>
-                </div>
-            </div>
-            
-            <div class="section-title">درجات الركائز المالية</div>
-            <div class="section-subtitle">أدائك عبر 7 مجالات رئيسية للصحة المالية</div>
-            {categories_html_ar}
-            
-            <div class="section-title">خطة عملك الشخصية</div>
-            <div class="section-subtitle">التغييرات الصغيرة تحدث فرقًا كبيرًا. إليك كيفية تقوية نتيجتك</div>
-            <div class="action-plan-box">
-                <div style="font-weight: 600; margin-bottom: 10px;">فئات التوصيات:</div>
-                <ul>{insights_html_ar}</ul>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <div style="margin-bottom: 20px;">
-                    {f'<a href="{download_url}" class="cta-button" style="background: #1f2937; margin: 5px; text-decoration: none;" download="financial_clinic_report.pdf">📄 تحميل التقرير المفصل</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer;" title="تحقق من مرفقات بريدك الإلكتروني لتحميل تقرير PDF">📄 تحميل التقرير المفصل</a>'}
-                    {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 تقريرك المفصل بصيغة PDF مرفق بهذا البريد الإلكتروني. يرجى التحقق من مرفقات بريدك الإلكتروني لتحميله.</p>'}
-                </div>
-                <a href="https://www.nationalbonds.ae/ar/contact-us" class="cta-button">احجز استشارة مجانية</a>
-                <a href="https://nationalbonds.onelink.me/NAu3/9m8huddj" class="cta-button">ابدأ الادخار مع السندات الوطنية</a>
-            </div>
-            
-            <p style="text-align: center; color: #6b7280;"><strong>تذكر:</strong> تحسين صحتك المالية رحلة تتطلب الصبر والمثابرة. نحن معك في كل خطوة!</p>
+        <div style="text-align:right;">
+          <span style="font-size:16px; font-weight:600; color:#3D4D57;">مسارك المالي الشخصي</span>
         </div>
-        
-        <div class="footer">
-            <p style="margin: 5px 0; color: #6b7280;">هذا التقرير لأغراض إعلامية فقط</p>
-            <p style="margin: 5px 0; font-weight: bold; color: #374151;">السندات الوطنية</p>
-            <p style="margin: 5px 0; color: #6b7280;">www.nationalbonds.ae</p>
+        <div style="text-align:right;">
+            <span style="font-size:16px; font-weight:600; color:#3D4D57;">بناءً على نتيجتك، اخترنا منتجات مصممة خصيصاً لأهدافك ومرحلتك المالية الحالية:</span>
         </div>
+        <div>
+         
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0 40px 0;">
+            <tr>
+                <td style="width:30%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                    <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">سندات الادخار</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">تمكنك سندات الادخار من تحقيق أهدافك وبناء شبكة أمان آمنة، وفقاً لشروطك.</div>
+                        </div>
+                        <img src="https://financial-clinic.s3.amazonaws.com/icons/coins.png" alt="Saving Bonds" style="width:100%; width: 285px;
+    height: 185px;object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+                        
+                        <a href="https://nationalbonds.ae/ar/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">اعرف المزيد</a>
+                    </div>
+                </td>
+                <td style="width:30%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                     <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">الراتب الثاني</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">احصل على دخل شهري مستقبلي مع عوائد تراكمية تنافسية.</div>
+                        </div>
+                        <img src="https://financial-clinic.s3.amazonaws.com/icons/second.png" alt="Second Salary" style="width:100%; width: 285px;
+    height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+
+                        <a href="https://nationalbonds.ae/ar/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">اعرف المزيد</a>
+                    </div>
+                </td>
+                <td style="width:30%; padding:10px; vertical-align:top;">
+                    <div style="border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff;">
+                     <div style="padding:18px 16px 0 16px;">
+                            <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">مليوني</div>
+                            <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">الرحلة إلى المليون سلسة مع هذه الخطة.</div>
+                        </div>
+                        <img src=" https://financial-clinic.s3.amazonaws.com/icons/my.png" alt="My Millions" style="width:100%; width: 285px;
+    height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
+
+                        <a href="https://nationalbonds.ae/ar/products/my-millions" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">اعرف المزيد</a>
+                    </div>
+                </td>
+            </tr>
+        </table>
+<div style="display: flex;
+    width: 100%;
+    justify-content: center">
+ <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" alt="National Bonds" style="height:48px; margin-left:40%;" />
+</div>
+
+                <table class="footer" width="100%" cellpadding="0" cellspacing="0" style="background:#fff; border-top:1px solid #e5e7eb;">
+                    <tr>
+                        <!-- Logo Right for RTL -->
+                        <td align="right" style="vertical-align:middle;">
+                            <img src="https://financial-clinic.s3.amazonaws.com/icons/logo.png" alt="National Bonds" style="height:200px; width:250px;margin-left:12px;" />
+                        </td>
+                        <!-- Social Icons Center -->
+                        <td align="center" style="vertical-align:middle;padding-left:80px;">
+                            <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.facebook.com/nationalbonds">
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.instagram.com/nationalbonds/">
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.linkedin.com/company/national-bonds-corporation">
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                                <td style="padding:0 9px;">
+                                    <a href="https://www.youtube.com/user/NationalBondsDubai/videos">
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                    </a>
+                                </td>
+                            </tr></table>
+                            <div style="font-size:10px; color:#6b7280;">ابق على اتصال</div>
+                        </td>
+                        <!-- App/Branches Left for RTL -->
+                        <td align="center" style="vertical-align:middle; padding-left:30px;">
+                            <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                                <tr>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">حمل تطبيقنا</div>
+                                    </td>
+                                    <td style="padding:0 18px; text-align:center; vertical-align:top;">
+                                       <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/location.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+</span>
+                                        <div style="font-size:10px; color:#6b7280;">فروعنا</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
     </div>
 </body>
 </html>
 """
         else:
+            logger.info("📧 EMAIL HTML - Returning ENGLISH template")
             return f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -939,7 +1039,7 @@ National Bonds Team
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332338/Man_qt2i81.png" alt="Financial Health" style="width:788px; height: 499px; margin-bottom: 20px;" />
+            <img src="https://financial-clinic.s3.amazonaws.com/icons/man.png" alt="Financial Health" style="width:788px; height: 499px; margin-bottom: 20px;" />
             
         </div>
         <div>
@@ -984,7 +1084,7 @@ National Bonds Team
                             <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SAVING BONDS</div>
                             <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Our Saving bonds empower you to achieve your goals, and build a secure safety net, on your terms. </div>
                         </div>
-                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Coins_btvqsu.png" alt="Saving Bonds" style="width:100%; width: 285px;
+                        <img src="https://financial-clinic.s3.amazonaws.com/icons/coins.png" alt="Saving Bonds" style="width:100%; width: 285px;
     height: 185px;object-fit:cover; border-bottom:1px solid #e5e7eb;" />
                         
                         <a href="https://nationalbonds.ae/products/saving-bonds" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
@@ -996,7 +1096,7 @@ National Bonds Team
                             <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">SECOND SALARY</div>
                             <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">Receive a future monthly income with competitive anticipated returns included.</div>
                         </div>
-                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/Second_Salary_vxewl3.png" alt="Second Salary" style="width:100%; width: 285px;
+                        <img src="https://financial-clinic.s3.amazonaws.com/icons/second.png" alt="Second Salary" style="width:100%; width: 285px;
     height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
 
                         <a href="https://nationalbonds.ae/products/second-salary" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
@@ -1008,7 +1108,7 @@ National Bonds Team
                             <div style="font-size:16px; font-weight:700; color:#374151; text-align:center; margin-bottom:8px;">MY MILLIONS</div>
                             <div style="font-size:14px; color:#374151; text-align:center; margin-bottom:12px;">The journey to a million is smooth with this plan.</div>
                         </div>
-                        <img src=" https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/My_Million_hsata5.png" alt="My Millions" style="width:100%; width: 285px;
+                        <img src=" https://financial-clinic.s3.amazonaws.com/icons/my.png" alt="My Millions" style="width:100%; width: 285px;
     height: 185px; object-fit:cover; border-bottom:1px solid #e5e7eb;" />
 
                         <a href="https://nationalbonds.ae/products/my-millions" style="display:block; background:#374151; color:#fff; text-align:center; padding:14px 0; font-weight:600; text-decoration:none; font-size:15px;">KNOW MORE</a>
@@ -1019,36 +1119,36 @@ National Bonds Team
 <div style="display: flex;
     width: 100%;
     justify-content: center">
- <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="National Bonds" style="height:48px; margin-left:45%;" />
+ <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" alt="National Bonds" style="height:48px; margin-left:45%;" />
 </div>
 
                 <table class="footer" width="100%" cellpadding="0" cellspacing="0" style="background:#fff; border-top:1px solid #e5e7eb;">
                     <tr>
                         <!-- Logo Left -->
                         <td align="left" style="vertical-align:middle;">
-                            <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" alt="National Bonds" style="height:200px; width:250px;margin-right:12px;" />
+                            <img src="https://financial-clinic.s3.amazonaws.com/icons/logo.png" alt="National Bonds" style="height:200px; width:250px;margin-right:12px;" />
                         </td>
                         <!-- Social Icons Center -->
                         <td align="center" style="vertical-align:middle;padding-right:80px;">
                             <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.facebook.com/nationalbonds">
-                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.instagram.com/nationalbonds/">
-                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.linkedin.com/company/national-bonds-corporation">
-                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.youtube.com/user/NationalBondsDubai/videos">
-                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                             </tr></table>
@@ -1060,13 +1160,13 @@ National Bonds Team
                                 <tr>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png" alt="Download App" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
                                     </td>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/location.png" alt="Branches" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
                                     </td>
@@ -1087,6 +1187,9 @@ National Bonds Team
         language: str
     ) -> str:
         """Generate plain text email content for Financial Clinic report."""
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
         score = result.get('total_score', result.get('overall_score', 0))
         user_name = profile.get('name', '') if profile else ''
         
@@ -1214,6 +1317,10 @@ Next Steps:
             Dict with success status and message
         """
         try:
+            # Debug: Log the language parameter
+            print(f"🌐 send_otp_email called with language: {language}")
+            print(f"📧 Recipient: {recipient_email}")
+            print(f"🔢 OTP Code: {otp_code}")
             # Create email message (use simple approach for OTP)
             msg = MIMEMultipart('alternative')
             
@@ -1370,7 +1477,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
@@ -1399,7 +1506,7 @@ If you didn't request this code, please ignore this email."""
 <div class="footer" style="display: flex; justify-content: space-between; align-items: center; ">
     <!-- LEFT: Logo -->
     <div class="footer-logo">
-        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+        <img src="https://financial-clinic.s3.amazonaws.com/icons/logo.png" 
              alt="National Bonds" />
         <div>
             SAVE.INVEST.<span style="color: #b8985f;">PROSPER.</span>
@@ -1417,7 +1524,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" 
                      alt="Facebook" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1425,7 +1532,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" 
                      alt="Instagram" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1433,7 +1540,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" 
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1441,7 +1548,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" 
                      alt="YouTube" style="width: 24px; height: 24px;" />
             </a>
         </div>
@@ -1454,13 +1561,13 @@ If you didn't request this code, please ignore this email."""
                                 <tr>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png" alt="Download App" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
                                     </td>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/location.png" alt="Branches" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
                                     </td>
@@ -1475,7 +1582,7 @@ If you didn't request this code, please ignore this email."""
                     <div style="text-align: center;">
                         <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">حمل تطبيقنا</div>
                         <div style="margin-top: 10px;">
-                            <img src="https://res.cloudina https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.pngry.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
+                            <img src="https://res.cloudina https://financial-clinic.s3.amazonaws.com/icons/downlaod.pngry.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" alt="Download" style="width: 24px; height: 24px; filter: brightness(0) saturate(100%) invert(71%) sepia(47%) saturate(414%) hue-rotate(358deg) brightness(92%) contrast(86%);" />
                         </div>
                     </div>
                     <div style="text-align: center;">
@@ -1529,7 +1636,7 @@ If you didn't request this code, please ignore this email."""
             <!-- Header -->
             <div class="header" style="width: 100%; display: flex; justify-content: center;">
                 <div class="logo">
-                    <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png" alt="Financial Clinic" style="height: 40px;" />
+                    <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" alt="Financial Clinic" style="height: 40px;" />
                 </div>
             </div>
 
@@ -1560,7 +1667,7 @@ If you didn't request this code, please ignore this email."""
     
     <!-- LEFT: Logo -->
     <div class="footer-logo">
-        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png" 
+        <img src="https://financial-clinic.s3.amazonaws.com/icons/logo.png" 
              alt="National Bonds" 
         
         <div>
@@ -1579,7 +1686,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" 
                      alt="Facebook" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1587,7 +1694,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" 
                      alt="Instagram" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1595,7 +1702,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" 
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1603,7 +1710,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" 
                      alt="YouTube" style="width: 24px; height: 24px;" />
             </a>
         </div>
@@ -1616,13 +1723,13 @@ If you didn't request this code, please ignore this email."""
                                 <tr>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px;margin-bottom: 10px; height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png" alt="Download App" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png" alt="Download App" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">DOWNLOAD OUR APP</div>
                                     </td>
                                     <td style="padding:0 18px; text-align:center; vertical-align:top;">
                                        <span style="display:inline-block; width:32px; margin-bottom: 10px;height:32px; border-radius:50%; border:2px solid #b8985f; background:#fff; display:flex; align-items:center; justify-content:center; padding:4px; box-sizing:border-box;">
-  <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png" alt="Branches" style="width:18px; height:18px; display:block;" />
+  <img src="https://financial-clinic.s3.amazonaws.com/icons/location.png" alt="Branches" style="width:18px; height:18px; display:block;" />
 </span>
                                         <div style="font-size:10px; color:#6b7280;">OUR BRANCHES</div>
                                     </td>

@@ -395,67 +395,26 @@ async def get_delivery_stats(
 from app.config import settings
 
 @router.get("/download-public/{file_token}")
-async def download_public_report(file_token: str, db: Session = Depends(get_db)):
+async def download_public_report(file_token: str):
     """Public download endpoint for PDF reports via email links."""
     import os
-    import io
-    from app.surveys.financial_clinic_routes import FinancialClinicResult
     
-    # Try to find the survey response by token
-    # The token format is typically: {survey_response_id}_{timestamp}
-    try:
-        # Extract survey_response_id from token (first part before underscore)
-        survey_response_id = int(file_token.split('_')[0]) if '_' in file_token else int(file_token)
-    except (ValueError, IndexError):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid file token format"
-        )
+    # Define downloads directory
+    downloads_dir = settings.DOWNLOAD_DIR
     
-    # Get the financial clinic result
-    result = db.query(FinancialClinicResult).filter(
-        FinancialClinicResult.id == survey_response_id
-    ).first()
+    # Look for file matching the token
+    for filename in os.listdir(downloads_dir):
+        if filename.startswith(file_token) and filename.endswith('.pdf'):
+            file_path = os.path.join(downloads_dir, filename)
+            if os.path.exists(file_path):
+                return FileResponse(
+                    path=file_path,
+                    filename=f"financial_clinic_report.pdf",
+                    media_type="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=financial_clinic_report.pdf"}
+                )
     
-    if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Report not found"
-        )
-    
-    try:
-        # Generate PDF on-the-fly
-        from app.reports.report_generation_service import ReportGenerationService
-        
-        report_service = ReportGenerationService()
-        
-        # Prepare survey data
-        survey_data = {
-            'result': result.result_data,
-            'profile': result.profile_data
-        }
-        
-        # Determine language from result data or default to English
-        language = result.result_data.get('language', 'en') if result.result_data else 'en'
-        
-        # Generate PDF
-        pdf_bytes = report_service.generate_financial_clinic_pdf(
-            survey_data=survey_data,
-            language=language
-        )
-        
-        # Return PDF as response
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=financial_clinic_report_{survey_response_id}.pdf"
-            }
-        )
-        
-    except Exception as e:
-        print(f"Error generating PDF: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate report: {str(e)}"
-        )
+    raise HTTPException(
+        status_code=404,
+        detail="Report file not found or expired"
+    )

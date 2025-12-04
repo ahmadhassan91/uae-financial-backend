@@ -43,6 +43,7 @@ flake8==6.1.0
 
 # Email & Reports
 jinja2==3.1.2
+weasyprint==63.1
 reportlab==4.0.7
 openpyxl==3.1.2
 

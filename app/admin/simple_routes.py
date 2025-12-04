@@ -745,7 +745,7 @@ async def export_simple_admin_csv(
 
         # Header matching reference CSV structure
         writer.writerow([
-            'ID', 'Name', 'Email', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
+            'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
             'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
@@ -767,6 +767,7 @@ async def export_simple_admin_csv(
                 r.id,
                 profile.name if profile else '',
                 profile.email if profile else '',
+                profile.mobile_number if profile and profile.mobile_number else '',
                 calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
                 profile.gender if profile else '',
                 profile.nationality if profile else '',
@@ -912,6 +913,7 @@ async def export_simple_admin_excel(
                 'id': r.id,
                 'name': profile.name if profile else '',
                 'email': profile.email if profile else '',
+                'mobile_number': profile.mobile_number if profile and profile.mobile_number else '',
                 'age': calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
                 'gender': profile.gender if profile else '',
                 'nationality': profile.nationality if profile else '',
@@ -943,7 +945,7 @@ async def export_simple_admin_excel(
         
         # Add headers matching reference CSV structure
         headers = [
-            'ID', 'Name', 'Email', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
+            'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
             'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
@@ -957,6 +959,7 @@ async def export_simple_admin_excel(
                 row['id'],
                 row['name'], 
                 row['email'],
+                row['mobile_number'],
                 row['age'],
                 row['gender'],
                 row['nationality'],

@@ -68,7 +68,7 @@ ENGLISH_TRANSLATIONS = {
     'personalized_recommendations': 'Personalized Recommendations',
     'educational_guidance': 'Educational guidance to improve your financial health',
     'financial_pillar_scores': 'Financial Pillar Scores',
-    'performance_across_areas': 'Your performance across the 7 key areas of financial health',
+    'performance_across_areas': 'Your performance across key areas of financial health',
     'no_results_available': 'No Results Available',
     'complete_assessment_first': 'You need to complete the financial health assessment first to see your results.',
     'error_loading_results': 'Error Loading Results',
