@@ -42,45 +42,21 @@
 
       /* Header */
       .header {
-        width: 100%;
-        margin-bottom: 25px;
-        padding: 15px 0;
-      }
-
-      .header-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .header-table td {
-        vertical-align: middle;
-        padding: 0 10px;
-      }
-
-      .header-table td:first-child {
-        width: 50%;
-        text-align: left;
-      }
-
-      .header-table td:last-child {
-        width: 50%;
-        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        padding: 0;
       }
 
       .logo-left {
-        height: 45px;
-        width: auto;
-        max-width: 180px;
+        height: 35px;
         object-fit: contain;
-        display: inline-block;
       }
 
       .logo-right {
-        height: 55px;
-        width: auto;
-        max-width: 220px;
+        height: 38px;
         object-fit: contain;
-        display: inline-block;
       }
 
       /* Hero Section */
@@ -465,24 +441,16 @@
     <div class="container">
       <!-- Header with Logos -->
       <div class="header">
-        <table class="header-table">
-          <tr>
-            <td>
-              <img
-                src="https://financial-clinic.s3.amazonaws.com/icons/financial.png"
-                alt="Financial Clinic"
-                class="logo-left"
-              />
-            </td>
-            <td>
-              <img
-                src="https://financial-clinic.s3.amazonaws.com/icons/logo.png"
-                alt="National Bonds"
-                class="logo-right"
-              />
-            </td>
-          </tr>
-        </table>
+        <img
+          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+          alt="Financial Clinic"
+          class="logo-left"
+        />
+        <img
+          src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+          alt="National Bonds"
+          class="logo-right"
+        />
       </div>
 
       <!-- Hero Section -->

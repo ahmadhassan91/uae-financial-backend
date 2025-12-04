@@ -1393,7 +1393,7 @@ class PDFReportService:
         )
         elements.append(Paragraph(category_header_text, pillar_header_style))
         
-        category_subtext_raw = 'أدائك عبر 7 مجالات رئيسية للصحة المالية' if language == 'ar' else 'Your performance across the 7 key areas of financial health'
+        category_subtext_raw = 'أدائك عبر مجالات رئيسية للصحة المالية' if language == 'ar' else 'Your performance across key areas of financial health'
         category_subtext = process_arabic_text(category_subtext_raw) if language == 'ar' else category_subtext_raw
         pillar_subtitle_style = ParagraphStyle(
             'PillarSubtitle',

@@ -2,8 +2,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
-
-
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
@@ -28,12 +26,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    ADMIN_TOKEN_EXPIRE_MINUTES: int = 120
+    TOKEN_REFRESH_THRESHOLD_MINUTES: int = 10
+    MAX_TOKEN_REFRESH_COUNT: int = 24
     
     # Environment
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     
     # CORS and Security
+    CORS_ORIGINS: str = ""  # JSON string of allowed origins from .env
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",  # Next.js dev
         "http://localhost:3001",  # Next.js dev (alternative port)
@@ -104,11 +106,8 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
-
-
 # Create global settings instance
 settings = Settings()
-
 # Ensure upload and download directories exist
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(settings.DOWNLOAD_DIR, exist_ok=True)

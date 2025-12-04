@@ -135,6 +135,9 @@ class HTMLPDFService:
         Returns:
             bytes: Generated PDF content
         """
+        # Strip whitespace and normalize language parameter (critical fix for production)
+        language = language.strip().lower() if language else "en"
+        
         try:
             import logging
             logger = logging.getLogger(__name__)
@@ -142,46 +145,48 @@ class HTMLPDFService:
             # Load template
             template = self.jinja_env.get_template('financial_clinic_pdf_template.html')
             
-            # Get logo paths (adjust these paths based on your setup)
-            frontend_path = Path(__file__).parent.parent.parent.parent / 'frontend' / 'public'
-            financial_clinic_logo = frontend_path / 'homepage' / 'icons' / 'logo.svg'
-            national_bonds_logo = frontend_path / 'homepage' / 'images' / 'nbc-logo2-02-1.png'
+            # Download logos from URLs (more reliable than file paths)
+            import urllib.request
+            import tempfile
             
-            # Convert logos to base64
-            financial_clinic_logo_base64 = self._get_logo_base64(str(financial_clinic_logo))
-            national_bonds_logo_base64 = self._get_logo_base64(str(national_bonds_logo))
+            financial_clinic_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+            national_bonds_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+            
+            try:
+                # Download Financial Clinic logo
+                fc_logo_data, _ = urllib.request.urlretrieve(financial_clinic_logo_url)
+                with open(fc_logo_data, 'rb') as f:
+                    financial_clinic_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                
+                # Download National Bonds logo  
+                nb_logo_data, _ = urllib.request.urlretrieve(national_bonds_logo_url)
+                with open(nb_logo_data, 'rb') as f:
+                    national_bonds_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+            except Exception as logo_error:
+                print(f"Error loading logos: {logo_error}")
+                financial_clinic_logo_base64 = ""
+                national_bonds_logo_base64 = ""
             
             # Prepare category translations, descriptions, and colors
             category_translations = {}
             category_descriptions = {}
-            category_scores_with_colors = {}
-            
-            for category_name, category_data in result_data.get('category_scores', {}).items():
+            category_colors = {}
+            for category_name in result_data.get('category_scores', {}).keys():
                 category_translations[category_name] = self._translate_category(category_name, language)
                 category_descriptions[category_name] = self._get_category_description(category_name, language)
                 
-                # Handle different data structures
-                if isinstance(category_data, dict):
-                    score = category_data.get('score', 0)
-                    max_possible = category_data.get('max_possible', 100)
-                    
-                    # Calculate percentage and add color
-                    percentage = (score / max_possible * 100) if max_possible > 0 else 0
-                    
-                    category_scores_with_colors[category_name] = {
-                        **category_data,
-                        'color': self._get_score_color(percentage)
-                    }
-                    logger.info(f"Category {category_name}: score={score}, max={max_possible}, percentage={percentage:.1f}%, color={self._get_score_color(percentage)}")
+                # Calculate color based on category percentage
+                category_data = result_data.get('category_scores', {}).get(category_name, {})
+                percentage = (category_data.get('score', 0) / category_data.get('max_possible', 1)) * 100
+                
+                if percentage >= 70:
+                    category_color = '#10b981'  # Green for good
+                elif percentage >= 40:
+                    category_color = '#f97316'  # Orange for fair
                 else:
-                    # If category_data is just a number (score)
-                    percentage = float(category_data) if category_data else 0
-                    category_scores_with_colors[category_name] = {
-                        'score': category_data,
-                        'max_possible': 100,
-                        'color': self._get_score_color(percentage)
-                    }
-                    logger.info(f"Category {category_name}: score={category_data}, percentage={percentage:.1f}%, color={self._get_score_color(percentage)}")
+                    category_color = '#dc2626'  # Red for needs improvement
+                
+                category_colors[category_name] = category_color
             
             # Prepare insights with translated categories
             insights = []
@@ -191,10 +196,26 @@ class HTMLPDFService:
                     'text': insight.get('text_ar' if language == 'ar' else 'text', insight.get('text', ''))
                 })
             
-            # Get score and calculate color/status
+            # Calculate status color and label based on score
             total_score = result_data.get('total_score', 0)
-            status_color = self._get_score_color(total_score)
-            status_label = self._get_status_label(total_score, language)
+            if total_score >= 80:
+                status_color = '#10b981'  # Green for Excellent
+                status_label_en = 'EXCELLENT'
+                status_label_ar = 'ممتاز'
+            elif total_score >= 60:
+                status_color = '#fbbf24'  # Yellow for Good
+                status_label_en = 'GOOD'
+                status_label_ar = 'جيد'
+            elif total_score >= 30:
+                status_color = '#f97316'  # Orange for Fair
+                status_label_en = 'FAIR'
+                status_label_ar = 'مقبول'
+            else:
+                status_color = '#dc2626'  # Red for Needs Improvement
+                status_label_en = 'NEEDS IMPROVEMENT'
+                status_label_ar = 'يحتاج إلى تحسين'
+            
+            status_label = status_label_ar if language == 'ar' else status_label_en
             
             # Render HTML
             html_content = template.render(
@@ -203,9 +224,10 @@ class HTMLPDFService:
                 total_score=total_score,
                 status_color=status_color,
                 status_label=status_label,
-                category_scores=category_scores_with_colors,
+                category_scores=result_data.get('category_scores', {}),
                 category_translations=category_translations,
                 category_descriptions=category_descriptions,
+                category_colors=category_colors,
                 insights=insights,
                 financial_clinic_logo_base64=financial_clinic_logo_base64,
                 national_bonds_logo_base64=national_bonds_logo_base64,
@@ -220,5 +242,7 @@ class HTMLPDFService:
             return pdf_content
             
         except Exception as e:
+            import traceback
             print(f"Error generating PDF: {e}")
+            print(traceback.format_exc())
             raise Exception(f"Failed to generate PDF: {str(e)}")
