@@ -47,12 +47,16 @@
         color: #505d68;
         margin-bottom: 20px;
         font-weight: 400;
+        text-align: right;
+        direction: rtl;
       }
       .message {
         font-size: 15px;
         color: #505d68;
         margin-bottom: 30px;
         line-height: 1.8;
+        text-align: right;
+        direction: rtl;
       }
       .verification-section {
         text-align: center;
@@ -89,6 +93,8 @@
         color: #6b7280;
         margin-top: 30px;
         line-height: 1.8;
+        text-align: right;
+        direction: rtl;
       }
       @media only screen and (max-width: 768px) {
         .email-container {
@@ -138,20 +144,29 @@
         .footer-table {
           padding: 20px 10px !important;
         }
-        .footer-logo-cell {
+        .footer-table tr {
+          display: block !important;
+          width: 100% !important;
+        }
+        .footer-table td {
           display: block !important;
           width: 100% !important;
           text-align: center !important;
-          padding: 0 0 20px 0 !important;
-        }
-        .footer-icons-cell {
-          display: block !important;
-          width: 100% !important;
+          padding: 10px 0 !important;
         }
         .footer-logo-img {
-          height: 80px !important;
-          width: 100px !important;
+          height: 60px !important;
+          width: auto !important;
+          max-width: 150px !important;
           margin: 0 auto !important;
+        }
+        .footer-icons-cell table {
+          margin: 15px auto !important;
+        }
+        .footer-icons-cell table td {
+          display: inline-block !important;
+          width: auto !important;
+          padding: 0 4px !important;
         }
       }
     </style>
@@ -163,7 +178,7 @@
         <div class="header" style="width: 100%; text-align: center">
           <div class="logo" style="text-align: center">
             <img
-              src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+              src="https://financial-clinic.s3.amazonaws.com/icons/financial.png"
               alt="Financial Clinic"
               style="height: 40px; display: inline-block; margin: 0 auto"
             />
@@ -244,30 +259,30 @@
           class="footer-table"
         >
           <tr>
-            <!-- Logo/Branding -->
+            <!-- NBC Logo - Left Corner -->
             <td
-              align="right"
-              style="vertical-align: middle; padding-right: 20px"
+              align="left"
+              style="vertical-align: middle; padding-left: 20px"
               width="20%"
               class="footer-logo-cell"
             >
               <img
-                src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+                src="https://financial-clinic.s3.amazonaws.com/icons/logo.png"
                 alt="السندات الوطنية"
-                style="height: 60px; width: auto; display: block"
+                style="height: 200px; width: 250px; display: block"
                 class="footer-logo-img"
               />
             </td>
-            <!-- All Icons in One Line -->
+            <!-- Social Media Icons - Center -->
             <td
               align="center"
               style="vertical-align: middle"
-              width="80%"
+              width="60%"
               class="footer-icons-cell"
-            >
+            ></td>
               <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
                 <tr>
-                  <!-- Download App Icon -->
+                  <!-- Social Icon 1 - YouTube -->
                   <td
                     style="
                       padding: 0 6px;
@@ -276,7 +291,7 @@
                     "
                   >
                     <a
-                      href="https://nationalbonds.onelink.me/NAu3/9m8huddj"
+                      href="https://www.youtube.com/user/NationalBondsUAE"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -285,47 +300,16 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                        text-decoration: none;
                       "
                     >
                       <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/downlaod_tzobjf.png"
-                        alt="حمل التطبيق"
+                        src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png"
+                        alt="YouTube"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
                     </a>
                   </td>
-                  <!-- Spacer -->
-                  <td style="padding: 0 15px"></td>
-                  <!-- Branches Icon -->
-                  <td
-                    style="
-                      padding: 0 6px;
-                      text-align: center;
-                      vertical-align: top;
-                    "
-                  >
-                    <span
-                      style="
-                        display: inline-block;
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        border: 2px solid #b8985f;
-                        background: #fff;
-                        text-align: center;
-                      "
-                    >
-                      <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/location_bmwxm8.png"
-                        alt="فروعنا"
-                        style="width: 20px; height: 20px; margin-top: 8px"
-                      />
-                    </span>
-                  </td>
-                  <!-- Spacer -->
-                  <td style="padding: 0 15px"></td>
-                  <!-- Social Icon 1 - Facebook -->
+                  <!-- Social Icon 2 - LinkedIn -->
                   <td
                     style="
                       padding: 0 6px;
@@ -334,7 +318,7 @@
                     "
                   >
                     <a
-                      href="https://www.facebook.com/nationalbonds"
+                      href="https://www.linkedin.com/company/national-bonds-corporation"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -346,35 +330,8 @@
                       "
                     >
                       <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332010/grommet-icons_facebook-option_ukdarn.png"
-                        alt="Facebook"
-                        style="width: 20px; height: 20px; margin-top: 8px"
-                      />
-                    </a>
-                  </td>
-                  <!-- Social Icon 2 - Instagram -->
-                  <td
-                    style="
-                      padding: 0 6px;
-                      text-align: center;
-                      vertical-align: top;
-                    "
-                  >
-                    <a
-                      href="https://www.instagram.com/nationalbonds/"
-                      style="
-                        display: inline-block;
-                        width: 40px;
-                        height: 40px;
-                        border-radius: 50%;
-                        border: 2px solid #b8985f;
-                        background: #fff;
-                        text-align: center;
-                      "
-                    >
-                      <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333399/instagram_khxfre.png"
-                        alt="Instagram"
+                        src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png"
+                        alt="LinkedIn"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
                     </a>
@@ -401,12 +358,12 @@
                     >
                       <img
                         src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764576429/X_ayekkc.png"
-                        alt="Twitter"
+                        alt="X"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
                     </a>
                   </td>
-                  <!-- Social Icon 4 - LinkedIn -->
+                  <!-- Social Icon 4 - Instagram -->
                   <td
                     style="
                       padding: 0 6px;
@@ -415,7 +372,7 @@
                     "
                   >
                     <a
-                      href="https://www.linkedin.com/company/national-bonds-corporation"
+                      href="https://www.instagram.com/nationalbonds/"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -427,13 +384,13 @@
                       "
                     >
                       <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764333370/linkedin_uxkfhj.png"
-                        alt="LinkedIn"
+                        src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png"
+                        alt="Instagram"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
                     </a>
                   </td>
-                  <!-- Social Icon 5 - YouTube -->
+                  <!-- Social Icon 5 - Facebook -->
                   <td
                     style="
                       padding: 0 6px;
@@ -442,7 +399,7 @@
                     "
                   >
                     <a
-                      href="https://www.youtube.com/user/NationalBondsUAE"
+                      href="https://www.facebook.com/nationalbonds"
                       style="
                         display: inline-block;
                         width: 40px;
@@ -454,11 +411,91 @@
                       "
                     >
                       <img
-                        src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764332336/youtube_ftgawy.png"
-                        alt="YouTube"
+                        src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png"
+                        alt="Facebook"
                         style="width: 20px; height: 20px; margin-top: 8px"
                       />
                     </a>
+                  </td>
+                </tr>
+                <tr>
+                  <!-- Stay Connected Label (centered below 5 social icons) -->
+                  <td colspan="5" style="padding-top: 8px; text-align: center">
+                    <div
+                      style="
+                        font-size: 11px;
+                        color: #9ca3af;
+                        letter-spacing: 1px;
+                        white-space: nowrap;
+                      "
+                    >
+                      ابقى على تواصل
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+            <!-- Branch and App Icons - Right Corner -->
+            <td
+              align="right"
+              style="vertical-align: middle; padding-right: 20px; padding-left: 160px"
+              width="20%"
+            >
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                <tr>
+                  <!-- Download App Icon -->
+                  <td
+                    style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    "
+                  >
+                    <a
+                      href="https://apps.apple.com/ae/app/national-bonds/id1461657357"
+                      style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                        text-decoration: none;
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png"
+                        alt="حمل التطبيق"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Branches Icon -->
+                  <td
+                    style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    "
+                  >
+                    <span
+                      style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/location.png"
+                        alt="فروعنا"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </span>
                   </td>
                 </tr>
                 <tr>
@@ -488,19 +525,16 @@
                       فروعنا
                     </div>
                   </td>
-                  <!-- Spacer -->
-                  <td style="padding: 0"></td>
-                  <!-- Stay Connected Label (centered below 5 social icons) -->
-                  <td colspan="5" style="padding-top: 8px; text-align: center">
+                  <!-- Branches Label -->
+                  <td style="padding-top: 8px; text-align: center">
                     <div
                       style="
                         font-size: 11px;
                         color: #9ca3af;
-                        letter-spacing: 1px;
                         white-space: nowrap;
                       "
                     >
-                      تواصل معنا
+                      فروعنا
                     </div>
                   </td>
                 </tr>
