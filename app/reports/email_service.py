@@ -878,12 +878,15 @@ National Bonds Team
         <div style="margin:32px 0 24px 0; text-align:right;">
             <span style="font-size:16px; color:#3D4D57; display:block; margin-top:8px;">خذ بضع دقائق لمراجعة نتائجك—إنها الخطوة الأولى نحو مستقبل مالي أقوى وأكثر ثقة.</span>
         </div>
+        <!-- Download button commented out for Arabic version -->
+        <!--
         <div style="text-align: center; margin: 30px 0;">
             <div style="margin-bottom: 20px; "font-size:16px; font-weight:600; color:#3D4D57;">
                 {f'<a href="{download_url}" class="cta-button" style="background: #3FAB4C; margin: 5px; text-decoration: none; color:white; font-weight:600;" download="financial_clinic_report.pdf">تحميل تقرير الصحة المالية</a>' if download_url else '<a href="#attachment" class="cta-button" style="background: #1f2937; margin: 5px; cursor: pointer; color:#1A237E; font-weight:600;" title="تحقق من مرفقات بريدك الإلكتروني لتحميل تقرير PDF">📄 تحميل تقرير الصحة المالية</a>'}
                 {'' if download_url else '<p style="font-size: 12px; color: #6b7280; margin-top: 10px;">📎 تقريرك المفصل بصيغة PDF مرفق بهذا البريد الإلكتروني. يرجى التحقق من مرفقات بريدك الإلكتروني لتحميله.</p>'}
             </div>
         </div>
+        -->
         <div style="text-align:right;">
           <span style="font-size:16px; font-weight:600; color:#3D4D57;">مسارك المالي الشخصي</span>
         </div>
