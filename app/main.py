@@ -173,6 +173,14 @@ async def startup_event():
     logger.info("Starting UAE Financial Health Check API")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
+    
+    # Initialize APScheduler
+    try:
+        from app.scheduler_setup import init_scheduler
+        init_scheduler()
+        logger.info("✅ APScheduler initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize APScheduler: {e}")
 
 
 # Shutdown event
@@ -180,6 +188,14 @@ async def startup_event():
 async def shutdown_event():
     """Application shutdown tasks."""
     logger.info("Shutting down UAE Financial Health Check API")
+    
+    # Shutdown APScheduler
+    try:
+        from app.scheduler_setup import shutdown_scheduler
+        shutdown_scheduler()
+        logger.info("✅ APScheduler shut down successfully")
+    except Exception as e:
+        logger.error(f"❌ Failed to shutdown APScheduler: {e}")
 
 
 if __name__ == "__main__":
