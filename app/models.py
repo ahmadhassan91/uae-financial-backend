@@ -730,3 +730,35 @@ class ConsultationRequest(Base):
         Index('idx_consultation_created_at', 'created_at'),
         Index('idx_consultation_email', 'email'),
     )
+
+
+class ScheduledEmail(Base):
+    """Scheduled email jobs for sending CSV exports of consultation leads."""
+    __tablename__ = "scheduled_emails"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Email configuration
+    recipient_emails = Column(JSON, nullable=False)  # List of email addresses
+    subject = Column(String(255), nullable=False)
+    scheduled_datetime = Column(DateTime(timezone=True), nullable=False, index=True)
+    
+    # Filters for leads data export (same as export endpoint)
+    status_filter = Column(String(20), nullable=True)
+    source_filter = Column(String(50), nullable=True)
+    date_from = Column(DateTime(timezone=True), nullable=True)
+    date_to = Column(DateTime(timezone=True), nullable=True)
+    
+    # Job tracking
+    job_id = Column(String(255), unique=True, index=True, nullable=False)  # APScheduler job ID
+    status = Column(String(20), default="pending", nullable=False, index=True)  # pending, sent, failed, cancelled
+    error_message = Column(Text, nullable=True)
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    creator = relationship("User")
+

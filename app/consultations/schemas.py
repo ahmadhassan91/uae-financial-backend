@@ -62,3 +62,36 @@ class ConsultationRequestFilters(BaseModel):
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None
     search: Optional[str] = None  # Search by name, email, or phone
+
+
+class ScheduledEmailCreate(BaseModel):
+    """Schema for creating a scheduled email."""
+    recipient_emails: list[EmailStr]
+    subject: Optional[str] = None
+    scheduled_datetime: datetime
+    status_filter: Optional[str] = None
+    source_filter: Optional[str] = None
+    date_from: Optional[datetime] = None
+    date_to: Optional[datetime] = None
+
+
+class ScheduledEmailResponse(BaseModel):
+    """Schema for scheduled email response."""
+    id: int
+    recipient_emails: list[str]
+    subject: str
+    scheduled_datetime: datetime
+    status_filter: Optional[str]
+    source_filter: Optional[str]
+    date_from: Optional[datetime]
+    date_to: Optional[datetime]
+    job_id: str
+    status: str
+    error_message: Optional[str]
+    created_by: int
+    created_at: datetime
+    sent_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+

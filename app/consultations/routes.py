@@ -1,7 +1,7 @@
 """API routes for consultation requests."""
 from datetime import datetime, timedelta
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_, desc
@@ -636,3 +636,186 @@ async def get_consultation_sources(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve consultation sources"
         )
+
+
+# Scheduled Email Endpoints
+@router.post("/admin/schedule-email")
+async def schedule_leads_email(
+    request_body: dict = Body(...),
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Schedule an email with CSV export of consultation leads."""
+    from app.consultations.scheduled_email_service import ScheduledEmailService
+    from dateutil import parser
+    
+    try:
+        # Extract fields from request body
+        recipient_emails = request_body.get('recipient_emails', [])
+        scheduled_datetime_str = request_body.get('scheduled_datetime')
+        subject = request_body.get('subject')
+        status_filter = request_body.get('status_filter')
+        source_filter = request_body.get('source_filter')
+        date_from_str = request_body.get('date_from')
+        date_to_str = request_body.get('date_to')
+        
+        # Validate required fields
+        if not recipient_emails:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one recipient email is required"
+            )
+        
+        if not scheduled_datetime_str:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Scheduled datetime is required"
+            )
+        
+        # Parse the datetime string
+        scheduled_dt = parser.isoparse(scheduled_datetime_str)
+        
+        # Validate scheduled datetime is in the future
+        # Use timezone-aware datetime for comparison
+        from datetime import timezone
+        now_utc = datetime.now(timezone.utc)
+        if scheduled_dt <= now_utc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Scheduled datetime must be in the future"
+            )
+        
+        # Parse optional dates
+        date_from_dt = parser.isoparse(date_from_str) if date_from_str else None
+        date_to_dt = parser.isoparse(date_to_str) if date_to_str else None
+        
+        # Create scheduled email
+        service = ScheduledEmailService()
+        scheduled_email = await service.schedule_leads_export(
+            db=db,
+            recipient_emails=recipient_emails,
+            scheduled_datetime=scheduled_dt,
+            created_by_id=current_user.id,
+            subject=subject,
+            status_filter=status_filter,
+            source_filter=source_filter,
+            date_from=date_from_dt,
+            date_to=date_to_dt
+        )
+        
+        # Log the action
+        audit_log = AuditLog(
+            user_id=current_user.id,
+            action="scheduled_email_created",
+            entity_type="scheduled_email",
+            entity_id=scheduled_email.id,
+            details={
+                "recipient_count": len(recipient_emails),
+                "scheduled_datetime": scheduled_dt.isoformat(),
+                "admin_email": current_user.email
+            }
+        )
+        db.add(audit_log)
+        db.commit()
+        
+        logger.info(f"✅ Scheduled email created by {current_user.email}: ID {scheduled_email.id}")
+        
+        return {
+            "success": True,
+            "message": "Email scheduled successfully",
+            "scheduled_email": {
+                "id": scheduled_email.id,
+                "recipient_emails": scheduled_email.recipient_emails,
+                "subject": scheduled_email.subject,
+                "scheduled_datetime": scheduled_email.scheduled_datetime.isoformat(),
+                "status": scheduled_email.status
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error scheduling email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to schedule email: {str(e)}"
+        )
+
+
+@router.get("/admin/scheduled-emails")
+async def list_scheduled_emails(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """List all scheduled emails."""
+    from app.consultations.scheduled_email_service import ScheduledEmailService
+    from app.models import ScheduledEmail
+    
+    try:
+        service = ScheduledEmailService()
+        scheduled_emails = await service.get_scheduled_emails(db, skip=skip, limit=limit)
+        
+        return {
+            "scheduled_emails": [
+                {
+                    "id": email.id,
+                    "recipient_emails": email.recipient_emails,
+                    "subject": email.subject,
+                    "scheduled_datetime": email.scheduled_datetime.isoformat(),
+                    "status": email.status,
+                    "error_message": email.error_message,
+                    "created_at": email.created_at.isoformat(),
+                    "sent_at": email.sent_at.isoformat() if email.sent_at else None
+                }
+                for email in scheduled_emails
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error listing scheduled emails: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve scheduled emails"
+        )
+
+
+@router.delete("/admin/scheduled-emails/{email_id}")
+async def cancel_scheduled_email(
+    email_id: int,
+    current_user: User = Depends(get_current_admin_user),
+    db: Session = Depends(get_db)
+) -> Any:
+    """Cancel a scheduled email."""
+    from app.consultations.scheduled_email_service import ScheduledEmailService
+    
+    try:
+        service = ScheduledEmailService()
+        result = await service.cancel_scheduled_email(db, email_id)
+        
+        if result['success']:
+            # Log the cancellation
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action="scheduled_email_cancelled",
+                entity_type="scheduled_email",
+                entity_id=email_id,
+                details={
+                    "admin_email": current_user.email
+                }
+            )
+            db.add(audit_log)
+            db.commit()
+            
+            logger.info(f"✅ Scheduled email {email_id} cancelled by {current_user.email}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Error cancelling scheduled email: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel scheduled email: {str(e)}"
+        )
+
