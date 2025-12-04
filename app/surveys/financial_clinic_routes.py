@@ -797,13 +797,23 @@ async def send_email_report(
         logger.info(f"📧 EMAIL - Language parameter: '{request.language}' -> '{language}' (type: {type(language)})")
         logger.info(f"📧 EMAIL - Is Arabic: {language == 'ar'}")
         
-        # Generate PDF (use stripped language)
-        pdf_content = await report_service.generate_financial_clinic_pdf(
-            survey_data=survey_data,
-            language=language
-        )
+        # Generate PDF only for English (Arabic PDF has layout issues)
+        pdf_content = None
+        if language != 'ar':
+            try:
+                pdf_content = await report_service.generate_financial_clinic_pdf(
+                    survey_data=survey_data,
+                    language=language
+                )
+                logger.info(f"✅ PDF generated successfully for language: {language}")
+            except Exception as e:
+                logger.error(f"❌ PDF generation failed: {e}")
+                # Continue without PDF
+                pdf_content = None
+        else:
+            logger.info(f"⏭️ Skipping PDF generation for Arabic language")
         
-        # Send email with PDF attachment
+        # Send email with or without PDF attachment
         email_result = await email_service.send_financial_clinic_report(
             recipient_email=request.email,
             result=survey_data['result'],
