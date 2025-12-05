@@ -28,6 +28,7 @@ class User(Base):
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
+    admin_role = Column(String(20), default="full", nullable=False)  # "full" or "view_only"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

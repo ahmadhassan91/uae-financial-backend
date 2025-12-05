@@ -38,6 +38,7 @@ class UserResponse(BaseModel):
     username: str
     is_active: bool
     is_admin: bool
+    admin_role: str = "full"  # "full" or "view_only"
     created_at: datetime
     
     class Config:

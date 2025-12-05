@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from ..database import get_db
 from ..models import CompanyTracker, CompanyAssessment, User
-from ..auth.dependencies import get_current_user, get_current_admin_user
+from ..auth.dependencies import get_current_user, get_current_admin_user, get_current_full_admin_user, get_current_full_admin_user
 from ..config import settings
 from .qr_utils import generate_qr_code, get_qr_code_metadata
 from .schemas import (
