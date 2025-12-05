@@ -1,347 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Verification Code - National Bonds</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-        "Helvetica", "Arial", sans-serif;
-      line-height: 1.6;
-      color: #505d68;
-      background-color: #f5f5f5;
-    }
-
-    .email-wrapper {
-      width: 100%;
-      background-color: #f5f5f5;
-      padding: 40px 0;
-    }
-
-    .email-container {
-      width: 75%;
-      margin: 0 auto;
-      background-color: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .header {
-      background-color: #ffffff;
-      padding: 30px 40px 20px 40px;
-    }
-
-    .logo {
-      text-align: center;
-    }
-
-    .logo-text {
-      font-size: 24px;
-      font-weight: 600;
-      color: #1a1a1a;
-      letter-spacing: -0.5px;
-    }
-
-    .logo-text .highlight {
-      color: #437749;
-    }
-
-    .content {
-      padding: 40px;
-      width: 100%;
-    }
-
-    .greeting {
-      font-size: 16px;
-      color: #505d68;
-      margin-bottom: 20px;
-      font-weight: 400;
-    }
-
-    .message {
-      font-size: 15px;
-      color: #505d68;
-      margin-bottom: 30px;
-      line-height: 1.6;
-    }
-
-    .verification-section {
-      text-align: center;
-      margin: 40px 0;
-    }
-
-    .verification-label {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 20px;
-      font-weight: 500;
-    }
-
-    .otp-boxes {
-      text-align: center;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .otp-box {
-      display: inline-block;
-      width: 60px;
-      height: 70px;
-      border: 2px solid #437749;
-      border-radius: 8px;
-      font-size: 32px;
-      font-weight: 600;
-      color: #1a1a1a;
-      background-color: #ffffff;
-      text-align: center;
-      line-height: 66px;
-      margin: 0 4px;
-      vertical-align: top;
-    }
-
-    .instruction {
-      font-size: 14px;
-      color: #6b7280;
-      margin-top: 30px;
-      line-height: 1.6;
-    }
-
-    .footer {
-      background-color: #ffffff;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 30px 40px;
-      border-top: 1px solid #f0f0f0;
-    }
-
-    .footer-logo {
-      flex: 0 0 auto;
-    }
-
-    .footer-brand {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-      margin-bottom: 10px;
-    }
-
-    .footer-brand-logo {
-      height: 40px;
-    }
-
-    .footer-tagline {
-      font-size: 12px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .social-links {
-      text-align: center;
-      flex: 0 0 auto;
-    }
-
-    .social-title {
-      font-size: 11px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 15px;
-    }
-
-    .social-icons {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-    }
-
-    .social-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      border: 2px solid #b8985f;
-      border-bottom-color: transparent;
-      border-bottom-width: 5px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      transition: all 0.3s;
-      background-color: transparent;
-      padding: 8px;
-    }
-
-    .social-icon img {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-    }
-
-    .social-icon:hover {
-      transform: translateY(-2px);
-    }
-
-    .app-links {
-      text-align: center;
-      display: flex;
-      gap: 30px;
-      flex: 0 0 auto;
-    }
-
-    .app-link-title {
-      font-size: 11px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 10px;
-    }
-
-    .branches-link {
-      text-align: center;
-      margin-top: 20px;
-    }
-
-    @media only screen and (max-width: 768px) {
-      .email-container {
-        width: 95% !important;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your Verification Code - National Bonds</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-
-      .footer-logo-img {
-        height: 120px !important;
-        width: 150px !important;
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Helvetica", "Arial", sans-serif;
+        line-height: 1.6;
+        color: #505d68;
+        background-color: #f5f5f5;
       }
-    }
-
-    @media only screen and (max-width: 600px) {
       .email-wrapper {
-        padding: 20px 0;
+        width: 100%;
+        background-color: #f5f5f5;
+        padding: 40px 0;
       }
-
       .email-container {
-        width: 100% !important;
-        border-radius: 0;
+        width: 75%;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       }
-
-      .content {
-        padding: 30px 20px;
-      }
-
       .header {
-        padding: 20px;
+        background-color: #ffffff;
+        padding: 30px 40px 20px 40px;
       }
-
+      .logo {
+        text-align: center;
+      }
+      .logo-text {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        letter-spacing: -0.5px;
+      }
+      .logo-text .highlight {
+        color: #437749;
+      }
+      .content {
+        padding: 40px;
+        width: 100%;
+      }
       .greeting {
-        font-size: 14px;
+        font-size: 16px;
+        color: #505d68;
+        margin-bottom: 20px;
+        font-weight: 400;
       }
-
       .message {
-        font-size: 14px;
+        font-size: 15px;
+        color: #505d68;
+        margin-bottom: 30px;
         line-height: 1.6;
       }
-
-      .otp-box {
-        width: 40px;
-        height: 50px;
-        font-size: 20px;
-        margin: 0 2px;
-        line-height: 46px;
+      .verification-section {
+        text-align: center;
+        margin: 40px 0;
       }
-
+      .verification-label {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 20px;
+        font-weight: 500;
+      }
       .otp-boxes {
         text-align: center;
-        justify-content: center;
-        white-space: nowrap;
+        margin: 0 auto;
+        width: 100%;
       }
-
+      .otp-box {
+        display: inline-block;
+        width: 60px;
+        height: 70px;
+        border: 2px solid #437749;
+        border-radius: 8px;
+        font-size: 32px;
+        font-weight: 600;
+        color: #1a1a1a;
+        background-color: #ffffff;
+        text-align: center;
+        line-height: 66px;
+        margin: 0 4px;
+        vertical-align: top;
+      }
       .instruction {
-        font-size: 13px;
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 30px;
         line-height: 1.6;
       }
-
-      .footer-table {
-        padding: 20px 10px !important;
+      .footer {
+        background-color: #ffffff;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 30px 40px;
+        border-top: 1px solid #f0f0f0;
       }
-
-      .footer-table tr {
-        display: block !important;
-        width: 100% !important;
+      .footer-logo {
+        flex: 0 0 auto;
       }
-
-      .footer-table td {
-        display: block !important;
-        width: 100% !important;
-        text-align: center !important;
-        padding: 10px 0 !important;
+      .footer-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin-bottom: 10px;
       }
-
-      .footer-logo-img {
-        height: 60px !important;
-        width: auto !important;
-        max-width: 150px !important;
-        margin: 0 auto !important;
+      .footer-brand-logo {
+        height: 40px;
       }
-
-      .footer-icons-cell table {
-        margin: 15px auto !important;
+      .footer-tagline {
+        font-size: 12px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
       }
-
-      .footer-icons-cell table td {
-        display: inline-block !important;
-        width: auto !important;
-        padding: 0 4px !important;
+      .social-links {
+        text-align: center;
+        flex: 0 0 auto;
       }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="email-wrapper">
-    <div class="email-container">
-      <!-- Header -->
-      <div class="header" style="width: 100%; text-align: center">
-        <div class="logo" style="text-align: center">
-          <img src="https://financial-clinic.s3.amazonaws.com/icons/financial.png" alt="Financial Clinic"
-            style="height: 40px; display: inline-block; margin: 0 auto" />
+      .social-title {
+        font-size: 11px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+      }
+      .social-icons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+      }
+      .social-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 2px solid #b8985f;
+        border-bottom-color: transparent;
+        border-bottom-width: 5px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.3s;
+        background-color: transparent;
+        padding: 8px;
+      }
+      .social-icon img {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+      }
+      .social-icon:hover {
+        transform: translateY(-2px);
+      }
+      .app-links {
+        text-align: center;
+        display: flex;
+        gap: 30px;
+        flex: 0 0 auto;
+      }
+      .app-link-title {
+        font-size: 11px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+      }
+      .branches-link {
+        text-align: center;
+        margin-top: 20px;
+      }
+      @media only screen and (max-width: 768px) {
+        .email-container {
+          width: 95% !important;
+        }
+        .footer-logo-img {
+          height: 120px !important;
+          width: 150px !important;
+        }
+      }
+      @media only screen and (max-width: 600px) {
+        .email-wrapper {
+          padding: 20px 0;
+        }
+        .email-container {
+          width: 100% !important;
+          border-radius: 0;
+        }
+        .content {
+          padding: 30px 15px;
+        }
+        .header {
+          padding: 20px;
+        }
+        .greeting {
+          font-size: 14px;
+        }
+        .message {
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        .otp-boxes {
+          text-align: center;
+          justify-content: center;
+          max-width: 100%;
+          padding: 0 10px;
+        }
+        .otp-box {
+          width: 42px !important;
+          height: 52px !important;
+          font-size: 22px !important;
+          margin: 0 3px !important;
+          line-height: 48px !important;
+          border-width: 1.5px !important;
+        }
+        .instruction {
+          font-size: 13px;
+          line-height: 1.6;
+        }
+        .footer-table {
+          padding: 20px 10px !important;
+        }
+        .footer-table tr {
+          display: block !important;
+          width: 100% !important;
+        }
+        .footer-table td {
+          display: block !important;
+          width: 100% !important;
+          text-align: center !important;
+          padding: 10px 0 !important;
+        }
+        .footer-logo-img {
+          height: 60px !important;
+          width: auto !important;
+          max-width: 150px !important;
+          margin: 0 auto !important;
+        }
+        .footer-icons-cell table {
+          margin: 15px auto !important;
+        }
+        .footer-icons-cell table td {
+          display: inline-block !important;
+          width: auto !important;
+          padding: 0 4px !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="email-container">
+        <!-- Header -->
+        <div class="header" style="width: 100%; text-align: center">
+          <div class="logo" style="text-align: center">
+            <img
+              src="https://financial-clinic.s3.amazonaws.com/icons/financial.png"
+              alt="Financial Clinic"
+              style="height: 40px; display: inline-block; margin: 0 auto"
+            />
+          </div>
         </div>
-      </div>
 
-      <!-- Content -->
-      <div class="content">
-        <div class="greeting">Hello,</div>
+        <!-- Content -->
+        <div class="content">
+          <div class="greeting">Hello,</div>
 
-        <div class="message">
-          Thank you for using the National Bonds Financial Health Check. To
-          verify your email address and secure your account, please use the
-          verification code below:
-        </div>
+          <div class="message">
+            Thank you for using the National Bonds Financial Health Check. To
+            verify your email address and secure your account, please use the
+            verification code below:
+          </div>
 
-        <!-- Verification Code -->
-        <div class="verification-section" style="text-align: center; margin: 40px 0">
-          <div class="verification-label" style="
+          <!-- Verification Code -->
+          <div
+            class="verification-section"
+            style="text-align: center; margin: 40px 0"
+          >
+            <div
+              class="verification-label"
+              style="
                 font-size: 14px;
                 color: #6b7280;
                 margin-bottom: 20px;
                 font-weight: 500;
-              ">
-            Verification Code
-          </div>
-          <div class="otp-boxes" style="text-align: center; margin: 0 auto; width: 100%">
-            {% set otp_digits = otp_code|string %} {% for digit in otp_digits
-            %}
-            <div class="otp-box" style="
+              "
+            >
+              Verification Code
+            </div>
+            <div
+              class="otp-boxes"
+              style="text-align: center; margin: 0 auto; width: 100%"
+            >
+              {% set otp_digits = otp_code|string %} {% for digit in otp_digits
+              %}
+              <div
+                class="otp-box"
+                style="
                   display: inline-block;
                   width: 60px;
                   height: 70px;
@@ -355,42 +323,67 @@
                   line-height: 66px;
                   margin: 0 4px;
                   vertical-align: top;
-                ">
-              {{ digit }}
+                "
+              >
+                {{ digit }}
+              </div>
+              {% endfor %}
             </div>
-            {% endfor %}
+          </div>
+
+          <div class="instruction">
+            Enter this code in the application to complete your verification. If
+            you didn't request this code, you can safely ignore this email.
           </div>
         </div>
 
-        <div class="instruction">
-          Enter this code in the application to complete your verification. If
-          you didn't request this code, you can safely ignore this email.
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <table width="100%" cellpadding="0" cellspacing="0" style="
+        <!-- Footer -->
+        <table
+          width="100%"
+          cellpadding="0"
+          cellspacing="0"
+          style="
             background: #fff;
             padding: 32px 24px;
             border-top: 1px solid #e5e7eb;
-          " class="footer-table">
-        <tr>
-          <!-- Logo/Branding -->
-          <td align="left" style="vertical-align: middle; padding-left: 20px" width="20%" class="footer-logo-cell">
-            <img src="https://financial-clinic.s3.amazonaws.com/icons/logo.png" alt="National Bonds"
-              style="height: 200px; width: 250px; display: block" class="footer-logo-img" />
-          </td>
-          <!-- All Icons in One Line -->
-          <td align="center" style="vertical-align: middle" width="80%" class="footer-icons-cell">
-            <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
-              <tr>
-                <!-- Social Icon 1 -->
-                <td style="
+          "
+          class="footer-table"
+        >
+          <tr>
+            <!-- Logo/Branding -->
+            <td
+              align="left"
+              style="vertical-align: middle; padding-left: 20px"
+              width="20%"
+              class="footer-logo-cell"
+            >
+              <img
+                src="https://financial-clinic.s3.amazonaws.com/icons/logo.png"
+                alt="National Bonds"
+                style="height: 200px; width: 250px; display: block"
+                class="footer-logo-img"
+              />
+            </td>
+            <!-- All Icons in One Line -->
+            <td
+              align="center"
+              style="vertical-align: middle"
+              width="80%"
+              class="footer-icons-cell"
+            >
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                <tr>
+                  <!-- Social Icon 1 -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://www.facebook.com/nationalbonds" style="
+                    "
+                  >
+                    <a
+                      href="https://www.facebook.com/nationalbonds"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -398,18 +391,26 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" alt="Facebook"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Social Icon 2 -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png"
+                        alt="Facebook"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Social Icon 2 -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://www.instagram.com/nationalbonds/" style="
+                    "
+                  >
+                    <a
+                      href="https://www.instagram.com/nationalbonds/"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -417,18 +418,26 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" alt="Instagram"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Social Icon 3 -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png"
+                        alt="Instagram"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Social Icon 3 -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://x.com/nationalbonds" style="
+                    "
+                  >
+                    <a
+                      href="https://x.com/nationalbonds"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -436,18 +445,26 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764576429/X_ayekkc.png" alt="Twitter"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Social Icon 4 -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/x.png"
+                        alt="Twitter"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Social Icon 4 -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://www.linkedin.com/company/national-bonds-corporation" style="
+                    "
+                  >
+                    <a
+                      href="https://www.linkedin.com/company/national-bonds-corporation"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -455,18 +472,26 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" alt="LinkedIn"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Social Icon 5 -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png"
+                        alt="LinkedIn"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Social Icon 5 -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://www.youtube.com/user/NationalBondsUAE" style="
+                    "
+                  >
+                    <a
+                      href="https://www.youtube.com/user/NationalBondsUAE"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -474,20 +499,28 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" alt="YouTube"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Spacer -->
-                <td style="padding: 0 15px"></td>
-                <!-- Download App Icon -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png"
+                        alt="YouTube"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Spacer -->
+                  <td style="padding: 0 15px"></td>
+                  <!-- Download App Icon -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <a href="https://apps.apple.com/ae/app/national-bonds/id1461657357" style="
+                    "
+                  >
+                    <a
+                      href="https://apps.apple.com/ae/app/national-bonds/id1461657357"
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -496,20 +529,27 @@
                         background: #fff;
                         text-align: center;
                         text-decoration: none;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png" alt="Download App"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </a>
-                </td>
-                <!-- Spacer -->
-                <td style="padding: 0 15px"></td>
-                <!-- Branches Icon -->
-                <td style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/downlaod.png"
+                        alt="Download App"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </a>
+                  </td>
+                  <!-- Spacer -->
+                  <td style="padding: 0 15px"></td>
+                  <!-- Branches Icon -->
+                  <td
+                    style="
                       padding: 0 6px;
                       text-align: center;
                       vertical-align: top;
-                    ">
-                  <span style="
+                    "
+                  >
+                    <span
+                      style="
                         display: inline-block;
                         width: 40px;
                         height: 40px;
@@ -517,55 +557,64 @@
                         border: 2px solid #b8985f;
                         background: #fff;
                         text-align: center;
-                      ">
-                    <img src="https://financial-clinic.s3.amazonaws.com/icons/location.png" alt="Branches"
-                      style="width: 20px; height: 20px; margin-top: 8px" />
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <!-- Stay Connected Label (centered below 5 social icons) -->
-                <td colspan="5" style="padding-top: 8px; text-align: center">
-                  <div style="
+                      "
+                    >
+                      <img
+                        src="https://financial-clinic.s3.amazonaws.com/icons/location.png"
+                        alt="Branches"
+                        style="width: 20px; height: 20px; margin-top: 8px"
+                      />
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <!-- Stay Connected Label (centered below 5 social icons) -->
+                  <td colspan="5" style="padding-top: 8px; text-align: center">
+                    <div
+                      style="
                         font-size: 11px;
                         color: #9ca3af;
                         letter-spacing: 1px;
                         white-space: nowrap;
-                      ">
-                    STAY CONNECTED
-                  </div>
-                </td>
-                <!-- Spacer -->
-                <td style="padding: 0"></td>
-                <!-- Download App Label -->
-                <td style="padding-top: 8px; text-align: center">
-                  <div style="
+                      "
+                    >
+                      STAY CONNECTED
+                    </div>
+                  </td>
+                  <!-- Spacer -->
+                  <td style="padding: 0"></td>
+                  <!-- Download App Label -->
+                  <td style="padding-top: 8px; text-align: center">
+                    <div
+                      style="
                         font-size: 11px;
                         color: #9ca3af;
                         white-space: nowrap;
-                      ">
-                    DOWNLOAD OUR APP
-                  </div>
-                </td>
-                <!-- Spacer -->
-                <td style="padding: 0"></td>
-                <!-- Branches Label -->
-                <td style="padding-top: 8px; text-align: center">
-                  <div style="
+                      "
+                    >
+                      DOWNLOAD OUR APP
+                    </div>
+                  </td>
+                  <!-- Spacer -->
+                  <td style="padding: 0"></td>
+                  <!-- Branches Label -->
+                  <td style="padding-top: 8px; text-align: center">
+                    <div
+                      style="
                         font-size: 11px;
                         color: #9ca3af;
                         white-space: nowrap;
-                      ">
-                    OUR BRANCHES
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
+                      "
+                    >
+                      OUR BRANCHES
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>
