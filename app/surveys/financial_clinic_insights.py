@@ -552,25 +552,28 @@ class InsightsEngine:
     ) -> List[Tuple[str, Dict]]:
         """
         Rank categories from lowest to highest score.
-        Ties are broken using CATEGORY_PRIORITY.
+        Ties are broken using CATEGORY_PRIORITY (lower priority number = higher priority).
+        
+        Categories with lowest scores (1 is lowest on 1-5 scale) indicate areas needing most attention.
+        For same scores, the predefined priority hierarchy determines the order.
         
         Args:
             category_scores: Category scores dictionary
             
         Returns:
-            List of (category_name, score_data) tuples, sorted by priority
+            List of (category_name, score_data) tuples, sorted by score then priority
         """
         # Convert to list of tuples
         category_list = list(category_scores.items())
         
         # Sort by:
-        # 1. Score (ascending - lowest first)
-        # 2. Priority (ascending - higher priority first for ties)
+        # 1. Score (ascending - lowest first, as lower scores need more attention)
+        # 2. Priority (ascending - lower priority number = higher priority for tie-breaking)
         sorted_categories = sorted(
             category_list,
             key=lambda x: (
-                x[1].get("score", 0),  # Lower score = higher priority
-                self.category_priority.get(x[0], 99)  # Higher priority number for ties
+                x[1].get("score", 0),  # Lower score = needs more attention
+                self.category_priority.get(x[0], 99)  # Lower priority number = higher priority
             )
         )
         
