@@ -245,11 +245,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
       }
 
       .pillar-info {
-        flex: 1;
+        flex: 0 0 180px;
         min-width: 0;
       }
 
@@ -267,8 +267,8 @@
       }
 
       .pillar-progress {
-        flex-shrink: 0;
-        width: 130px;
+        flex: 0 1 250px;
+        max-width: 250px;
         height: 8px;
         background: #e5e7eb;
         border-radius: 4px;
@@ -290,14 +290,12 @@
       }
 
       /* RTL Pillar Progress */
-      .rtl .pillar-progress {
-        margin-left: 0;
-        margin-right: 12px;
-        /* Replace gap */
+      .rtl .pillar-header {
+        gap: 6px;
       }
 
-      .rtl .pillar-header {
-        /* flex-direction: row-reverse; - Removed, let direction: rtl handle it */
+      .rtl .pillar-info {
+        margin-left: 6px;
       }
 
       /* Recommendations */
