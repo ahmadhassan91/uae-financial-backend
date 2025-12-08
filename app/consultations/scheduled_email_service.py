@@ -60,6 +60,17 @@ class ScheduledEmailService:
             if not subject:
                 subject = f"Consultation Leads Export - {datetime.utcnow().strftime('%Y-%m-%d')}"
             
+            # Ensure recipient_emails is a list (PostgreSQL JSON handling)
+            if not isinstance(recipient_emails, list):
+                logger.warning(f"⚠️ recipient_emails is not a list: {type(recipient_emails)}")
+                if isinstance(recipient_emails, str):
+                    import json
+                    recipient_emails = json.loads(recipient_emails)
+                else:
+                    recipient_emails = list(recipient_emails)
+            
+            logger.info(f"📧 Creating scheduled email - Recipients: {recipient_emails}, Job ID: {job_id}")
+            
             # Create scheduled email record
             scheduled_email = ScheduledEmail(
                 recipient_emails=recipient_emails,
@@ -78,19 +89,34 @@ class ScheduledEmailService:
             db.commit()
             db.refresh(scheduled_email)
             
-            # Schedule the job with APScheduler
-            scheduler = get_scheduler()
-            scheduler.add_job(
-                func=self._send_scheduled_leads_email,
-                trigger='date',
-                run_date=scheduled_datetime,
-                args=[scheduled_email.id],
-                id=job_id,
-                replace_existing=True,
-                misfire_grace_time=300  # 5 minutes grace time
-            )
+            logger.info(f"✅ Scheduled email record created in DB: ID {scheduled_email.id}")
             
-            logger.info(f"✅ Scheduled email job created: ID {scheduled_email.id}, Job ID {job_id}")
+            # Schedule the job with APScheduler
+            try:
+                scheduler = get_scheduler()
+                if scheduler is None:
+                    raise Exception("Scheduler is not initialized")
+                
+                logger.info(f"📅 Adding job to scheduler: {job_id}")
+                
+                scheduler.add_job(
+                    func=self._send_scheduled_leads_email,
+                    trigger='date',
+                    run_date=scheduled_datetime,
+                    args=[scheduled_email.id],
+                    id=job_id,
+                    replace_existing=True,
+                    misfire_grace_time=300  # 5 minutes grace time
+                )
+                
+                logger.info(f"✅ Scheduled email job created: ID {scheduled_email.id}, Job ID {job_id}")
+            except Exception as scheduler_error:
+                logger.error(f"❌ Failed to add job to scheduler: {str(scheduler_error)}")
+                # Update the record to reflect the error
+                scheduled_email.status = "failed"
+                scheduled_email.error_message = f"Scheduler error: {str(scheduler_error)}"
+                db.commit()
+                raise
             
             return scheduled_email
             
@@ -134,9 +160,15 @@ class ScheduledEmailService:
                 date_to=scheduled_email.date_to
             )
             
+            # Ensure recipient_emails is a list
+            recipient_emails = scheduled_email.recipient_emails
+            if isinstance(recipient_emails, str):
+                import json
+                recipient_emails = json.loads(recipient_emails)
+            
             # Send email to all recipients
             self._send_csv_email(
-                recipient_emails=scheduled_email.recipient_emails,
+                recipient_emails=recipient_emails,
                 subject=scheduled_email.subject,
                 csv_content=csv_content,
                 filename=f"consultation_leads_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"

@@ -659,6 +659,9 @@ async def schedule_leads_email(
         date_from_str = request_body.get('date_from')
         date_to_str = request_body.get('date_to')
         
+        # Log for debugging
+        logger.info(f"📧 Schedule email request - Recipients: {recipient_emails}, Type: {type(recipient_emails)}")
+        
         # Validate required fields
         if not recipient_emails:
             raise HTTPException(

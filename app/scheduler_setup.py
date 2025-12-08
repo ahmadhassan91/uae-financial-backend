@@ -25,12 +25,15 @@ def init_scheduler():
     dyno_name = os.environ.get('DYNO', '')
     worker_id = os.environ.get('WORKER_ID', '0')
     
-    # On Heroku, only initialize on web.1 dyno
+    # On Heroku, initialize on any web dyno (web.1, web.2, etc.)
     # In other environments, only initialize on worker 0
-    if dyno_name and not dyno_name.startswith('web.1'):
-        logger.info(f"⏭️ Skipping scheduler initialization on dyno {dyno_name}")
-        return None
-    elif not dyno_name and worker_id != '0':
+    if dyno_name:
+        if not dyno_name.startswith('web'):
+            logger.info(f"⏭️ Skipping scheduler initialization on non-web dyno {dyno_name}")
+            return None
+        else:
+            logger.info(f"✅ Initializing scheduler on dyno {dyno_name}")
+    elif worker_id != '0':
         logger.info(f"⏭️ Skipping scheduler initialization in worker {worker_id}")
         return None
     
@@ -76,10 +79,14 @@ def get_scheduler():
     
     # If scheduler is None, try to initialize it
     if scheduler is None:
+        logger.info("🔄 Scheduler not initialized, attempting to initialize now...")
         scheduler = init_scheduler()
     
     if scheduler is None:
-        raise RuntimeError("Scheduler not initialized. Call init_scheduler() first.")
+        dyno_name = os.environ.get('DYNO', 'unknown')
+        error_msg = f"Scheduler not available on this dyno ({dyno_name}). Scheduler only runs on web dynos."
+        logger.error(f"❌ {error_msg}")
+        raise RuntimeError(error_msg)
     
     return scheduler
 
