@@ -21,9 +21,16 @@ def init_scheduler():
         return scheduler
     
     # Only initialize scheduler in the first worker process to avoid conflicts
-    # In production with multiple workers, only worker 0 should run the scheduler
+    # Check for Heroku dyno name or worker ID
+    dyno_name = os.environ.get('DYNO', '')
     worker_id = os.environ.get('WORKER_ID', '0')
-    if worker_id != '0':
+    
+    # On Heroku, only initialize on web.1 dyno
+    # In other environments, only initialize on worker 0
+    if dyno_name and not dyno_name.startswith('web.1'):
+        logger.info(f"⏭️ Skipping scheduler initialization on dyno {dyno_name}")
+        return None
+    elif not dyno_name and worker_id != '0':
         logger.info(f"⏭️ Skipping scheduler initialization in worker {worker_id}")
         return None
     
