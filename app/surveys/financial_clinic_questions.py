@@ -77,8 +77,8 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_en="Do you have more than one source of income?",
         text_ar="هل لديك أكثر من مصدر دخل؟",
         options=[
-              FinancialClinicOption(value=4, label_en="Yes, I save for retirement occasionally, but my contributions vary depending on my monthly expenses", label_ar="نعم، أدّخر للتقاعد أحياناً، لكنّ مساهماتي تختلف بحسب نفقاتي الشهرية."),
-              FinancialClinicOption(value=4, label_en="I have additional income but they are not consistent", label_ar="لديّ دخل إضافيّ لكنّه غير منتظم"),
+            FinancialClinicOption(value=5, label_en="Yes, I have multiple consistent sources of income", label_ar="نعم، لدي مصادر دخل متعددة ومتسقة"),
+            FinancialClinicOption(value=4, label_en="I have additional income but they are not consistent", label_ar="لديّ دخل إضافيّ لكنّه غير منتظم"),
             FinancialClinicOption(value=3, label_en="I have only 1 stream of consistent income", label_ar="لدي مصدر دخل واحد فقط متسق"),
             FinancialClinicOption(value=2, label_en="I have only 1 stream of income and it is not consistent", label_ar="لدي مصدر دخل واحد فقط وليس متسقاً"),
             FinancialClinicOption(value=1, label_en="I currently have no income stream", label_ar="ليس لدي حالياً أي مصدر دخل"),
