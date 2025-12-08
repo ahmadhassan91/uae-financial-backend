@@ -1447,7 +1447,7 @@ If you didn't request this code, please ignore this email."""
             otp_digits_html = ""
             for digit in otp_code:
                 otp_digits_html += f'''
-                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                <div style="display: inline-block; width: 50px; height: 60px; border: 2px solid #437749; border-radius: 8px; font-size: 28px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 56px; margin: 0 2px; vertical-align: top;">
                     {digit}
                 </div>'''
             
@@ -1495,7 +1495,7 @@ If you didn't request this code, please ignore this email."""
                 <!-- Verification Code -->
                 <div style="text-align: center; margin: 40px 0;">
                     <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">رمز التحقق</div>
-                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                    <div style="text-align: center; margin: 0 auto; max-width: 100%; overflow-x: auto;">
                         {otp_digits_html}
                     </div>
                 </div>
@@ -1606,7 +1606,7 @@ If you didn't request this code, please ignore this email."""
             otp_digits_html = ""
             for digit in otp_code:
                 otp_digits_html += f'''
-                <div style="display: inline-block; width: 60px; height: 70px; border: 2px solid #437749; border-radius: 8px; font-size: 32px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 66px; margin: 0 4px; vertical-align: top;">
+                <div style="display: inline-block; width: 50px; height: 60px; border: 2px solid #437749; border-radius: 8px; font-size: 28px; font-weight: 600; color: #1a1a1a; background-color: #ffffff; text-align: center; line-height: 56px; margin: 0 2px; vertical-align: top;">
                     {digit}
                 </div>'''
             
@@ -1654,7 +1654,7 @@ If you didn't request this code, please ignore this email."""
                 <!-- Verification Code -->
                 <div style="text-align: center; margin: 40px 0;">
                     <div style="font-size: 14px; color: #6b7280; margin-bottom: 20px; font-weight: 500;">Verification Code</div>
-                    <div style="text-align: center; margin: 0 auto; width: 100%;">
+                    <div style="text-align: center; margin: 0 auto; max-width: 100%; overflow-x: auto;">
                         {otp_digits_html}
                     </div>
                 </div>
