@@ -1366,7 +1366,8 @@ async def get_overview_metrics(
                 "excellent_count": 0,
                 "good_count": 0,
                 "needs_improvement_count": 0,
-                "at_risk_count": 0
+                "at_risk_count": 0,
+                "today_submissions": 0
             }
         
         # Calculate metrics
@@ -1384,6 +1385,10 @@ async def get_overview_metrics(
         cases_completed_percentage = 100.0  # All retrieved responses are considered "completed" in Financial Clinic
         unique_completion_percentage = (total_responses / all_responses_count * 100) if all_responses_count > 0 else 0.0
         
+        # Calculate today's submissions
+        today = datetime.now().date()
+        today_submissions = sum(1 for r in responses if r.created_at.date() == today)
+        
         return {
             "total_responses": total_responses,  # Keep for backward compatibility
             "total_submissions": all_responses_count,  # Total including duplicates
@@ -1394,7 +1399,8 @@ async def get_overview_metrics(
             "excellent_count": excellent_count,
             "good_count": good_count,
             "needs_improvement_count": needs_improvement_count,
-            "at_risk_count": at_risk_count
+            "at_risk_count": at_risk_count,
+            "today_submissions": today_submissions  # New field for today's count
         }
         
     except Exception as e:
