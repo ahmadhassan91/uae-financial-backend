@@ -1147,9 +1147,9 @@ class PDFReportService:
         # Title Section - Updated to match new design
         if language == "ar":
             title_text = process_arabic_text("إليك درجة صحتك المالية!")
-            subtitle_text = process_arabic_text("هذه لمحة سريعة، نظرة واضحة على مدى صحة أموالك اليوم.")
-            subtitle_text2 = process_arabic_text("تعكس نتيجتك كيفية أدائك عبر المجالات الرئيسية.")
-            subtitle_text3 = process_arabic_text("استمر في تحسين عاداتك، وسوف تنمو رفاهيتك المالية بشكل أقوى مع مرور الوقت.")
+            subtitle_text = process_arabic_text("نقدّم لكم لمحة سريعة تعكس رؤية واضحة لمدى صحّة وضعكم المالي اليوم.")
+            subtitle_text2 = process_arabic_text("تشير نتيجتكم إلى مستوى أدائكم في الجوانب الرئيسية.")
+            subtitle_text3 = process_arabic_text("تابعوا تحسين سلوكيّاتكم المالية لتتعزّز جودة حياتكم المالية تدريجياً مع الوقت.")
         else:
             title_text = "Here's your Financial Health Score!"
             subtitle_text = "This is your snapshot; a clear view of how healthy your finances are today."
