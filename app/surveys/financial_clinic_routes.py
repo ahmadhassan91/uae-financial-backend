@@ -34,6 +34,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/financial-clinic", tags=["Financial Clinic"])
 
 
+# ==================== Helper Functions ====================
+
+def convert_age_to_dob(age: int) -> str:
+    """
+    Convert age to approximate date of birth in DD/MM/YYYY format.
+    Uses January 1st of the calculated birth year.
+    
+    Args:
+        age: Age in years
+        
+    Returns:
+        Date of birth string in DD/MM/YYYY format
+    """
+    current_year = datetime.now().year
+    birth_year = current_year - age
+    return f"01/01/{birth_year}"
+
+
 # ==================== Request/Response Models ====================
 
 class FinancialClinicAnswers(BaseModel):
@@ -47,6 +65,7 @@ class ProfileData(BaseModel):
     # Required fields (but flexible for resumed surveys)
     name: str = ""
     date_of_birth: str = ""  # Format: DD/MM/YYYY
+    age: Optional[int] = None  # Alternative to date_of_birth (will be converted)
     gender: str = ""  # Male, Female
     nationality: str = ""  # Emirati, Non-Emirati
     children: int = 0  # 0-5+
@@ -386,6 +405,16 @@ async def submit_financial_clinic_survey(
             existing_profile = db.query(FinancialClinicProfile).filter(
                 FinancialClinicProfile.email == profile_data['email']
             ).first()
+        
+        # Convert age to date_of_birth if age is provided but date_of_birth is not
+        if 'age' in profile_data and profile_data['age'] and not profile_data.get('date_of_birth'):
+            try:
+                age = int(profile_data['age'])
+                profile_data['date_of_birth'] = convert_age_to_dob(age)
+                logger.info(f"🔄 Converted age {age} to date_of_birth: {profile_data['date_of_birth']}")
+            except (ValueError, TypeError) as e:
+                logger.warning(f"⚠️ Failed to convert age to date_of_birth: {e}")
+                profile_data['date_of_birth'] = '01/01/1990'  # Fallback
         
         if existing_profile:
             # Update existing profile with non-empty values

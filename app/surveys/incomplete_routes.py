@@ -20,6 +20,22 @@ import secrets
 router = APIRouter(prefix="/surveys/incomplete", tags=["incomplete-surveys"])
 
 
+def convert_age_to_dob(age: int) -> str:
+    """
+    Convert age to approximate date of birth in DD/MM/YYYY format.
+    Uses January 1st of the calculated birth year.
+    
+    Args:
+        age: Age in years
+        
+    Returns:
+        Date of birth string in DD/MM/YYYY format
+    """
+    current_year = datetime.now().year
+    birth_year = current_year - age
+    return f"01/01/{birth_year}"
+
+
 @router.post("/start", response_model=IncompleteSurveyResponse)
 async def start_incomplete_survey(
     survey_data: IncompleteSurveyCreate,
@@ -508,9 +524,18 @@ async def resume_survey_session(
         
         # If no direct profile, try to extract from common fields
         if not profile_data and any(key in incomplete_survey.responses for key in ['name', 'email', 'gender']):
+            # Convert age to date_of_birth if age is provided but date_of_birth is not
+            dob = incomplete_survey.responses.get('date_of_birth', '')
+            if not dob and 'age' in incomplete_survey.responses:
+                try:
+                    age = int(incomplete_survey.responses['age'])
+                    dob = convert_age_to_dob(age)
+                except (ValueError, TypeError):
+                    dob = ''
+            
             profile_data = {
                 'name': incomplete_survey.responses.get('name', ''),
-                'date_of_birth': incomplete_survey.responses.get('date_of_birth', ''),
+                'date_of_birth': dob,
                 'gender': incomplete_survey.responses.get('gender', 'Male'),
                 'nationality': incomplete_survey.responses.get('nationality', 'Emirati'),
                 'children': incomplete_survey.responses.get('children', 0),
