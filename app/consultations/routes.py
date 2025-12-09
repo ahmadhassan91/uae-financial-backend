@@ -114,11 +114,22 @@ async def list_consultation_requests(
     try:
         from app.models import FinancialClinicProfile, FinancialClinicResponse, CompanyTracker
         
-        # Build base query - join with profile to enable demographic filtering
-        query = db.query(ConsultationRequest).outerjoin(
-            FinancialClinicProfile,
-            ConsultationRequest.email == FinancialClinicProfile.email
-        )
+        # Determine if we need demographic filtering
+        has_demographic_filters = any([income_range, nationality, age_group, company_id])
+        
+        # Build base query - use inner join if demographic filters are applied, otherwise outer join
+        if has_demographic_filters:
+            # Inner join to only show requests with profiles when filtering by demographics
+            query = db.query(ConsultationRequest).join(
+                FinancialClinicProfile,
+                ConsultationRequest.email == FinancialClinicProfile.email
+            )
+        else:
+            # Outer join to show all requests
+            query = db.query(ConsultationRequest).outerjoin(
+                FinancialClinicProfile,
+                ConsultationRequest.email == FinancialClinicProfile.email
+            )
         
         # Apply consultation request filters
         if status:
@@ -144,6 +155,12 @@ async def list_consultation_requests(
         if nationality:
             query = query.filter(FinancialClinicProfile.nationality == nationality)
         
+        # Apply age group filter - we'll filter in Python since date format is DD/MM/YYYY
+        # Just ensure we have a date_of_birth for now
+        if age_group:
+            query = query.filter(FinancialClinicProfile.date_of_birth.isnot(None))
+            query = query.filter(FinancialClinicProfile.date_of_birth != '')
+        
         if company_id:
             # Join with FinancialClinicResponse to get company_tracker_id
             query = query.outerjoin(
@@ -151,10 +168,10 @@ async def list_consultation_requests(
                 FinancialClinicResponse.profile_id == FinancialClinicProfile.id
             ).filter(FinancialClinicResponse.company_tracker_id == company_id)
         
-        # Order by most recent first and get results
-        consultation_requests = query.order_by(
+        # Get all results (we'll filter age in Python for now since date format is DD/MM/YYYY)
+        all_requests = query.order_by(
             desc(ConsultationRequest.created_at)
-        ).offset(skip).limit(limit).all()
+        ).all()
         
         # Apply age filtering in Python if needed
         if age_group:
@@ -171,8 +188,8 @@ async def list_consultation_requests(
             
             # Filter results by age
             filtered_requests = []
-            for request in consultation_requests:
-                # Get profile for this request
+            for request in all_requests:
+                # Get profile for this request (it should already be joined)
                 profile = db.query(FinancialClinicProfile).filter(
                     FinancialClinicProfile.email == request.email
                 ).first()
@@ -197,7 +214,11 @@ async def list_consultation_requests(
                 elif age_group == "60+" and age > 60:
                     filtered_requests.append(request)
             
-            consultation_requests = filtered_requests
+            # Apply pagination after filtering
+            consultation_requests = filtered_requests[skip:skip + limit]
+        else:
+            # Apply pagination normally
+            consultation_requests = all_requests[skip:skip + limit]
         
         return consultation_requests
         
