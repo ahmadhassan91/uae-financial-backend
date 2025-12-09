@@ -35,9 +35,13 @@ def init_scheduler():
         return None
     
     try:
+        # Use the database_url property which handles postgres:// to postgresql+psycopg2:// conversion
+        database_url = settings.database_url
+        logger.info(f"🔧 Using database URL for scheduler (dialect: {database_url.split(':')[0]})")
+        
         # Configure job stores
         jobstores = {
-            'default': SQLAlchemyJobStore(url=settings.DATABASE_URL)
+            'default': SQLAlchemyJobStore(url=database_url)
         }
         
         # Configure executors
@@ -66,7 +70,7 @@ def init_scheduler():
         
         return scheduler
     except Exception as e:
-        logger.error(f"❌ Failed to initialize scheduler: {e}")
+        logger.error(f"❌ Failed to initialize scheduler: {e}", exc_info=True)
         return None
 
 
@@ -76,10 +80,19 @@ def get_scheduler():
     
     # If scheduler is None, try to initialize it
     if scheduler is None:
-        scheduler = init_scheduler()
+        logger.info("🔄 Scheduler not initialized, attempting to initialize now...")
+        try:
+            scheduler = init_scheduler()
+        except Exception as e:
+            logger.error(f"❌ Failed to initialize scheduler: {e}")
+            # Don't raise here, let the check below handle it
     
     if scheduler is None:
-        raise RuntimeError("Scheduler not initialized. Call init_scheduler() first.")
+        dyno_name = os.environ.get('DYNO', 'unknown')
+        worker_id = os.environ.get('WORKER_ID', 'unknown')
+        error_msg = f"Scheduler not available (DYNO={dyno_name}, WORKER_ID={worker_id}). Scheduler only runs on web dynos or worker 0."
+        logger.error(f"❌ {error_msg}")
+        raise RuntimeError(error_msg)
     
     return scheduler
 

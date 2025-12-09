@@ -77,3 +77,4 @@ scripts/verify_*.py
 
 # Alembic
 alembic/versions/*.pyc
+*.md
