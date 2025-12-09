@@ -15,9 +15,9 @@ class Settings(BaseSettings):
         """Get database URL, preferring Heroku's DATABASE_URL if available."""
         heroku_db_url = os.getenv("DATABASE_URL")
         if heroku_db_url:
-            # Heroku uses postgres:// but SQLAlchemy needs postgresql://
+            # Heroku uses postgres:// but SQLAlchemy needs postgresql+psycopg2://
             if heroku_db_url.startswith("postgres://"):
-                heroku_db_url = heroku_db_url.replace("postgres://", "postgresql://", 1)
+                heroku_db_url = heroku_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
             return heroku_db_url
         return self.DATABASE_URL
     
