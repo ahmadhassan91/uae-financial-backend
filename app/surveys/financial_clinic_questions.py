@@ -104,7 +104,7 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
     FinancialClinicQuestion(
         id="fc_q4",
         number=4,
-        category=FinancialClinicCategory.SAVINGSF_HABIT,
+        category=FinancialClinicCategory.SAVINGS_HABIT,
         weight=5,  # 5% of total score
         text_en="What is the typical duration of your savings goals?",
         text_ar="ما هي المدة المعتادة لتحقيق أهدافكم الادخارية؟",
