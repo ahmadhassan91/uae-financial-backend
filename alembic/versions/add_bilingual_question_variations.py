@@ -1,7 +1,7 @@
 """Add bilingual support to question variations
 
 Revision ID: add_bilingual_variations
-Revises: [previous_revision]
+Revises: add_company_tracking_fc
 Create Date: 2025-11-12 00:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import JSON
 
 # revision identifiers, used by Alembic.
 revision = 'add_bilingual_variations'
-down_revision = None  # Update this with the previous revision ID
+down_revision = 'add_company_tracking_fc'  # Parent: add_company_tracking_to_financial_clinic
 branch_labels = None
 depends_on = None
 
