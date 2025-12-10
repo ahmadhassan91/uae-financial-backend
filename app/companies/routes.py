@@ -197,14 +197,23 @@ async def delete_company(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    """Delete a company. Admin only."""
+    """Delete a company and all related data. Admin only."""
+    from app.models import CompanyAssessment
+    
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
+    # Delete all related company assessments first
+    db.query(CompanyAssessment).filter(
+        CompanyAssessment.company_tracker_id == company_id
+    ).delete(synchronize_session=False)
+    
+    # Now delete the company
     db.delete(company)
     db.commit()
-    return {"message": "Company deleted successfully"}
+    
+    return {"message": "Company and all related data deleted successfully"}
 
 
 @router.post("/{company_id}/generate-link", response_model=CompanyLink)
