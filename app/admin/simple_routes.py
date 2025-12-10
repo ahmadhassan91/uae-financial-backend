@@ -766,11 +766,27 @@ async def export_simple_admin_csv(
             
             # Extract insights (Personalized Action Plans) - up to 5 insights
             insights = []
-            if r.insights and isinstance(r.insights, list):
-                insights = r.insights[:5]  # Get first 5 insights
-            # Pad with empty strings if less than 5 insights
-            while len(insights) < 5:
-                insights.append('')
+            try:
+                if r.insights:
+                    if isinstance(r.insights, list):
+                        insights = r.insights[:5]  # Get first 5 insights
+                    elif isinstance(r.insights, str):
+                        # If insights is stored as JSON string, parse it
+                        import json
+                        parsed_insights = json.loads(r.insights)
+                        if isinstance(parsed_insights, list):
+                            insights = parsed_insights[:5]
+                        else:
+                            insights = [str(parsed_insights)]
+                    else:
+                        insights = [str(r.insights)]
+                # Pad with empty strings if less than 5 insights
+                while len(insights) < 5:
+                    insights.append('')
+            except Exception as e:
+                # If any error occurs, use empty strings
+                insights = ['', '', '', '', '']
+                logger.warning(f"Error processing insights for response {r.id}: {e}")
             
             # Format mobile number with country code
             mobile_number = ''
@@ -934,11 +950,27 @@ async def export_simple_admin_excel(
             
             # Extract insights (Personalized Action Plans) - up to 5 insights
             insights = []
-            if r.insights and isinstance(r.insights, list):
-                insights = r.insights[:5]  # Get first 5 insights
-            # Pad with empty strings if less than 5 insights
-            while len(insights) < 5:
-                insights.append('')
+            try:
+                if r.insights:
+                    if isinstance(r.insights, list):
+                        insights = r.insights[:5]  # Get first 5 insights
+                    elif isinstance(r.insights, str):
+                        # If insights is stored as JSON string, parse it
+                        import json
+                        parsed_insights = json.loads(r.insights)
+                        if isinstance(parsed_insights, list):
+                            insights = parsed_insights[:5]
+                        else:
+                            insights = [str(parsed_insights)]
+                    else:
+                        insights = [str(r.insights)]
+                # Pad with empty strings if less than 5 insights
+                while len(insights) < 5:
+                    insights.append('')
+            except Exception as e:
+                # If any error occurs, use empty strings
+                insights = ['', '', '', '', '']
+                logger.warning(f"Error processing insights for response {r.id}: {e}")
             
             # Format mobile number with country code
             mobile_number = ''
