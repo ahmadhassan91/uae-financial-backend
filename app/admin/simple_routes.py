@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth.dependencies import get_current_admin_user
+from app.auth.utils import verify_password, get_password_hash
 from app.models import User, LocalizedContent, SurveyResponse, CustomerProfile, CompanyTracker
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
@@ -202,6 +203,28 @@ def parse_filter_params(
         filters['companies'] = [c.strip() for c in companies.split(',')]
     
     return filters
+
+@simple_admin_router.post("/change-password")
+async def change_admin_password(
+    current_password: str = Body(...),
+    new_password: str = Body(...),
+    confirm_new_password: str = Body(...),
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user)
+):
+    """
+    Change password for the current admin user.
+    """
+    if new_password != confirm_new_password:
+        raise HTTPException(status_code=400, detail="New passwords do not match.")
+    if not verify_password(current_password, admin_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters.")
+    # Update password
+    admin_user.hashed_password = get_password_hash(new_password)
+    db.commit()
+    return {"message": "Password changed successfully."}
 
 @simple_admin_router.get("/localized-content")
 async def get_simple_localized_content(
