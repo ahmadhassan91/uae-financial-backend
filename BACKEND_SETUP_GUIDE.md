@@ -8,9 +8,55 @@ Before you begin, ensure you have the following installed:
 
 - **Python 3.12** or higher
 - **pip** (Python package manager)
-- **PostgreSQL** (for production) or SQLite (for development)
+- **PostgreSQL 14+** (for production) or SQLite (for development)
 - **Git**
 - **virtualenv** or **venv** (recommended)
+
+## Dependencies Overview
+
+The backend uses the following key dependencies (as of December 2025):
+
+### Core Framework
+| Package | Version | Purpose |
+|---------|---------|---------|
+| fastapi | 0.104.1 | Web framework |
+| uvicorn | 0.24.0 | ASGI server |
+| gunicorn | 21.2.0 | Production WSGI server |
+
+### Database
+| Package | Version | Purpose |
+|---------|---------|---------|
+| sqlalchemy | 2.0.23 | ORM |
+| psycopg2-binary | 2.9.9 | PostgreSQL adapter |
+| alembic | 1.12.1 | Database migrations |
+
+### Authentication & Security
+| Package | Version | Purpose |
+|---------|---------|---------|
+| python-jose | 3.3.0 | JWT tokens |
+| passlib | 1.7.4 | Password hashing |
+| email-validator | 2.3.0 | Email validation |
+
+### Reports & Documents
+| Package | Version | Purpose |
+|---------|---------|---------|
+| weasyprint | 63.1 | PDF generation |
+| reportlab | 4.0.7 | PDF creation |
+| jinja2 | 3.1.2 | Templating |
+| arabic-reshaper | 3.0.0 | Arabic text support |
+| python-bidi | 0.4.2 | RTL text support |
+
+### Cloud Storage
+| Package | Version | Purpose |
+|---------|---------|---------|
+| boto3 | 1.34.34 | AWS S3 integration |
+
+### Testing
+| Package | Version | Purpose |
+|---------|---------|---------|
+| pytest | 7.4.3 | Testing framework |
+| pytest-asyncio | 0.21.1 | Async test support |
+| httpx | 0.25.2 | HTTP client for tests |
 
 ## Quick Setup (Automated)
 
@@ -203,6 +249,136 @@ alembic upgrade head
 python scripts/admin/create_admin_user.py
 ```
 
+## Alembic Migration Chain
+
+The database schema is managed through Alembic migrations. Understanding the migration chain is crucial for new setups and troubleshooting.
+
+### Current Migration Chain (as of December 2025)
+
+```
+<base>
+  └── b61460598eb2 - Initial migration (Sep 2025)
+       └── 79b2254e8076 - Add simple authentication support
+            └── 240c9283bdec - Add incomplete survey tracking
+                 └── 8bcd32d4afae - Add children field to customer profile
+                      └── af977425d8d6 - Add question variation and localization schema
+                           └── 68cc0c8f7a83 - Enhance existing models for advanced features
+                                └── 3b1ff4bac719 - Create report delivery tracking models
+                                     └── c483380ec75e - Add company question sets table
+                                          └── 001b495bba1c - Add financial clinic fields and products
+                                               └── 69d35e0766b1 - Add financial clinic profile and response tables
+                                                    └── 6593ad32fc2a - Add OTP authentication support
+                                                         └── add_company_tracking_fc (branchpoint)
+                                                              ├── 6fe63e174eb9 - Add question variation mapping
+                                                              └── add_bilingual_variations - Add bilingual support
+                                                                   └── 4b6e9065d93a (mergepoint)
+                                                                        └── 95da3f14bc08 - Add variation sets and company assignments
+                                                                             └── d4c4d64e643e - Add default to variation_sets updated_at
+                                                                                  └── 7917158dfb99 - Add company tracking to incomplete surveys
+                                                                                       └── 5cd8640bba5d - Add consultation requests table
+                                                                                            └── b52a1a5a8503 - Add question_variation_mapping back
+                                                                                                 └── 75eceb034b5b - Add completed_at to financial_clinic_responses
+                                                                                                      └── add_scheduled_emails - Add scheduled_emails table
+                                                                                                           └── 12b5be243f89 - Add admin_role to users
+                                                                                                                └── 51e7d91adcdc - Add variation control flags (HEAD)
+```
+
+### Key Tables Created by Migrations
+
+| Migration | Tables Created |
+|-----------|----------------|
+| b61460598eb2 | users, customer_profiles, survey_responses, questions |
+| af977425d8d6 | question_variations, localized_content, demographic_rules |
+| 3b1ff4bac719 | report_deliveries, delivery_tracking |
+| c483380ec75e | company_question_sets |
+| 69d35e0766b1 | financial_clinic_profiles, financial_clinic_responses |
+| 5cd8640bba5d | consultation_requests |
+| 95da3f14bc08 | variation_sets |
+| add_scheduled_emails | scheduled_emails |
+
+### Migration Commands
+
+```bash
+# Check current migration status
+alembic current
+
+# View migration history
+alembic history --verbose
+
+# Upgrade to latest
+alembic upgrade head
+
+# Upgrade one step at a time
+alembic upgrade +1
+
+# Downgrade one step
+alembic downgrade -1
+
+# Downgrade to specific revision
+alembic downgrade b61460598eb2
+
+# Create new migration (auto-generate)
+alembic revision --autogenerate -m "description_of_changes"
+
+# Create empty migration
+alembic revision -m "description_of_changes"
+
+# Show SQL without executing
+alembic upgrade head --sql
+```
+
+### Fresh Database Setup
+
+For a completely new database setup:
+
+```bash
+# 1. Ensure database exists (PostgreSQL)
+createdb financial_health
+
+# 2. Configure DATABASE_URL in .env
+# DATABASE_URL=postgresql://user:password@localhost/financial_health
+
+# 3. Run all migrations from base
+alembic upgrade head
+
+# 4. Verify migration
+alembic current
+# Should show: 51e7d91adcdc (head)
+
+# 5. Create admin user
+python scripts/admin/create_admin_user.py
+```
+
+### Troubleshooting Migrations
+
+#### Multiple Heads Error
+```bash
+# Check for multiple heads
+alembic heads
+
+# If multiple heads exist, create a merge migration
+alembic merge heads -m "merge_multiple_heads"
+alembic upgrade head
+```
+
+#### Migration Out of Sync
+```bash
+# Stamp current database state without running migrations
+alembic stamp head
+
+# Or stamp to specific revision
+alembic stamp 51e7d91adcdc
+```
+
+#### Schema Drift Detection
+```bash
+# Check for differences between models and database
+alembic check
+
+# Generate migration for any detected differences
+alembic revision --autogenerate -m "sync_schema"
+```
+
 ## Testing
 
 ### Run All Tests
@@ -390,6 +566,68 @@ Once the server is running, visit:
 7. **Implement rate limiting** for API endpoints
 8. **Use environment-specific configurations**
 
+## Updating Dependencies
+
+### Check for Outdated Packages
+
+```bash
+# List outdated packages
+pip list --outdated
+
+# Check specific package
+pip show fastapi
+```
+
+### Update Dependencies Safely
+
+```bash
+# Update a specific package
+pip install --upgrade fastapi
+
+# Update all packages (use with caution)
+pip install --upgrade -r requirements.txt
+
+# After updating, test everything
+pytest tests/ -v
+
+# If tests pass, update requirements.txt
+pip freeze > requirements.txt
+```
+
+### Key Dependencies to Monitor
+
+| Package | Current | Check For Updates |
+|---------|---------|-------------------|
+| fastapi | 0.104.1 | Security patches |
+| sqlalchemy | 2.0.23 | Major version changes |
+| alembic | 1.12.1 | Migration compatibility |
+| python-jose | 3.3.0 | Security vulnerabilities |
+| weasyprint | 63.1 | PDF generation bugs |
+
+### WeasyPrint System Dependencies
+
+WeasyPrint requires system-level dependencies for PDF generation:
+
+**macOS:**
+```bash
+brew install pango cairo libffi gdk-pixbuf
+```
+
+**Ubuntu/Debian:**
+```bash
+apt-get install -y libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
+```
+
+**Heroku:**
+The `Aptfile` in the backend folder handles this automatically:
+```
+libpango-1.0-0
+libpangocairo-1.0-0
+libgdk-pixbuf2.0-0
+libffi-dev
+shared-mime-info
+```
+
 ## Monitoring and Logs
 
 ### View Logs
@@ -470,5 +708,13 @@ For issues or questions:
 
 ---
 
-**Last Updated:** November 2025  
-**Version:** 2.0.0
+**Last Updated:** December 2025  
+**Version:** 2.1.0
+
+## Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.1.0 | Dec 2025 | Added migration chain docs, dependency overview, WeasyPrint deps |
+| 2.0.0 | Nov 2025 | Major update with Financial Clinic, variations system |
+| 1.0.0 | Sep 2025 | Initial release |
