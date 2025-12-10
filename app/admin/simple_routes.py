@@ -768,28 +768,26 @@ async def export_simple_admin_csv(
             financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
             # Extract insights (Personalized Action Plans) - up to 5 insights
-            insights = []
-            try:
-                if r.insights:
+            insights = ['', '', '', '', '']  # Default to empty strings
+            if r.insights:
+                try:
                     if isinstance(r.insights, list):
-                        insights = r.insights[:5]  # Get first 5 insights
+                        # Extract text from each insight dictionary
+                        insight_texts = []
+                        for insight in r.insights[:5]:
+                            if isinstance(insight, dict) and 'text' in insight:
+                                insight_texts.append(insight['text'])
+                            elif isinstance(insight, str):
+                                insight_texts.append(insight)
+                            else:
+                                insight_texts.append(str(insight))
+                        insights = insight_texts + [''] * (5 - len(insight_texts))
                     elif isinstance(r.insights, str):
-                        # If insights is stored as JSON string, parse it
-                        import json
-                        parsed_insights = json.loads(r.insights)
-                        if isinstance(parsed_insights, list):
-                            insights = parsed_insights[:5]
-                        else:
-                            insights = [str(parsed_insights)]
+                        insights = [r.insights] + [''] * 4
                     else:
-                        insights = [str(r.insights)]
-                # Pad with empty strings if less than 5 insights
-                while len(insights) < 5:
-                    insights.append('')
-            except Exception as e:
-                # If any error occurs, use empty strings
-                insights = ['', '', '', '', '']
-                logger.warning(f"Error processing insights for response {r.id}: {e}")
+                        insights = [str(r.insights)] + [''] * 4
+                except:
+                    insights = ['', '', '', '', '']
             
             # Format mobile number with country code
             mobile_number = ''
@@ -952,28 +950,26 @@ async def export_simple_admin_excel(
             financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
             # Extract insights (Personalized Action Plans) - up to 5 insights
-            insights = []
-            try:
-                if r.insights:
+            insights = ['', '', '', '', '']  # Default to empty strings
+            if r.insights:
+                try:
                     if isinstance(r.insights, list):
-                        insights = r.insights[:5]  # Get first 5 insights
+                        # Extract text from each insight dictionary
+                        insight_texts = []
+                        for insight in r.insights[:5]:
+                            if isinstance(insight, dict) and 'text' in insight:
+                                insight_texts.append(insight['text'])
+                            elif isinstance(insight, str):
+                                insight_texts.append(insight)
+                            else:
+                                insight_texts.append(str(insight))
+                        insights = insight_texts + [''] * (5 - len(insight_texts))
                     elif isinstance(r.insights, str):
-                        # If insights is stored as JSON string, parse it
-                        import json
-                        parsed_insights = json.loads(r.insights)
-                        if isinstance(parsed_insights, list):
-                            insights = parsed_insights[:5]
-                        else:
-                            insights = [str(parsed_insights)]
+                        insights = [r.insights] + [''] * 4
                     else:
-                        insights = [str(r.insights)]
-                # Pad with empty strings if less than 5 insights
-                while len(insights) < 5:
-                    insights.append('')
-            except Exception as e:
-                # If any error occurs, use empty strings
-                insights = ['', '', '', '', '']
-                logger.warning(f"Error processing insights for response {r.id}: {e}")
+                        insights = [str(r.insights)] + [''] * 4
+                except:
+                    insights = ['', '', '', '', '']
             
             # Format mobile number with country code
             mobile_number = ''
