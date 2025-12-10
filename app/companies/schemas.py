@@ -42,6 +42,9 @@ class CompanyResponse(CompanyBase):
     average_score: Optional[float]
     question_variation_mapping: Optional[Dict[str, int]] = None
     variation_set_id: Optional[int] = None  # Variation Set assignment
+    enable_variations: Optional[bool] = False
+    variations_enabled_at: Optional[datetime] = None
+    variations_enabled_by: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime]
 
