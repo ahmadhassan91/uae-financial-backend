@@ -117,19 +117,11 @@ async def list_consultation_requests(
         # Determine if we need demographic filtering
         has_demographic_filters = any([income_range, nationality, age_group, company_id])
         
-        # Build base query - use inner join if demographic filters are applied, otherwise outer join
-        if has_demographic_filters:
-            # Inner join to only show requests with profiles when filtering by demographics
-            query = db.query(ConsultationRequest).join(
-                FinancialClinicProfile,
-                ConsultationRequest.email == FinancialClinicProfile.email
-            )
-        else:
-            # Outer join to show all requests
-            query = db.query(ConsultationRequest).outerjoin(
-                FinancialClinicProfile,
-                ConsultationRequest.email == FinancialClinicProfile.email
-            )
+        # Always use outer join to show all requests, but we'll filter later
+        query = db.query(ConsultationRequest).outerjoin(
+            FinancialClinicProfile,
+            ConsultationRequest.email == FinancialClinicProfile.email
+        )
         
         # Apply consultation request filters
         if status:
@@ -148,18 +140,12 @@ async def list_consultation_requests(
                 )
             )
         
-        # Apply demographic filters (from profile)
+        # Apply demographic filters (from profile) - only filter at DB level for non-age filters
         if income_range:
             query = query.filter(FinancialClinicProfile.income_range == income_range)
         
         if nationality:
             query = query.filter(FinancialClinicProfile.nationality == nationality)
-        
-        # Apply age group filter - we'll filter in Python since date format is DD/MM/YYYY
-        # Just ensure we have a date_of_birth for now
-        if age_group:
-            query = query.filter(FinancialClinicProfile.date_of_birth.isnot(None))
-            query = query.filter(FinancialClinicProfile.date_of_birth != '')
         
         if company_id:
             # Join with FinancialClinicResponse to get company_tracker_id
@@ -168,10 +154,12 @@ async def list_consultation_requests(
                 FinancialClinicResponse.profile_id == FinancialClinicProfile.id
             ).filter(FinancialClinicResponse.company_tracker_id == company_id)
         
-        # Get all results (we'll filter age in Python for now since date format is DD/MM/YYYY)
+        # Get all results (we'll filter age in Python since date format is DD/MM/YYYY)
         all_requests = query.order_by(
             desc(ConsultationRequest.created_at)
         ).all()
+        
+        logger.info(f"📊 Consultation requests query returned {len(all_requests)} results before age filtering")
         
         # Apply age filtering in Python if needed
         if age_group:
@@ -179,11 +167,23 @@ async def list_consultation_requests(
                 if not dob_str:
                     return None
                 try:
+                    # Try DD/MM/YYYY format first (primary format)
                     dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
                     today = datetime.today()
                     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
                     return age
-                except:
+                except ValueError:
+                    try:
+                        # Try YYYY-MM-DD format as fallback
+                        dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                        today = datetime.today()
+                        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                        return age
+                    except:
+                        logger.warning(f"Failed to parse date of birth: {dob_str}")
+                        return None
+                except Exception as e:
+                    logger.warning(f"Error calculating age from {dob_str}: {e}")
                     return None
             
             # Filter results by age
@@ -195,24 +195,37 @@ async def list_consultation_requests(
                 ).first()
                 
                 if not profile or not profile.date_of_birth:
+                    logger.debug(f"Skipping request {request.id}: No profile or DOB for {request.email}")
                     continue
                 
                 age = calculate_age(profile.date_of_birth)
                 if age is None:
+                    logger.debug(f"Skipping request {request.id}: Could not calculate age from {profile.date_of_birth}")
                     continue
                 
+                # Log age for debugging
+                logger.debug(f"Request {request.id} - Email: {request.email}, Age: {age}, Filter: {age_group}")
+                
+                # Match age group
+                matched = False
                 if age_group == "< 18" and age < 18:
-                    filtered_requests.append(request)
+                    matched = True
                 elif age_group == "18-25" and 18 <= age <= 25:
-                    filtered_requests.append(request)
+                    matched = True
                 elif age_group == "26-35" and 26 <= age <= 35:
-                    filtered_requests.append(request)
+                    matched = True
                 elif age_group == "36-45" and 36 <= age <= 45:
-                    filtered_requests.append(request)
+                    matched = True
                 elif age_group == "46-60" and 46 <= age <= 60:
-                    filtered_requests.append(request)
+                    matched = True
                 elif age_group == "60+" and age > 60:
+                    matched = True
+                
+                if matched:
                     filtered_requests.append(request)
+                    logger.debug(f"✓ Request {request.id} matched age filter")
+            
+            logger.info(f"Age filter '{age_group}': {len(filtered_requests)} of {len(all_requests)} requests matched")
             
             # Apply pagination after filtering
             consultation_requests = filtered_requests[skip:skip + limit]
