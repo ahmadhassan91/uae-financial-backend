@@ -10,6 +10,9 @@ from sqlalchemy import func, and_, or_, desc
 import csv
 import io
 import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 simple_admin_router = APIRouter(prefix="/admin/simple", tags=["admin-simple"])
 
