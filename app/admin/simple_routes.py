@@ -1999,7 +1999,7 @@ async def get_companies_analytics(
             companies.append({
                 "company_name": data["company_name"],
                 "total_responses": len(data["scores"]),
-                "avg_score": round(avg_score, 2),
+                "average_score": round(avg_score, 2),
                 "excellent_count": excellent_count,
                 "good_count": good_count,
                 "needs_improvement_count": needs_improvement_count,
