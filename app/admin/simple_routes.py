@@ -743,13 +743,14 @@ async def export_simple_admin_csv(
         output = io.StringIO()
         writer = csv.writer(output)
 
-        # Header matching reference CSV structure
+        # Header with mobile number country code and 5 action plan columns
         writer.writerow([
             'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
             'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
-            'Financial Knowledge Score', 'Submission Date'
+            'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
+            'Action Plan 4', 'Action Plan 5', 'Submission Date'
         ])
 
         for r in responses:
@@ -763,11 +764,28 @@ async def export_simple_admin_csv(
             financial_protection_score = get_category_score(r.category_scores, 'Protecting Your Family')
             financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
+            # Extract insights (Personalized Action Plans) - up to 5 insights
+            insights = []
+            if r.insights and isinstance(r.insights, list):
+                insights = r.insights[:5]  # Get first 5 insights
+            # Pad with empty strings if less than 5 insights
+            while len(insights) < 5:
+                insights.append('')
+            
+            # Format mobile number with country code
+            mobile_number = ''
+            if profile and profile.mobile_number:
+                mobile_number = profile.mobile_number
+                # Add country code if not already present
+                if not mobile_number.startswith('+'):
+                    # Default to UAE country code if not specified
+                    mobile_number = '+971 ' + mobile_number
+            
             writer.writerow([
                 r.id,
                 profile.name if profile else '',
                 profile.email if profile else '',
-                profile.mobile_number if profile and profile.mobile_number else '',
+                mobile_number,
                 calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
                 profile.gender if profile else '',
                 profile.nationality if profile else '',
@@ -785,6 +803,11 @@ async def export_simple_admin_csv(
                 retirement_planning_score,
                 financial_protection_score,
                 financial_knowledge_score,
+                insights[0] if len(insights) > 0 else '',
+                insights[1] if len(insights) > 1 else '',
+                insights[2] if len(insights) > 2 else '',
+                insights[3] if len(insights) > 3 else '',
+                insights[4] if len(insights) > 4 else '',
                 r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else ''
             ])
 
@@ -909,11 +932,28 @@ async def export_simple_admin_excel(
             financial_protection_score = get_category_score(r.category_scores, 'Protecting Your Family')
             financial_knowledge_score = get_category_score(r.category_scores, 'Emergency Savings')
             
+            # Extract insights (Personalized Action Plans) - up to 5 insights
+            insights = []
+            if r.insights and isinstance(r.insights, list):
+                insights = r.insights[:5]  # Get first 5 insights
+            # Pad with empty strings if less than 5 insights
+            while len(insights) < 5:
+                insights.append('')
+            
+            # Format mobile number with country code
+            mobile_number = ''
+            if profile and profile.mobile_number:
+                mobile_number = profile.mobile_number
+                # Add country code if not already present
+                if not mobile_number.startswith('+'):
+                    # Default to UAE country code if not specified
+                    mobile_number = '+971 ' + mobile_number
+            
             rows.append({
                 'id': r.id,
                 'name': profile.name if profile else '',
                 'email': profile.email if profile else '',
-                'mobile_number': profile.mobile_number if profile and profile.mobile_number else '',
+                'mobile_number': mobile_number,
                 'age': calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
                 'gender': profile.gender if profile else '',
                 'nationality': profile.nationality if profile else '',
@@ -931,6 +971,11 @@ async def export_simple_admin_excel(
                 'retirement_planning_score': retirement_planning_score,
                 'financial_protection_score': financial_protection_score,
                 'financial_knowledge_score': financial_knowledge_score,
+                'action_plan_1': insights[0] if len(insights) > 0 else '',
+                'action_plan_2': insights[1] if len(insights) > 1 else '',
+                'action_plan_3': insights[2] if len(insights) > 2 else '',
+                'action_plan_4': insights[3] if len(insights) > 3 else '',
+                'action_plan_5': insights[4] if len(insights) > 4 else '',
                 'created_at': r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else ''
             })
 
@@ -943,13 +988,14 @@ async def export_simple_admin_excel(
         ws = wb.active
         ws.title = "Financial Clinic Responses"
         
-        # Add headers matching reference CSV structure
+        # Add headers with mobile number country code and 5 action plan columns
         headers = [
             'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
             'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
-            'Financial Knowledge Score', 'Submission Date'
+            'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
+            'Action Plan 4', 'Action Plan 5', 'Submission Date'
         ]
         ws.append(headers)
         
@@ -977,6 +1023,11 @@ async def export_simple_admin_excel(
                 row['retirement_planning_score'],
                 row['financial_protection_score'],
                 row['financial_knowledge_score'],
+                row['action_plan_1'],
+                row['action_plan_2'],
+                row['action_plan_3'],
+                row['action_plan_4'],
+                row['action_plan_5'],
                 row['created_at']
             ])
         
