@@ -198,18 +198,25 @@ async def delete_company(
     current_user: User = Depends(get_current_admin_user)
 ):
     """Delete a company and all related data. Admin only."""
-    from app.models import CompanyAssessment
+    from app.models import CompanyAssessment, FinancialClinicResponse
     
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
     
-    # Delete all related company assessments first
+    # Delete all related data in correct order (children first, then parent)
+    
+    # 1. Delete financial clinic responses
+    db.query(FinancialClinicResponse).filter(
+        FinancialClinicResponse.company_tracker_id == company_id
+    ).delete(synchronize_session=False)
+    
+    # 2. Delete company assessments
     db.query(CompanyAssessment).filter(
         CompanyAssessment.company_tracker_id == company_id
     ).delete(synchronize_session=False)
     
-    # Now delete the company
+    # 3. Finally delete the company itself
     db.delete(company)
     db.commit()
     
