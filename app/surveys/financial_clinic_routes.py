@@ -134,109 +134,110 @@ async def get_financial_clinic_questions(
     # Get base questions
     questions = get_questions_for_profile(children_count=children)
     
-    # TEMPORARILY DISABLED: If company URL provided, check for variation set or individual variations
-    # This was causing variations to appear instead of default questions
-    # if company_url:
-    #     from ..models import CompanyTracker, QuestionVariation, VariationSet
-    #     from .financial_clinic_questions import FinancialClinicQuestion, FinancialClinicOption
-    #     
-    #     company = db.query(CompanyTracker).filter(
-    #         CompanyTracker.unique_url == company_url,
-    #         CompanyTracker.is_active == True
-    #     ).first()
-    #     
-    #     # Priority 1: Check for assigned variation set
-    #     if company and company.variation_set_id:
-    #         variation_set = db.query(VariationSet).filter(
-    #             VariationSet.id == company.variation_set_id,
-    #             VariationSet.is_active == True
-    #         ).first()
-    #         
-    #         if variation_set:
-    #             # Use variations from the set
-    #             variation_mapping = {
-    #                 'fc_q1': variation_set.q1_variation_id,
-    #                 'fc_q2': variation_set.q2_variation_id,
-    #                 'fc_q3': variation_set.q3_variation_id,
-    #                 'fc_q4': variation_set.q4_variation_id,
-    #                 'fc_q5': variation_set.q5_variation_id,
-    #                 'fc_q6': variation_set.q6_variation_id,
-    #                 'fc_q7': variation_set.q7_variation_id,
-    #                 'fc_q8': variation_set.q8_variation_id,
-    #                 'fc_q9': variation_set.q9_variation_id,
-    #                 'fc_q10': variation_set.q10_variation_id,
-    #                 'fc_q11': variation_set.q11_variation_id,
-    #                 'fc_q12': variation_set.q12_variation_id,
-    #                 'fc_q13': variation_set.q13_variation_id,
-    #                 'fc_q14': variation_set.q14_variation_id,
-    #                 'fc_q15': variation_set.q15_variation_id,
-    #             }
-    #             
-    #             # Replace questions with variations from set
-    #             for base_q_id, variation_id in variation_mapping.items():
-    #                 variation = db.query(QuestionVariation).filter(
-    #                     QuestionVariation.id == variation_id,
-    #                     QuestionVariation.is_active == True
-    #                 ).first()
-    #                 
-    #                 if variation:
-    #                     # Find and replace the question
-    #                     for i, q in enumerate(questions):
-    #                         if q.id == base_q_id:
-    #                             # Use bilingual fields (text_en, text_ar)
-    #                             questions[i] = FinancialClinicQuestion(
-    #                                 id=q.id,  # Keep same ID for scoring
-    #                                 number=q.number,
-    #                                 category=q.category,
-    #                                 weight=q.weight,
-    #                                 text_en=variation.text_en or variation.text,
-    #                                 text_ar=variation.text_ar or variation.text,
-    #                                 options=[
-    #                                     FinancialClinicOption(
-    #                                         value=opt['value'],
-    #                                         label_en=opt.get('label_en', opt.get('label', f"[Option {opt['value']}]")),
-    #                                         label_ar=opt.get('label_ar', opt.get('label', f"[خيار {opt['value']}]"))
-    #                                     )
-    #                                     for opt in variation.options
-    #                                 ],
-    #                                 conditional=q.conditional,
-    #                                 condition_field=q.condition_field,
-    #                                 condition_value=q.condition_value
-    #                             )
-    #     
-    #     # Priority 2: Fall back to individual question_variation_mapping (legacy)
-    #     elif company and company.question_variation_mapping:
-    #         # Replace questions with variations
-    #         for base_q_id, variation_id in company.question_variation_mapping.items():
-    #             variation = db.query(QuestionVariation).filter(
-    #                 QuestionVariation.id == variation_id,
-    #                 QuestionVariation.is_active == True
-    #             ).first()
-    #             
-    #             if variation:
-    #                 # Find and replace the question
-    #                 for i, q in enumerate(questions):
-    #                     if q.id == base_q_id:
-    #                         # Replace with variation text/options (use bilingual fields)
-    #                         questions[i] = FinancialClinicQuestion(
-    #                             id=q.id,  # Keep same ID Chelsea: scoring
-    #                             number=q.number,
-    #                             category Variations: q.category,
-    #                             weight=q.weight,
-    #                             text_en=variation.text_en or variation.text,
-    #                             text_ar=variation.text_ar or variation.text,
-    #                             options=[
-    #                                 FinancialClinicOption(
-    #                                     value=opt['value'],
-    #                                     label_en=opt.get('label_en', opt.get('label', f"[Option {opt['value']}]")),
-    #                                     label_ar=opt.get('label_ar', opt.get('label', f"[خيار {opt['value']}]"))
-    #                                 )
-    #                                 for opt in variation.options
-    #                             ],
-    #                             conditional=q.conditional,
-    #                             condition_field=q.condition_field,
-    #                             condition_value=q.condition_value
-    #                         )
+    # If company URL provided, check for variations (only if explicitly enabled)
+    if company_url:
+        from ..models import CompanyTracker, QuestionVariation, VariationSet
+        from .financial_clinic_questions import FinancialClinicQuestion, FinancialClinicOption
+        
+        company = db.query(CompanyTracker).filter(
+            CompanyTracker.unique_url == company_url,
+            CompanyTracker.is_active == True
+        ).first()
+        
+        # Only apply variations if explicitly enabled
+        if company and company.enable_variations:
+            # Priority 1: Check for assigned variation set
+            if company.variation_set_id:
+                variation_set = db.query(VariationSet).filter(
+                    VariationSet.id == company.variation_set_id,
+                    VariationSet.is_active == True
+                ).first()
+                
+                if variation_set:
+                    # Use variations from set
+                    variation_mapping = {
+                        'fc_q1': variation_set.q1_variation_id,
+                        'fc_q2': variation_set.q2_variation_id,
+                        'fc_q3': variation_set.q3_variation_id,
+                        'fc_q4': variation_set.q4_variation_id,
+                        'fc_q5': variation_set.q5_variation_id,
+                        'fc_q6': variation_set.q6_variation_id,
+                        'fc_q7': variation_set.q7_variation_id,
+                        'fc_q8': variation_set.q8_variation_id,
+                        'fc_q9': variation_set.q9_variation_id,
+                        'fc_q10': variation_set.q10_variation_id,
+                        'fc_q11': variation_set.q11_variation_id,
+                        'fc_q12': variation_set.q12_variation_id,
+                        'fc_q13': variation_set.q13_variation_id,
+                        'fc_q14': variation_set.q14_variation_id,
+                        'fc_q15': variation_set.q15_variation_id,
+                    }
+                    
+                    # Replace questions with variations from set
+                    for base_q_id, variation_id in variation_mapping.items():
+                        variation = db.query(QuestionVariation).filter(
+                            QuestionVariation.id == variation_id,
+                            QuestionVariation.is_active == True
+                        ).first()
+                        
+                        if variation:
+                            # Find and replace the question
+                            for i, q in enumerate(questions):
+                                if q.id == base_q_id:
+                                    # Use bilingual fields (text_en, text_ar)
+                                    questions[i] = FinancialClinicQuestion(
+                                        id=q.id,  # Keep same ID for scoring
+                                        number=q.number,
+                                        category=q.category,
+                                        weight=q.weight,
+                                        text_en=variation.text_en or variation.text,
+                                        text_ar=variation.text_ar or variation.text,
+                                        options=[
+                                            FinancialClinicOption(
+                                                value=opt['value'],
+                                                label_en=opt.get('label_en', opt.get('label', f"[Option {opt['value']}]")),
+                                                label_ar=opt.get('label_ar', opt.get('label', f"[خيار {opt['value']}]"))
+                                            )
+                                            for opt in variation.options
+                                        ],
+                                        conditional=q.conditional,
+                                        condition_field=q.condition_field,
+                                        condition_value=q.condition_value
+                                    )
+            
+            # Priority 2: Fall back to individual question_variation_mapping (legacy)
+            elif company and company.question_variation_mapping:
+                # Replace questions with variations
+                for base_q_id, variation_id in company.question_variation_mapping.items():
+                    variation = db.query(QuestionVariation).filter(
+                        QuestionVariation.id == variation_id,
+                        QuestionVariation.is_active == True
+                    ).first()
+                    
+                    if variation:
+                        # Find and replace the question
+                        for i, q in enumerate(questions):
+                            if q.id == base_q_id:
+                                # Replace with variation text/options (use bilingual fields)
+                                questions[i] = FinancialClinicQuestion(
+                                    id=q.id,  # Keep same ID for scoring
+                                    number=q.number,
+                                    category=q.category,
+                                    weight=q.weight,
+                                    text_en=variation.text_en or variation.text,
+                                    text_ar=variation.text_ar or variation.text,
+                                    options=[
+                                        FinancialClinicOption(
+                                            value=opt['value'],
+                                            label_en=opt.get('label_en', opt.get('label', f"[Option {opt['value']}]")),
+                                            label_ar=opt.get('label_ar', opt.get('label', f"[خيار {opt['value']}]"))
+                                        )
+                                        for opt in variation.options
+                                    ],
+                                    conditional=q.conditional,
+                                    condition_field=q.condition_field,
+                                    condition_value=q.condition_value
+                                )
     
     return [
         {

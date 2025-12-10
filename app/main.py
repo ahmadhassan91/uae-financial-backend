@@ -164,6 +164,8 @@ app.include_router(admin_variation_set_router, prefix="/api/v1")
 app.include_router(admin_demographic_rule_router, prefix="/api/v1")
 app.include_router(admin_localization_router, prefix="/api/v1")
 app.include_router(simple_admin_router, prefix="/api/v1")
+from app.admin import variation_routes
+app.include_router(variation_routes.router, prefix="/api/v1")
 
 
 # Startup event

@@ -207,6 +207,11 @@ class CompanyTracker(Base):
     # Variation Set Assignment
     variation_set_id = Column(Integer, ForeignKey("variation_sets.id"), nullable=True, index=True)
     
+    # Variation Control Flags
+    enable_variations = Column(Boolean, default=False, index=True)  # Explicit control for variations
+    variations_enabled_at = Column(DateTime(timezone=True), nullable=True)
+    variations_enabled_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
     # Question Variation Mapping (API compatibility)
     question_variation_mapping = Column(JSON, nullable=True)  # {"fc_q3": 123, "fc_q11": 456}
     
