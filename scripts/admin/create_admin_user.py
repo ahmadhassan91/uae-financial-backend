@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """
-Create an admin user for the UAE Financial Health Check application.
+Create admin users for the UAE Financial Health Check application.
 
-This script creates a default admin user for accessing the admin dashboard.
-Can be run multiple times safely - will skip if admin already exists.
+This script creates default admin users (full admin and view-only admin) for 
+accessing the admin dashboard. Can be run multiple times safely - will skip 
+if admin already exists.
 
 Usage:
     python scripts/admin/create_admin_user.py
     
     Or with custom credentials:
     python scripts/admin/create_admin_user.py --email admin@example.com --password mypassword
+    
+    Create view-only admin:
+    python scripts/admin/create_admin_user.py --email viewer@example.com --password mypassword --role view_only
 """
 
 import sys
@@ -26,127 +30,229 @@ from app.database import SessionLocal, engine, Base
 from app.models import User
 from app.auth.utils import get_password_hash
 
-def create_admin_user(email=None, username=None, password=None):
-    """Create an admin user with predefined or custom credentials."""
+
+# Default admin users configuration
+DEFAULT_ADMIN_USERS = [
+    {
+        "email": "admin@nationalbonds.ae",
+        "username": "admin",
+        "password": "admin123",
+        "admin_role": "full",
+        "description": "Full Admin (can view and modify all data)"
+    },
+    {
+        "email": "viewonly@nationalbonds.ae",
+        "username": "viewonly",
+        "password": "viewonly123",
+        "admin_role": "view_only",
+        "description": "View-Only Admin (can only view data, no modifications)"
+    }
+]
+
+
+def create_admin_user(email: str, username: str, password: str, admin_role: str = "full", db: Session = None):
+    """Create an admin user with specified credentials and role."""
     
-    # Admin user credentials (use defaults if not provided)
-    admin_email = email or "admin@nationalbonds.ae"
-    admin_username = username or "admin"
-    admin_password = password or "admin123"  # Simple password for testing
     admin_dob = date(1990, 1, 1)  # Default date of birth
+    close_db = False
     
-    print("Creating admin user...")
-    print(f"Email: {admin_email}")
-    print(f"Username: {admin_username}")
-    print(f"Password: {admin_password}")
-    print(f"Date of Birth: {admin_dob}")
-    
-    # Create database session
-    db = SessionLocal()
+    if db is None:
+        db = SessionLocal()
+        close_db = True
     
     try:
         # Check if admin user already exists
-        existing_user = db.query(User).filter(User.email == admin_email).first()
+        existing_user = db.query(User).filter(User.email == email).first()
         
         if existing_user:
-            print(f"✅ Admin user already exists with email: {admin_email}")
+            print(f"  ⚠️  User already exists: {email}")
             
-            # Make sure they are admin
+            # Update admin status and role if needed
+            updated = False
             if not existing_user.is_admin:
                 existing_user.is_admin = True
+                updated = True
+            
+            if hasattr(existing_user, 'admin_role') and existing_user.admin_role != admin_role:
+                existing_user.admin_role = admin_role
+                updated = True
+            
+            if updated:
                 db.commit()
-                print("✅ Updated existing user to admin status")
+                print(f"  ✅ Updated user to admin with role: {admin_role}")
+            else:
+                print(f"  ✅ User already has correct admin settings")
             
             return existing_user
         
         # Create new admin user
-        hashed_password = get_password_hash(admin_password)
+        hashed_password = get_password_hash(password)
         
         admin_user = User(
-            email=admin_email,
-            username=admin_username,
+            email=email,
+            username=username,
             hashed_password=hashed_password,
             date_of_birth=datetime.combine(admin_dob, datetime.min.time()),
             is_active=True,
-            is_admin=True  # Set admin flag
+            is_admin=True,
+            admin_role=admin_role
         )
         
         db.add(admin_user)
         db.commit()
         db.refresh(admin_user)
         
-        print("✅ Admin user created successfully!")
-        print(f"   User ID: {admin_user.id}")
-        print(f"   Email: {admin_user.email}")
-        print(f"   Is Admin: {admin_user.is_admin}")
+        print(f"  ✅ Created: {email} (Role: {admin_role})")
         
         return admin_user
         
     except Exception as e:
-        print(f"❌ Error creating admin user: {str(e)}")
+        print(f"  ❌ Error creating user {email}: {str(e)}")
         db.rollback()
         return None
         
     finally:
-        db.close()
+        if close_db:
+            db.close()
 
-def test_admin_credentials():
-    """Test that the admin credentials work."""
-    print("\n=== Testing Admin Credentials ===")
+
+def create_all_default_admins():
+    """Create all default admin users."""
+    print("\n📋 Creating Default Admin Users...")
+    print("=" * 50)
+    
+    db = SessionLocal()
+    created_users = []
+    
+    try:
+        for user_config in DEFAULT_ADMIN_USERS:
+            print(f"\n{user_config['description']}:")
+            user = create_admin_user(
+                email=user_config['email'],
+                username=user_config['username'],
+                password=user_config['password'],
+                admin_role=user_config['admin_role'],
+                db=db
+            )
+            if user:
+                created_users.append({
+                    **user_config,
+                    'id': user.id
+                })
+    finally:
+        db.close()
+    
+    return created_users
+
+
+def list_admin_users():
+    """List all admin users in the database."""
+    print("\n📋 Current Admin Users:")
+    print("=" * 50)
     
     db = SessionLocal()
     
     try:
-        admin_user = db.query(User).filter(User.email == "admin@nationalbonds.ae").first()
+        admin_users = db.query(User).filter(User.is_admin == True).all()
         
-        if admin_user:
-            print(f"✅ Admin user found:")
-            print(f"   ID: {admin_user.id}")
-            print(f"   Email: {admin_user.email}")
-            print(f"   Username: {admin_user.username}")
-            print(f"   Is Admin: {admin_user.is_admin}")
-            print(f"   Is Active: {admin_user.is_active}")
-            print(f"   Created: {admin_user.created_at}")
-            
-            return True
-        else:
-            print("❌ Admin user not found")
+        if not admin_users:
+            print("  No admin users found.")
+            return []
+        
+        for user in admin_users:
+            role = getattr(user, 'admin_role', 'full')
+            print(f"  • {user.email}")
+            print(f"    ID: {user.id}")
+            print(f"    Username: {user.username}")
+            print(f"    Role: {role}")
+            print(f"    Active: {user.is_active}")
+            print(f"    Created: {user.created_at}")
+            print()
+        
+        return admin_users
+        
+    finally:
+        db.close()
+
+
+def reset_admin_password(email: str, new_password: str):
+    """Reset password for an admin user."""
+    print(f"\n🔑 Resetting password for: {email}")
+    
+    db = SessionLocal()
+    
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        
+        if not user:
+            print(f"  ❌ User not found: {email}")
             return False
-            
+        
+        if not user.is_admin:
+            print(f"  ❌ User is not an admin: {email}")
+            return False
+        
+        user.hashed_password = get_password_hash(new_password)
+        db.commit()
+        
+        print(f"  ✅ Password reset successfully for: {email}")
+        return True
+        
     except Exception as e:
-        print(f"❌ Error testing admin credentials: {str(e)}")
+        print(f"  ❌ Error resetting password: {str(e)}")
+        db.rollback()
         return False
         
     finally:
         db.close()
 
+
 def main():
-    """Main function to create admin user and test credentials."""
-    # Parse command line arguments
+    """Main function to create admin users."""
     parser = argparse.ArgumentParser(
-        description='Create an admin user for UAE Financial Health Check',
+        description='Manage admin users for UAE Financial Health Check',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Create admin with default credentials
+  # Create all default admin users (full admin + view-only)
   python scripts/admin/create_admin_user.py
   
-  # Create admin with custom email and password
+  # Create a custom admin with full access
   python scripts/admin/create_admin_user.py --email admin@example.com --password SecurePass123
   
-Default credentials:
-  Email: admin@nationalbonds.ae
-  Password: admin123
-  Date of Birth: 01/01/1990
+  # Create a view-only admin
+  python scripts/admin/create_admin_user.py --email viewer@example.com --password SecurePass123 --role view_only
+  
+  # List all admin users
+  python scripts/admin/create_admin_user.py --list
+  
+  # Reset admin password
+  python scripts/admin/create_admin_user.py --reset-password admin@nationalbonds.ae --new-password NewSecurePass123
+
+Default Admin Users:
+  1. Full Admin
+     Email: admin@nationalbonds.ae
+     Password: admin123
+     
+  2. View-Only Admin
+     Email: viewonly@nationalbonds.ae
+     Password: viewonly123
         """
     )
-    parser.add_argument('--email', help='Admin email address', default=None)
-    parser.add_argument('--username', help='Admin username', default=None)
-    parser.add_argument('--password', help='Admin password', default=None)
+    parser.add_argument('--email', help='Admin email address')
+    parser.add_argument('--username', help='Admin username')
+    parser.add_argument('--password', help='Admin password')
+    parser.add_argument('--role', choices=['full', 'view_only'], default='full',
+                        help='Admin role (default: full)')
+    parser.add_argument('--list', action='store_true', help='List all admin users')
+    parser.add_argument('--reset-password', metavar='EMAIL', help='Reset password for admin user')
+    parser.add_argument('--new-password', help='New password (use with --reset-password)')
     
     args = parser.parse_args()
     
-    print("=== UAE Financial Health Check - Admin User Setup ===\n")
+    print("=" * 60)
+    print("  UAE Financial Health Check - Admin User Management")
+    print("=" * 60)
     
     # Ensure database tables exist
     try:
@@ -156,37 +262,81 @@ Default credentials:
         print(f"❌ Error creating database tables: {str(e)}")
         sys.exit(1)
     
-    # Create admin user
-    admin_user = create_admin_user(
-        email=args.email,
-        username=args.username,
-        password=args.password
-    )
+    # Handle different commands
+    if args.list:
+        list_admin_users()
+        return
     
-    if admin_user:
-        # Test credentials
-        test_admin_credentials()
+    if args.reset_password:
+        if not args.new_password:
+            print("❌ Error: --new-password is required with --reset-password")
+            sys.exit(1)
+        success = reset_admin_password(args.reset_password, args.new_password)
+        sys.exit(0 if success else 1)
+    
+    if args.email:
+        # Create custom admin user
+        username = args.username or args.email.split('@')[0]
+        password = args.password or 'admin123'
         
-        print("\n=== Admin Login Instructions ===")
-        print("To access the admin dashboard:")
-        print("1. Start the backend server:")
-        print("   uvicorn app.main:app --reload")
-        print("\n2. Go to the admin login page:")
-        print("   http://localhost:8000/admin/login")
-        print("\n3. Use these credentials:")
-        print(f"   Email: {args.email or 'admin@nationalbonds.ae'}")
-        print(f"   Password: {args.password or 'admin123'}")
-        print("   Date of Birth: 01/01/1990")
-        print("\n4. Access admin dashboard:")
-        print("   http://localhost:8000/admin")
+        print(f"\n📋 Creating Custom Admin User...")
+        print("=" * 50)
+        print(f"  Email: {args.email}")
+        print(f"  Username: {username}")
+        print(f"  Password: {'*' * len(password)}")
+        print(f"  Role: {args.role}")
         
-        if not args.password or args.password == "admin123":
-            print("\n⚠️  WARNING: Please change the default password in production!")
+        user = create_admin_user(
+            email=args.email,
+            username=username,
+            password=password,
+            admin_role=args.role
+        )
         
-        print("\n✅ Setup complete!")
+        if not user:
+            sys.exit(1)
     else:
-        print("\n❌ Admin user setup failed!")
-        sys.exit(1)
+        # Create all default admin users
+        created_users = create_all_default_admins()
+        
+        if not created_users:
+            print("\n❌ No admin users were created!")
+            sys.exit(1)
+    
+    # Show all admin users
+    list_admin_users()
+    
+    # Show login instructions
+    print("\n" + "=" * 60)
+    print("  Admin Login Instructions")
+    print("=" * 60)
+    print("""
+1. Start the backend server:
+   uvicorn app.main:app --reload
+
+2. Go to the admin login page:
+   http://localhost:3000/admin
+
+3. Use these credentials:
+
+   Full Admin (can modify data):
+   • Email: admin@nationalbonds.ae
+   • Password: admin123
+   • Date of Birth: 01/01/1990
+
+   View-Only Admin (read-only access):
+   • Email: viewonly@nationalbonds.ae
+   • Password: viewonly123
+   • Date of Birth: 01/01/1990
+
+⚠️  WARNING: Change these passwords in production!
+
+To change a password:
+   python scripts/admin/create_admin_user.py --reset-password admin@nationalbonds.ae --new-password YourSecurePassword
+""")
+    
+    print("✅ Setup complete!")
+
 
 if __name__ == "__main__":
     main()
