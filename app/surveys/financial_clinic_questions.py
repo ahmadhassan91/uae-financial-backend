@@ -142,7 +142,7 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_ar="هل أنتم ملتزمون بالادخار للطوارئ؟",
         options=[
                             FinancialClinicOption(value=5, label_en="I already have sufficient emergency savings", label_ar="مدخرات الطوارئ الخاصة بي كافية بالفعل"),
-                            FinancialClinicOption(value=4, label_en="I save every month towards my emergency savings", label_ar="أدّخر شهريًا في حساب الطوارئ الخاص بي."),
+                            FinancialClinicOption(value=4, label_en="I save every month towards my emergency savings", label_ar="أدّخر شهريًا في حساب الطوارئ الخاص بي"),
                         FinancialClinicOption(value=3, label_en="I try to save consistently but not every month", label_ar="أحاول أن أدّخر بانتظام، لكن ليس كلّ شهر"),
                         FinancialClinicOption(value=2, label_en="I save when I can but not consistently", label_ar="أدّخر كلّما أمكن، لكن ليس بانتظام"),
                         FinancialClinicOption(value=1, label_en="One day I will start saving", label_ar="سأبدأ بالادخار يوماً ما"),
@@ -221,10 +221,10 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_ar="هل تدخّرون أو تستثمرون بانتظام من أجل التقاعد؟",
         options=[
             FinancialClinicOption(value=5, label_en="Yes, I contribute regularly for a retirement plan and with a specific goal", label_ar="نعم، أنا ادخر بانتظام في خطة للتقاعد وبهدف محدّد"),
-            FinancialClinicOption(value=4, label_en="Yes, I save for retirement occasionally, but my contributions vary depending on my monthly expenses", label_ar="نعم، أدّخر للتقاعد أحياناً، لكنّ مساهماتي تختلف بحسب نفقاتي الشهرية."),
-            FinancialClinicOption(value=3, label_en="I have started saving or investing for retirement, but I don't have a clear plan or specific goal", label_ar="لقد بدأتُ بالادخار أو الاستثمار للتقاعد، لكن ليس لديّ خطة واضحة أو هدف محدّد."),
+            FinancialClinicOption(value=4, label_en="Yes, I save for retirement occasionally, but my contributions vary depending on my monthly expenses", label_ar="نعم، أدّخر للتقاعد أحياناً، لكنّ مساهماتي تختلف بحسب نفقاتي الشهرية"),
+            FinancialClinicOption(value=3, label_en="I have started saving or investing for retirement, but I don't have a clear plan or specific goal", label_ar="لقد بدأتُ بالادخار أو الاستثمار للتقاعد، لكن ليس لديّ خطة واضحة أو هدف محدّد"),
             FinancialClinicOption(value=2, label_en="Yes, but I save whenever I can and without a clear plan", label_ar="نعم، لكنّي أدخر كلّما استطعت وبدون خطة واضحة"),
-            FinancialClinicOption(value=1, label_en="No, I have not thought about saving for retirement", label_ar="لا، لم أفكّر في مسألة الادّخار من أجل التقاعد."),
+            FinancialClinicOption(value=1, label_en="No, I have not thought about saving for retirement", label_ar="لا، لم أفكّر في مسألة الادّخار من أجل التقاعد"),
         ]
     ),
     FinancialClinicQuestion(
@@ -236,7 +236,7 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_ar="ما مدى ثقتكم في أنّكم ستُحافظون على أسلوب حياة مريح بعد التقاعد؟",
         options=[
                             FinancialClinicOption(value=5, label_en="I have already secured a retirement income", label_ar="لقد أمّنت بالفعل دخلاً للتقاعد"),
-                            FinancialClinicOption(value=4, label_en="I am highly confident of having a stable income after retirement", label_ar="أنا واثق تمامًا من الحصول على دخل ثابت بعد التقاعد."),
+                            FinancialClinicOption(value=4, label_en="I am highly confident of having a stable income after retirement", label_ar="أنا واثق تمامًا من الحصول على دخل ثابت بعد التقاعد"),
                         FinancialClinicOption(value=3, label_en="I am somewhat confident of having a stable income after retirement", label_ar="أنا واثقٌ إلى حدّ ما من الحصول على دخل ثابت بعد التقاعد"),
                         FinancialClinicOption(value=2, label_en="I am not very confident of having a stable income after retirement", label_ar="لست واثقاً تماماً من الحصول على دخل ثابت بعد التقاعد"),
                         FinancialClinicOption(value=1, label_en="I am certain I will not have a stable income after retirement", label_ar="أنا متأكد من أنّه لن يكون لدي دخل ثابت بعد التقاعد"),
