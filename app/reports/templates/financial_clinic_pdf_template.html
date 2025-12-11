@@ -115,6 +115,12 @@
         position: relative;
         margin: 10px auto;
         overflow: hidden;
+        direction: ltr;
+      }
+
+      /* RTL: Flip progress bar for Arabic */
+      [dir="rtl"] .progress-bar {
+        transform: scaleX(-1);
       }
 
       .progress-fill {
@@ -273,6 +279,12 @@
         background: #e5e7eb;
         border-radius: 4px;
         overflow: hidden;
+        direction: ltr;
+      }
+
+      /* RTL: Flip progress bar for Arabic */
+      [dir="rtl"] .pillar-progress {
+        transform: scaleX(-1);
       }
 
       .pillar-progress-fill {
