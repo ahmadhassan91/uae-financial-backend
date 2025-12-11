@@ -68,7 +68,7 @@
       .hero-title {
         font-size: 24px;
         font-weight: 600;
-        color: #2d7a3e;
+        color: #5e5e5e;
         margin-bottom: 8px;
         line-height: 1.2;
       }
@@ -216,7 +216,7 @@
       .section-title {
         font-size: 15px;
         font-weight: 600;
-        color: #2d7a3e;
+        color: #5e5e5e;
         text-align: center;
         margin: 14px 0 7px;
       }
@@ -310,7 +310,7 @@
       .recommendations-title {
         font-size: 9px;
         font-weight: 600;
-        color: #2d7a3e;
+        color: #5e5e5e;
         margin-bottom: 6px;
       }
 
@@ -477,16 +477,14 @@
 
       <!-- Score Display -->
       <div class="score-section">
-        <div class="score-label" style="color: {{ status_color }}">
-          {{ status_label }}
-        </div>
-        <div class="score-number" style="color: {{ status_color }}">
+        <div class="score-label" style="color: #5e5e5e">{{ status_label }}</div>
+        <div class="score-number" style="color: #5e5e5e">
           {{ total_score|round|int }}%
         </div>
         <div class="progress-bar">
           <div
             class="progress-fill"
-            style="width: {{ total_score }}%; background-color: {{ status_color }};"
+            style="width: {{ total_score }}%; background-color: #AF8F39;"
           ></div>
         </div>
       </div>

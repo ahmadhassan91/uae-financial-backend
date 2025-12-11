@@ -151,7 +151,7 @@ class PDFReportService:
             Hex color code
         """
         if score >= 80:
-            return '#6cc922'  # Excellent - Green
+            return '#6cc922'  # Excellent - Green //this is PDF
         elif score >= 60:
             return '#fca924'  # Good - Yellow/Orange
         elif score >= 30:
@@ -1156,12 +1156,12 @@ class PDFReportService:
             subtitle_text2 = "Your score reflects how you're doing across key areas."
             subtitle_text3 = "Keep improving your habits, and your financial wellbeing will grow stronger over time."
         
-        # Update title style to match image - green color
+        # Update title style to match image - dark gray color #5E5E5E
         title_style_updated = ParagraphStyle(
             'CustomTitleUpdated',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#2d7a3e'),
+            textColor=colors.HexColor('#5E5E5E'),
             spaceAfter=12,
             alignment=TA_CENTER,
             fontName=title_font
@@ -1202,21 +1202,21 @@ class PDFReportService:
             score_color = colors.HexColor('#dc2626')  # Red - Needs Improvement
             status_label = 'NEEDS IMPROVEMENT' if language == 'en' else 'يحتاج تحسين'
         
-        # Status label style
+        # Status label style (fixed dark gray color to match design)
         status_style = ParagraphStyle(
             'StatusStyle',
             fontSize=20,
-            textColor=score_color,
+            textColor=colors.HexColor('#5E5E5E'),
             alignment=TA_CENTER,
             fontName='Helvetica-Bold',
             spaceAfter=8
         )
         
-        # Large score display with simple clean style
+        # Large score display with simple clean style (fixed dark gray color)
         score_style = ParagraphStyle(
             'ScoreStyle', 
             fontSize=72, 
-            textColor=score_color, 
+            textColor=colors.HexColor('#5E5E5E'), 
             alignment=TA_CENTER, 
             fontName='Helvetica-Bold',
             leading=80,
@@ -1238,10 +1238,10 @@ class PDFReportService:
         bg_bar.strokeColor = None
         progress_drawing.add(bg_bar)
         
-        # Filled bar (colored based on score)
+        # Filled bar (fixed golden color to match design)
         fill_width = (total_score / 100) * progress_width
         fill_bar = Rect(0, 0, fill_width, progress_height)
-        fill_bar.fillColor = score_color
+        fill_bar.fillColor = colors.HexColor('#AF8F39')
         fill_bar.strokeColor = None
         progress_drawing.add(fill_bar)
         
@@ -1385,7 +1385,7 @@ class PDFReportService:
         pillar_header_style = ParagraphStyle(
             'PillarHeader',
             fontSize=20,
-            textColor=colors.HexColor('#2d7a3e'),
+            textColor=colors.HexColor('#5E5E5E'),
             alignment=TA_CENTER,
             fontName=title_font,
             spaceAfter=10,
@@ -1580,7 +1580,7 @@ class PDFReportService:
             action_plan_header_style = ParagraphStyle(
                 'ActionPlanHeader',
                 fontSize=20,
-                textColor=colors.HexColor('#2d7a3e'),
+                textColor=colors.HexColor('#5E5E5E'),
                 alignment=TA_CENTER,
                 fontName=title_font,
                 spaceAfter=10,
@@ -1611,7 +1611,7 @@ class PDFReportService:
             rec_header_style = ParagraphStyle(
                 'RecHeader',
                 fontSize=11,
-                textColor=colors.HexColor('#2d7a3e'),
+                textColor=colors.HexColor('#5E5E5E'),
                 fontName='Helvetica-Bold',
                 spaceAfter=8
             )
