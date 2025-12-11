@@ -2120,27 +2120,33 @@ async def get_score_analytics_table(
                         variation_set.q15_variation_id
                     ]
                     
-                    # Get all variations
+                    # Get all variations and build a lookup dict by ID
                     variations = db.query(QuestionVariation).filter(
                         QuestionVariation.id.in_(variation_ids),
                         QuestionVariation.is_active == True
                     ).all()
                     
+                    # Create a dict for quick lookup by variation id
+                    variation_lookup = {v.id: v for v in variations}
+                    
                     if variations:
                         # Convert variations to question-like objects for analysis
+                        # Use the original order from variation_ids (q1, q2, ..., q15)
                         questions_to_analyze = []
-                        for i, var in enumerate(variations, start=1):
-                            # Create a simple object with the needed attributes
-                            class VariationQuestion:
-                                def __init__(self, variation, question_number):
-                                    self.id = variation.base_question_id
-                                    self.number = question_number
-                                    self.text_en = variation.text_en or variation.text  # Use bilingual field or fallback
-                                    self.category = type('obj', (object,), {
-                                        'value': variation.factor or "General"  # Use factor as category
-                                    })()
-                            
-                            questions_to_analyze.append(VariationQuestion(var, i))
+                        for i, var_id in enumerate(variation_ids, start=1):
+                            var = variation_lookup.get(var_id)
+                            if var:
+                                # Create a simple object with the needed attributes
+                                class VariationQuestion:
+                                    def __init__(self, variation, question_number):
+                                        self.id = variation.base_question_id
+                                        self.number = question_number
+                                        self.text_en = variation.text_en or variation.text  # Use bilingual field or fallback
+                                        self.category = type('obj', (object,), {
+                                            'value': variation.factor or "General"  # Use factor as category
+                                        })()
+                                
+                                questions_to_analyze.append(VariationQuestion(var, i))
         
         # Build question analytics with nationality breakdown
         question_analytics = []
