@@ -286,19 +286,52 @@ class ReportGenerationService:
         Returns:
             PDF content as bytes
         """
-        # Strip whitespace and normalize language parameter (critical fix for production)
-        language = language.strip().lower() if language else "en"
-        
-        # Extract result and profile from survey_data
-        result = survey_data.get('result', {})
-        profile = survey_data.get('profile', {})
-        
-        # Get customer name from profile
-        customer_name = profile.get('name', '')
-        
-        # Use the HTML PDF service to generate the report
-        return await self.html_pdf_service.generate_financial_clinic_pdf(
-            result_data=result,
-            language=language,
-            customer_name=customer_name
-        )
+        try:
+            # Strip whitespace and normalize language parameter (critical fix for production)
+            language = language.strip().lower() if language else "en"
+            
+            # Extract result and profile from survey_data
+            result = survey_data.get('result', {})
+            profile = survey_data.get('profile', {})
+
+            # Normalize category_scores shape so HTMLPDFService always receives
+            # a dict keyed by category name. When data comes from
+            # FinancialClinicResponse history, category_scores is a list.
+            category_scores = result.get('category_scores')
+            if isinstance(category_scores, list):
+                normalized: Dict[str, Any] = {}
+                for item in category_scores:
+                    if not isinstance(item, dict):
+                        continue
+
+                    name = item.get('category') or item.get('category_en')
+                    if not name:
+                        continue
+
+                    normalized[name] = {
+                        'score': item.get('score', 0),
+                        'max_possible': item.get('max_possible', item.get('max_score', 0)),
+                        'percentage': item.get('percentage', 0),
+                        'status_level': item.get('status_level'),
+                    }
+
+                result = {**result, 'category_scores': normalized}
+            
+            # Get customer name from profile
+            customer_name = profile.get('name', '')
+            
+            # Use the HTML PDF service to generate the report
+            return await self.html_pdf_service.generate_financial_clinic_pdf(
+                result_data=result,
+                language=language,
+                customer_name=customer_name
+            )
+        except Exception as e:
+            # Re-raise with additional context so the API returns a helpful message
+            from pprint import pformat
+            debug_info = {
+                'language': language,
+                'result_keys': list(result.keys()) if isinstance(result, dict) else type(result).__name__,
+                'category_scores_type': type(result.get('category_scores')).__name__ if isinstance(result, dict) else 'n/a',
+            }
+            raise Exception(f"Financial Clinic HTML PDF generation failed: {e}. Debug: {pformat(debug_info)}")
