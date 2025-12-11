@@ -636,12 +636,16 @@ async def generate_pdf_report(
         
         # If survey_response_id provided, load from database
         if request.survey_response_id:
+            logger.info(f"Querying for survey_response_id: {request.survey_response_id} (type: {type(request.survey_response_id)})")
             response = db.query(FinancialClinicResponse).filter(
                 FinancialClinicResponse.id == request.survey_response_id
             ).first()
             
             if not response:
-                raise HTTPException(status_code=404, detail="Survey response not found")
+                # Log available IDs for debugging
+                all_ids = db.query(FinancialClinicResponse.id).limit(10).all()
+                logger.error(f"Survey response {request.survey_response_id} not found. Recent IDs: {[r.id for r in all_ids]}")
+                raise HTTPException(status_code=404, detail=f"Survey response {request.survey_response_id} not found")
             
             # Use helper function to convert response to survey_data format
             survey_data = convert_response_to_survey_data(response)
@@ -714,10 +718,15 @@ async def generate_pdf_report(
         }
     except Exception as e:
         # Return informative error instead of 500
+        import traceback
+        error_detail = str(e) if str(e) else repr(e)
+        logger.error(f"PDF generation error: {error_detail}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return {
             "success": False,
             "message": "PDF generation encountered an error",
-            "error": str(e)
+            "error": error_detail,
+            "traceback": traceback.format_exc()[:500]  # First 500 chars of traceback
         }
 
 
