@@ -1,7 +1,7 @@
 """remove periods from arabic option labels
 
 Revision ID: remove_arabic_periods
-Revises: 75eceb034b5b
+Revises: 51e7d91adcdc
 Create Date: 2025-12-11 12:38:00.000000
 
 """
@@ -12,7 +12,7 @@ import json
 
 # revision identifiers, used by Alembic.
 revision = 'remove_arabic_periods'
-down_revision = '75eceb034b5b'
+down_revision = '51e7d91adcdc'
 branch_labels = None
 depends_on = None
 
