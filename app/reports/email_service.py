@@ -96,7 +96,7 @@ class EmailReportService:
             }
     
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
-        """Send email using SMTP - exact production approach."""
+        """Send email using SMTP - supports both authenticated and relay servers."""
         import logging
         logger = logging.getLogger(__name__)
         
@@ -109,17 +109,33 @@ class EmailReportService:
             
             logger.info(f"📧 Attempting to send email to: {to_email}")
             logger.info(f"📧 SMTP Host: {settings.SMTP_HOST}, Port: {settings.SMTP_PORT}")
-            logger.info(f"📧 SMTP Username: {settings.SMTP_USERNAME[:5]}***")
+            
+            # Check if authentication is required (password is set)
+            smtp_password = getattr(settings, 'SMTP_PASSWORD', '') or ''
+            smtp_username = getattr(settings, 'SMTP_USERNAME', '') or ''
+            requires_auth = bool(smtp_password.strip())
+            
+            if requires_auth:
+                logger.info(f"📧 SMTP Username: {smtp_username[:5]}*** (authenticated mode)")
+            else:
+                logger.info("📧 SMTP relay mode (no authentication)")
             
             # Use settings from config
             server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
             logger.info("📧 SMTP connection established")
             
-            server.starttls()
-            logger.info("📧 TLS started")
-            
-            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-            logger.info("📧 SMTP login successful")
+            # Only use TLS and authentication if password is configured
+            # Internal SMTP relays (like smtprelay.nationalbonds.ae:25) typically don't require auth
+            if requires_auth:
+                server.starttls()
+                logger.info("📧 TLS started")
+                
+                server.login(smtp_username, smtp_password)
+                logger.info("📧 SMTP login successful")
+            else:
+                # For internal relays, we may still need EHLO
+                server.ehlo()
+                logger.info("📧 EHLO sent (relay mode, no TLS/auth)")
             
             # Use as_string() exactly like the working test
             msg_string = msg.as_string()

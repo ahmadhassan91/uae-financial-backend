@@ -366,8 +366,18 @@ UAE Financial Health Team
             
             # Send email
             server = smtplib.SMTP(self.email_service.smtp_server, self.email_service.smtp_port)
-            server.starttls()
-            server.login(self.email_service.smtp_username, self.email_service.smtp_password)
+            
+            # Check if authentication is required (password is set)
+            smtp_password = self.email_service.smtp_password or ''
+            requires_auth = bool(smtp_password.strip())
+            
+            if requires_auth:
+                server.starttls()
+                server.login(self.email_service.smtp_username, smtp_password)
+            else:
+                # For internal relays without auth
+                server.ehlo()
+            
             server.sendmail(self.email_service.from_email, recipient_emails, msg.as_string())
             server.quit()
             
