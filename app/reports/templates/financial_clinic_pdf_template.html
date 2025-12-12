@@ -274,7 +274,7 @@
 
       .pillar-progress {
         flex: 0 1 250px;
-        max-width: 250px;
+        max-width: 350px;
         height: 8px;
         background: #e5e7eb;
         border-radius: 4px;
@@ -489,14 +489,22 @@
 
       <!-- Score Display -->
       <div class="score-section">
-        <div class="score-label" style="color: #5e5e5e">{{ status_label }}</div>
-        <div class="score-number" style="color: #5e5e5e">
+        <div
+          class="score-label"
+          style="color: {% if total_score >= 80 %}#6cc922{% elif total_score >= 60 %}#fca924{% elif total_score >= 30 %}#fe6521{% else %}#f00c01{% endif %};"
+        >
+          {{ status_label }}
+        </div>
+        <div
+          class="score-number"
+          style="color: {% if total_score >= 80 %}#6cc922{% elif total_score >= 60 %}#fca924{% elif total_score >= 30 %}#fe6521{% else %}#f00c01{% endif %};"
+        >
           {{ total_score|round|int }}%
         </div>
         <div class="progress-bar">
           <div
             class="progress-fill"
-            style="width: {{ total_score }}%; background-color: #AF8F39;"
+            style="width: {{ total_score }}%; background-color: {% if total_score >= 80 %}#6cc922{% elif total_score >= 60 %}#fca924{% elif total_score >= 30 %}#fe6521{% else %}#f00c01{% endif %};"
           ></div>
         </div>
       </div>
@@ -512,7 +520,7 @@
           <div class="score-band band-poor">1-29</div>
           <div class="score-band band-fair">30-59</div>
           <div class="score-band band-good">60-79</div>
-          <div class="score-band band-excellent">85-100</div>
+          <div class="score-band band-excellent">80-100</div>
         </div>
 
         <div class="band-labels">
@@ -580,7 +588,7 @@
           <div class="pillar-progress">
             <div
               class="pillar-progress-fill"
-              style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%; background-color: {{ category_colors[category_name] }};"
+              style="width: {{ (category_data.score / category_data.max_possible * 100)|round|int }}%; background-color: {% set percent = (category_data.score / category_data.max_possible * 100) %}{% if percent >= 80 %}#6cc922{% elif percent >= 60 %}#fca924{% elif percent >= 30 %}#fe6521{% else %}#f00c01{% endif %};"
             ></div>
           </div>
         </div>
