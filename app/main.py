@@ -44,7 +44,15 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
-# Configure CORS
+# Add trusted host middleware for security (must be added BEFORE CORS so it runs AFTER CORS)
+# Note: FastAPI middleware is processed in reverse order of addition
+if not settings.DEBUG:
+    app.add_middleware(
+        TrustedHostMiddleware,
+        allowed_hosts=settings.allowed_hosts_list
+    )
+
+# Configure CORS (must be added AFTER TrustedHostMiddleware so it runs FIRST)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -52,13 +60,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-
-# Add trusted host middleware for security
-if not settings.DEBUG:
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.allowed_hosts_list
-    )
 
 
 # Custom middleware for request logging and timing

@@ -88,7 +88,13 @@ class Settings(BaseSettings):
     @property
     def allowed_hosts_list(self) -> List[str]:
         """Get list of allowed hosts from environment or defaults."""
-        default_hosts = ["localhost", "127.0.0.1", "0.0.0.0"]
+        default_hosts = [
+            "localhost", 
+            "127.0.0.1", 
+            "0.0.0.0",
+            ".herokuapp.com",  # Allow all Heroku subdomains
+            ".netlify.app",    # Allow all Netlify subdomains
+        ]
         if self.ALLOWED_HOSTS:
             hosts = [h.strip() for h in self.ALLOWED_HOSTS.split(",") if h.strip()]
             return list(set(default_hosts + hosts))
