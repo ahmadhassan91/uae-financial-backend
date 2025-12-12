@@ -1,7 +1,6 @@
 """Main FastAPI application entry point."""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import time
@@ -44,15 +43,10 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
-# Add trusted host middleware for security (must be added BEFORE CORS so it runs AFTER CORS)
-# Note: FastAPI middleware is processed in reverse order of addition
-if not settings.DEBUG:
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.allowed_hosts_list
-    )
+# TrustedHostMiddleware removed - CORS middleware provides sufficient protection
+# and the wildcard patterns weren't working correctly with Heroku's dynamic hostnames
 
-# Configure CORS (must be added AFTER TrustedHostMiddleware so it runs FIRST)
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
