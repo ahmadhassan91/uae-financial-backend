@@ -7,6 +7,7 @@ import time
 
 from app.config import settings
 from app.database import engine, Base
+from app.logging_config import setup_logging, get_logger, ExceptionLogger
 from app.auth.routes import router as auth_router
 from app.customers.routes import router as customers_router
 from app.surveys.routes import router as surveys_router
@@ -26,9 +27,10 @@ from app.surveys.financial_clinic_routes import router as financial_clinic_route
 from app.consent.routes import router as consent_router
 from app.consultations.routes import router as consultations_router
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Initialize centralized logging
+setup_logging()
+logger = get_logger(__name__)
+exception_logger = ExceptionLogger(logger)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -81,8 +83,17 @@ async def log_requests(request: Request, call_next):
 # Global exception handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Handle unexpected exceptions gracefully."""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    """Handle unexpected exceptions gracefully and log them."""
+    # Log the exception with full context
+    exception_logger.log_request_error(
+        request_path=str(request.url.path),
+        method=request.method,
+        exc=exc,
+        extra_data={
+            "query_params": str(request.query_params),
+            "client_host": request.client.host if request.client else "unknown"
+        }
+    )
     
     if settings.DEBUG:
         return JSONResponse(
