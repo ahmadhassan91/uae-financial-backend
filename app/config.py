@@ -2,6 +2,24 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
+import json
+
+
+# Default localhost origins for development
+DEFAULT_DEV_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "http://localhost:3003",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:3003",
+    "http://127.0.0.1:5173",
+]
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
@@ -34,24 +52,47 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
     
-    # CORS and Security
-    CORS_ORIGINS: str = ""  # JSON string of allowed origins from .env
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",  # Next.js dev
-        "http://localhost:3001",  # Next.js dev (alternative port)
-        "http://localhost:3002",  # Next.js dev (alternative port)
-        "http://localhost:3003",  # Next.js dev (alternative port)
-        "http://localhost:5173",  # Vite dev
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:3003",
-        "http://127.0.0.1:5173",
-        "https://financial-clinic.netlify.app",  # Current Netlify deployment
-        "https://national-bonds-ae.netlify.app",  # Specific Netlify production deployment
-        "https://lively-sawine-92b143.netlify.app",  # Previous Netlify deployment
-    ]
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0", "*.herokuapp.com"]
+    # CORS and Security - loaded from .env
+    # Set CORS_ORIGINS in .env as comma-separated URLs or JSON array
+    # Example: CORS_ORIGINS=https://example.com,https://app.example.com
+    # Or: CORS_ORIGINS=["https://example.com","https://app.example.com"]
+    CORS_ORIGINS: str = ""
+    ALLOWED_HOSTS: str = ""  # Comma-separated list of allowed hosts
+    
+    @property
+    def allowed_origins(self) -> List[str]:
+        """Get list of allowed CORS origins from environment or defaults."""
+        if self.CORS_ORIGINS:
+            # Try parsing as JSON array first
+            try:
+                origins = json.loads(self.CORS_ORIGINS)
+                if isinstance(origins, list):
+                    # In development, include localhost origins
+                    if self.ENVIRONMENT == "development":
+                        return list(set(DEFAULT_DEV_ORIGINS + origins))
+                    return origins
+            except json.JSONDecodeError:
+                pass
+            
+            # Parse as comma-separated string
+            origins = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+            if origins:
+                # In development, include localhost origins
+                if self.ENVIRONMENT == "development":
+                    return list(set(DEFAULT_DEV_ORIGINS + origins))
+                return origins
+        
+        # Default: only localhost origins for development
+        return DEFAULT_DEV_ORIGINS
+    
+    @property
+    def allowed_hosts_list(self) -> List[str]:
+        """Get list of allowed hosts from environment or defaults."""
+        default_hosts = ["localhost", "127.0.0.1", "0.0.0.0"]
+        if self.ALLOWED_HOSTS:
+            hosts = [h.strip() for h in self.ALLOWED_HOSTS.split(",") if h.strip()]
+            return list(set(default_hosts + hosts))
+        return default_hosts
     
     # Email (for notifications and OTP)
     SMTP_HOST: str = ""
