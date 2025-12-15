@@ -370,7 +370,7 @@ class ArabicPDFReportService:
             if overall_score >= 80:
                 interpretation = self._process_arabic_text("ممتاز - صحة مالية قوية")
             elif overall_score >= 60:
-                interpretation = self._process_arabic_text("جيد - صحة مالية مقبولة")
+                interpretation = self._process_arabic_text("جيّدة - صحّة ماليّة قويّة")
             elif overall_score >= 40:
                 interpretation = self._process_arabic_text("يحتاج تحسين - هناك مجال للتطوير")
             else:
