@@ -418,3 +418,40 @@ async def download_public_report(file_token: str):
         status_code=404,
         detail="Report file not found or expired"
     )
+
+
+@router.get("/download-nfs/{filename}")
+async def download_nfs_report(filename: str):
+    """Download endpoint for PDF reports stored on NFS (on-prem deployment)."""
+    from app.reports.nfs_storage import nfs_storage
+    
+    if not settings.USE_NFS_STORAGE:
+        raise HTTPException(
+            status_code=404,
+            detail="NFS storage is not enabled"
+        )
+    
+    # Validate filename to prevent path traversal
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
+    
+    # Get PDF from NFS storage
+    pdf_content = nfs_storage.get_pdf(filename)
+    
+    if pdf_content is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found or expired"
+        )
+    
+    from fastapi.responses import Response
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=financial_clinic_report.pdf"
+        }
+    )

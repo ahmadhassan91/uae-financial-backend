@@ -123,6 +123,13 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET: str = ""
     USE_S3_STORAGE: bool = False  # Set to True to use S3 instead of local storage
     
+    # NFS Storage Configuration (for on-prem deployment)
+    USE_NFS_STORAGE: bool = False  # Set to True to use NFS mounted storage
+    NFS_MOUNT_PATH: str = "/mnt/financialclinic"  # Local mount point for NFS share
+    NFS_REPORTS_SUBDIR: str = "reports"  # Subdirectory for PDF reports
+    NFS_ICONS_SUBDIR: str = "icons"  # Subdirectory for static icons
+    NFS_PUBLIC_URL_BASE: str = ""  # Base URL for accessing NFS files via web (e.g., https://financialclinic.nationalbonds.ae/storage)
+    
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
     PRODUCTION_BASE_URL: str = ""  # Will be loaded from .env

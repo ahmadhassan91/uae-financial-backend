@@ -1,11 +1,19 @@
 """AWS S3 storage service for PDF reports."""
-import boto3
 import logging
 from typing import Optional
 from datetime import datetime, timedelta
-from botocore.exceptions import ClientError
 
 from app.config import settings
+
+# Try to import boto3, but don't fail if not installed
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    boto3 = None
+    ClientError = Exception  # Fallback for type hints
 
 
 logger = logging.getLogger(__name__)
@@ -16,7 +24,13 @@ class S3StorageService:
     
     def __init__(self):
         """Initialize S3 client."""
-        self.use_s3 = settings.USE_S3_STORAGE
+        self.use_s3 = settings.USE_S3_STORAGE and BOTO3_AVAILABLE
+        self.s3_client = None
+        self.bucket_name = None
+        
+        if not BOTO3_AVAILABLE:
+            logger.warning("⚠️ boto3 not installed - S3 storage unavailable")
+            return
         
         if self.use_s3:
             try:
@@ -33,7 +47,6 @@ class S3StorageService:
                 self.use_s3 = False
                 self.s3_client = None
         else:
-            self.s3_client = None
             logger.info("📁 Using local file storage (S3 disabled)")
     
     def upload_pdf(
