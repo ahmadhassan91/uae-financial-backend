@@ -98,5 +98,78 @@ class BulkOperationResult(BaseModel):
     """Schema for bulk operation results."""
     successful: int
     failed: int
+    errors: List[str]
+
+
+# New schemas for Companies Details feature
+
+class CompanyDetailsBase(BaseModel):
+    """Base schema for company details."""
+    company_name: str
+    company_email: EmailStr
+    contact_person: str
+    phone_number: Optional[str] = None
+    additional_details: Optional[str] = None
+
+
+class CompanyDetailsCreate(CompanyDetailsBase):
+    """Schema for creating company details."""
+    pass
+
+
+class CompanyDetailsResponse(CompanyDetailsBase):
+    """Schema for company details response."""
+    id: int
+    uploaded_by: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+
+class CompanyCustomerProfileBase(BaseModel):
+    """Base schema for company customer profile."""
+    company_id: int
+    full_name: str
+    date_of_birth: datetime
+    gender: str
+    nationality: str
+    emirate: str
+    children: str
+    employment_status: str
+    household_income: str
+    email: EmailStr
+    mobile_number: str
+
+
+class CompanyCustomerProfileCreate(CompanyCustomerProfileBase):
+    """Schema for creating company customer profile."""
+    pass
+
+
+class CompanyCustomerProfileResponse(CompanyCustomerProfileBase):
+    """Schema for company customer profile response."""
+    id: int
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+
+class CSVUploadResponse(BaseModel):
+    """Schema for CSV upload response."""
+    message: str
+    companies_uploaded: int
+    companies: List[CompanyDetailsResponse]
+
+
+class CompanyListResponse(BaseModel):
+    """Schema for company list response."""
+    companies: List[CompanyDetailsResponse]
+    total: int
+    failed: int
     errors: List[Dict[str, str]]
     generated_links: Optional[List[CompanyLink]] = None
