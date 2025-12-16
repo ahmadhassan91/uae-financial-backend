@@ -148,7 +148,7 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
                 "en": (
                     "You maintain a strong savings routine. Continue optimizing returns through structured plans and "
                     "smart investments. Consider long term savings with our Booster offerings for enhanced savings "
-                    "growth over 3 to 5 years"
+                    "growth over 3 to 5 years."
                 ),
                 "ar": (
                     "تحافظ على روتين ادخار قوي. استمر في تحسين العوائد من خلال الخطط المنظمة والاستثمارات الذكية. "
@@ -254,7 +254,7 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
         "good": {
             "income_above_30k": {
                 "en": (
-                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward. "
                     "your retirement plans with our My Million plan."
                 ),
                 "ar": (
@@ -263,7 +263,7 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             },
             "else": {
                 "en": (
-                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward. "
                     "your retirement goals with our Global Savings Club or Second Salary plan"
                 ),
                 "ar": (
@@ -272,7 +272,7 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             },
             "default": {
                 "en": (
-                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward. "
                     "your retirement plans."
                 ),
                 "ar": (
