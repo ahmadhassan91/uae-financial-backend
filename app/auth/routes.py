@@ -186,17 +186,15 @@ async def refresh_access_token(
         )
         
         # Optionally create new refresh token (for enhanced security)
-        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        new_refresh_token = create_access_token(
-            data={"sub": str(user.id), "type": "refresh"},
-            expires_delta=refresh_token_expires
+        new_refresh_token = create_refresh_token(
+            data={"sub": str(user.id), "email": user.email}
         )
         
         return {
             "access_token": access_token,
             "refresh_token": new_refresh_token,
             "token_type": "bearer",
-            "expires_in": expire_minutes * 60,  # Return in seconds
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Return in seconds
             "user_type": "admin" if user.is_admin else "user"
         }
         

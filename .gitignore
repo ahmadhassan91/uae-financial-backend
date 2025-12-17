@@ -78,4 +78,10 @@ scripts/verify_*.py
 
 # Alembic
 alembic/versions/*.pyc
-*.md
+
+# Backups and SQL dumps
+backups/
+*.sql
+
+# Application logs
+backend.log

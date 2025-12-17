@@ -1274,9 +1274,10 @@ Next Steps:
         import hashlib
         from datetime import datetime
         
-        # Generate unique token for file
+        # Generate unique, cryptographically strong token for file
+        from secrets import token_urlsafe
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        token = hashlib.md5(f"{identifier}_{timestamp}".encode()).hexdigest()[:12]
+        token = token_urlsafe(16)  # URL-safe random token
         filename = f"{token}_financial_clinic_report.pdf"
         
         # Try S3 storage first (cloud deployment)
