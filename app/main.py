@@ -184,6 +184,11 @@ async def startup_event():
     
     # Initialize APScheduler
     try:
+        # Check security settings in production
+        if settings.ENVIRONMENT == "production" and not settings.SECRET_KEY:
+            logger.critical("❌ CRITICAL SECURITY ERROR: SECRET_KEY not set in production!")
+            raise ValueError("SECRET_KEY must be set in production environment")
+            
         from app.scheduler_setup import init_scheduler
         init_scheduler()
         logger.info("✅ APScheduler initialized successfully")

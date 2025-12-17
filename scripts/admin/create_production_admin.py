@@ -2,9 +2,12 @@
 """
 Create or reset admin users in production database.
 This script creates both full admin and view-only admin users.
+SECURE VERSION: No hardcoded credentials.
 """
 import os
 import sys
+import getpass
+import secrets
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -17,11 +20,46 @@ def get_password_hash(password: str) -> str:
     return hashed.decode('utf-8')
 
 
+def get_secure_password(prompt: str, env_var: str = None) -> str:
+    """
+    Get a password securely from env var, user input, or generate one.
+    """
+    if env_var:
+        pwd = os.getenv(env_var)
+        if pwd:
+            return pwd
+            
+    print(f"\n--- {prompt} ---")
+    print("1. Enter password manually")
+    print("2. Generate secure random password")
+    
+    while True:
+        choice = input("Select option (1/2): ").strip()
+        if choice == "1":
+            pwd = getpass.getpass("Enter password: ")
+            confirm = getpass.getpass("Confirm password: ")
+            if pwd != confirm:
+                print("Passwords do not match. Try again.")
+                continue
+            if len(pwd) < 8:
+                print("Password too short. Must be at least 8 characters.")
+                continue
+            return pwd
+        elif choice == "2":
+            pwd = secrets.token_urlsafe(16)
+            print(f"Generated password: {pwd}")
+            print("⚠️  SAVE THIS PASSWORD NOW - IT WILL NOT BE SHOWN AGAIN ⚠️")
+            input("Press Enter when you have saved the password...")
+            return pwd
+        else:
+            print("Invalid choice.")
+
+
 def create_admin_users():
     """Create or update admin users in production."""
     
     print("=" * 60)
-    print("CREATE/UPDATE ADMIN USERS IN PRODUCTION")
+    print("CREATE/UPDATE ADMIN USERS IN PRODUCTION (SECURE)")
     print("=" * 60)
     print()
     
@@ -30,7 +68,7 @@ def create_admin_users():
     if not database_url:
         print("❌ ERROR: DATABASE_URL environment variable not set")
         print("\nFor Heroku, run:")
-        print("  heroku run python create_production_admin.py --app your-app-name")
+        print("  heroku run python scripts/admin/create_production_admin.py --app your-app-name")
         return 1
     
     # Fix Heroku postgres:// to postgresql://
@@ -44,19 +82,30 @@ def create_admin_users():
         SessionLocal = sessionmaker(bind=engine)
         db = SessionLocal()
         
+        # Get Admin Passwords
+        print("\n🔐 CREDENTIAL SETUP")
+        
+        print("\n[Full Admin User]")
+        admin_email = input("Enter email for Full Admin (default: admin@nationalbonds.ae): ").strip() or "admin@nationalbonds.ae"
+        admin_password = get_secure_password("Full Admin Password", "ADMIN_PASSWORD")
+        
+        print("\n[View-Only Admin User]")
+        view_email = input("Enter email for View-Only Admin (default: viewonly@nationalbonds.ae): ").strip() or "viewonly@nationalbonds.ae"
+        view_password = get_secure_password("View-Only Admin Password", "VIEWONLY_PASSWORD")
+        
         # Admin users to create
         admin_users = [
             {
-                "email": "admin@nationalbonds.ae",
+                "email": admin_email,
                 "username": "admin",
-                "password": "admin123",
+                "password": admin_password,
                 "admin_role": "full",
                 "description": "Full Admin"
             },
             {
-                "email": "viewonly@nationalbonds.ae",
+                "email": view_email,
                 "username": "viewonly",
-                "password": "viewonly123",
+                "password": view_password,
                 "admin_role": "view_only",
                 "description": "View-Only Admin"
             }
@@ -69,7 +118,6 @@ def create_admin_users():
         for user_data in admin_users:
             print(f"\n{user_data['description']}:")
             print(f"  Email: {user_data['email']}")
-            print(f"  Password: {user_data['password']}")
             print(f"  Role: {user_data['admin_role']}")
             
             # Check if user exists
@@ -172,14 +220,6 @@ def create_admin_users():
         print("\n" + "=" * 60)
         print("✓ SUCCESS! Admin users created/updated")
         print("=" * 60)
-        print("\nYou can now login with:")
-        print("\n1. Full Admin:")
-        print("   Email: admin@nationalbonds.ae")
-        print("   Password: admin123")
-        print("\n2. View-Only Admin:")
-        print("   Email: viewonly@nationalbonds.ae")
-        print("   Password: viewonly123")
-        print("\n" + "=" * 60)
         
         return 0
         
