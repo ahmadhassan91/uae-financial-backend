@@ -968,22 +968,22 @@ National Bonds Team
                             <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.facebook.com/nationalbonds">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/facebook.jpg" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.instagram.com/nationalbonds/">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.jpg" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.linkedin.com/company/national-bonds-corporation">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.jpg" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.youtube.com/user/NationalBondsDubai/videos">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.jpg" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                             </tr></table>
@@ -1152,22 +1152,22 @@ National Bonds Team
                             <table cellpadding="0" cellspacing="0" style="margin-bottom:8px;"><tr>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.facebook.com/nationalbonds">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/facebook.jpg" alt="Facebook" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.instagram.com/nationalbonds/">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.jpg" alt="Instagram" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.linkedin.com/company/national-bonds-corporation">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.jpg" alt="LinkedIn" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                                 <td style="padding:0 9px;">
                                     <a href="https://www.youtube.com/user/NationalBondsDubai/videos">
-                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
+                                        <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.jpg" alt="YouTube" style="width:30px; height:30px; border-radius:50%; border:2px solid #b8985f; display:inline-block; padding:4px; box-sizing:border-box;" />
                                     </a>
                                 </td>
                             </tr></table>
@@ -1571,7 +1571,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/facebook.jpg" 
                      alt="Facebook" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1579,7 +1579,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.jpg" 
                      alt="Instagram" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1587,7 +1587,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.jpg" 
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1595,7 +1595,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.jpg" 
                      alt="YouTube" style="width: 24px; height: 24px;" />
             </a>
         </div>
@@ -1733,7 +1733,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/grommet-icons.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/facebook.jpg" 
                      alt="Facebook" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1741,7 +1741,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/instagram.jpg" 
                      alt="Instagram" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1749,7 +1749,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/linkedin.jpg" 
                      alt="LinkedIn" style="width: 24px; height: 24px;" />
             </a>
 
@@ -1757,7 +1757,7 @@ If you didn't request this code, please ignore this email."""
                style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b8985f; 
                       display: inline-flex; align-items: center; justify-content: center; 
                       text-decoration: none; background-color: transparent; padding: 8px;">
-                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.png" 
+                <img src="https://financial-clinic.s3.amazonaws.com/icons/youtube.jpg" 
                      alt="YouTube" style="width: 24px; height: 24px;" />
             </a>
         </div>
