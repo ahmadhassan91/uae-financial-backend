@@ -92,6 +92,11 @@ class Settings(BaseSettings):
             "localhost", 
             "127.0.0.1", 
             "0.0.0.0",
+            "uae-financial-health-filters-68ab0c8434cb.herokuapp.com",
+            "financial-clinic.netlify.app",
+            "financialclinic.ae",      # On-prem production domain
+            "www.financialclinic.ae",  # On-prem production domain with www
+            ".financialclinic.ae",     # All subdomains of financialclinic.ae
             ".herokuapp.com",  # Allow all Heroku subdomains
             ".netlify.app",    # Allow all Netlify subdomains
         ]

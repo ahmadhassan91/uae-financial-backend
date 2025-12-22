@@ -107,24 +107,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Trusted Host Middleware - Validate Host header to prevent Host Header Injection
-# Configure allowed hosts based on environment
-ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "uae-financial-health-filters-68ab0c8434cb.herokuapp.com",
-    "financial-clinic.netlify.app",
-    "financialclinic.ae",      # On-prem production domain
-    "www.financialclinic.ae",  # On-prem production domain with www
-    ".financialclinic.ae",     # All subdomains of financialclinic.ae
-    ".herokuapp.com",  # Allow all Heroku subdomains
-    ".netlify.app",    # Allow all Netlify subdomains
-]
-if settings.DEBUG:
-    ALLOWED_HOSTS.append("*")  # Allow all in debug mode
-
+# Use allowed hosts from environment settings
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=ALLOWED_HOSTS if not settings.DEBUG else ["*"]
+    allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
 )
 
 # Configure CORS
