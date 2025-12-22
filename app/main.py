@@ -107,11 +107,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 # Trusted Host Middleware - Validate Host header to prevent Host Header Injection
-# Use allowed hosts from environment settings
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
-)
+# Temporarily disabled for debugging on-prem server
+# app.add_middleware(
+#     TrustedHostMiddleware,
+#     allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
+# )
 
 # Configure CORS
 app.add_middleware(
@@ -134,6 +134,8 @@ async def log_requests(request: Request, call_next):
     
     # Log request (handle None client in test environment)
     client_host = request.client.host if request.client else "unknown"
+    logger.info(f"🔍 DEBUG: Host header: {request.headers.get('host', 'NOT_SET')}")
+    logger.info(f"🔍 DEBUG: URL: {request.url}")
     logger.info(f"{request.method} {request.url.path} - {client_host}")
     
     # Process request
