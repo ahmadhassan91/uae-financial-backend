@@ -133,6 +133,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Initialize Rate Limiter (must be done during app initialization, not startup)
+setup_rate_limiter(app)
+
 
 # Custom middleware for request logging and timing
 @app.middleware("http")
@@ -258,12 +261,7 @@ async def startup_event():
     logger.info("Starting UAE Financial Health Check API")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
-    
-    # Initialize Rate Limiter
-    try:
-        setup_rate_limiter(app)
-    except Exception as e:
-        logger.error(f"❌ Failed to initialize rate limiter: {e}")
+    logger.info("✅ Rate limiter already initialized during app setup")
     
     # Initialize APScheduler
     try:
