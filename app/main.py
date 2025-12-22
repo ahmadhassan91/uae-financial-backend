@@ -1,6 +1,8 @@
 """Main FastAPI application entry point."""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import time
@@ -8,6 +10,7 @@ import time
 from app.config import settings
 from app.database import engine, Base
 from app.logging_config import setup_logging, get_logger, ExceptionLogger
+from app.middleware.rate_limiter import setup_rate_limiter, limiter
 from app.auth.routes import router as auth_router
 from app.customers.routes import router as customers_router
 from app.surveys.routes import router as surveys_router
@@ -45,8 +48,81 @@ app = FastAPI(
     openapi_url="/openapi.json" if settings.DEBUG else None
 )
 
-# TrustedHostMiddleware removed - CORS middleware provides sufficient protection
-# and the wildcard patterns weren't working correctly with Heroku's dynamic hostnames
+# =============================================================================
+# Security Headers Middleware
+# =============================================================================
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to add security headers to all responses.
+    Implements recommendations from security audit.
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        
+        # X-Frame-Options: Prevent clickjacking attacks
+        response.headers["X-Frame-Options"] = "DENY"
+        
+        # X-Content-Type-Options: Prevent MIME-type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # X-XSS-Protection: Enable XSS filtering (legacy browsers)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        
+        # Referrer-Policy: Control referrer information
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        
+        # Permissions-Policy: Restrict browser features
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Content-Security-Policy: Restrict content sources
+        # Note: This is a strict policy - adjust based on application needs
+        csp_directives = [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",  # Required for some frameworks
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: https:",
+            "font-src 'self' data:",
+            "connect-src 'self' https:",
+            "frame-ancestors 'none'",  # Equivalent to X-Frame-Options: DENY
+            "base-uri 'self'",
+            "form-action 'self'",
+        ]
+        response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+        
+        # Strict-Transport-Security: Force HTTPS (only in production)
+        if settings.ENVIRONMENT == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        
+        # Cache-Control for sensitive endpoints
+        if "/auth/" in request.url.path or "/admin/" in request.url.path:
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        
+        return response
+
+
+# Add Security Headers Middleware (added first so it runs last)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Trusted Host Middleware - Validate Host header to prevent Host Header Injection
+# Configure allowed hosts based on environment
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "uae-financial-health-filters-68ab0c8434cb.herokuapp.com",
+    "financial-clinic.netlify.app",
+    ".herokuapp.com",  # Allow all Heroku subdomains
+    ".netlify.app",    # Allow all Netlify subdomains
+]
+if settings.DEBUG:
+    ALLOWED_HOSTS.append("*")  # Allow all in debug mode
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=ALLOWED_HOSTS if not settings.DEBUG else ["*"]
+)
 
 # Configure CORS
 app.add_middleware(
@@ -181,6 +257,12 @@ async def startup_event():
     logger.info("Starting UAE Financial Health Check API")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
+    
+    # Initialize Rate Limiter
+    try:
+        setup_rate_limiter(app)
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize rate limiter: {e}")
     
     # Initialize APScheduler
     try:

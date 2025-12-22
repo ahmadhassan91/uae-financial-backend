@@ -1,0 +1,18 @@
+[Unit]
+Description=Financial Clinic Backend API
+After=network.target
+
+[Service]
+Type=simple
+User=finclinic01
+Group=www-data
+WorkingDirectory=/home/finclinic01/backend
+Environment=PATH=/home/finclinic01/backend/venv/bin
+EnvironmentFile=/home/finclinic01/backend/.env
+EnvironmentFile=/home/finclinic01/backend/scripts/deploy/nfs_config.env
+ExecStart=/home/finclinic01/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -702,6 +702,34 @@ class OTPCode(Base):
     used_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class FailedLoginAttempt(Base):
+    """
+    Track failed login/OTP attempts for account lockout.
+    Implements security audit recommendation for brute-force protection.
+    """
+    __tablename__ = "failed_login_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Identifier (email or IP address)
+    identifier = Column(String(255), nullable=False, index=True)
+    identifier_type = Column(String(20), nullable=False, default="email")  # email, ip
+    
+    # Attempt details
+    attempt_type = Column(String(50), nullable=False)  # otp_verify, login, password_reset
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(500), nullable=True)
+    
+    # Lockout tracking
+    attempt_count = Column(Integer, default=1, nullable=False)
+    last_attempt_at = Column(DateTime(timezone=True), server_default=func.now())
+    locked_until = Column(DateTime(timezone=True), nullable=True)
+    
+    # Metadata
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
 class ConsultationRequest(Base):
     """Consultation requests from users who want to book a free consultation."""
     __tablename__ = "consultation_requests"
