@@ -63,6 +63,7 @@ ADMIN_RATE_LIMIT = "100/minute"  # 100 requests per minute for admin
 
 # General API limits
 API_RATE_LIMIT = "200/minute"  # 200 requests per minute for general API
+DEFAULT_RATE_LIMIT = "200/minute"  # Default rate limit for all endpoints
 
 
 def get_rate_limit_key_user(request: Request) -> str:

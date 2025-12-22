@@ -7,7 +7,7 @@ Implements security audit recommendations:
 - Progressive delays between attempts
 - Notify users of suspicious activity
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -17,6 +17,11 @@ import math
 from app.models import FailedLoginAttempt, AuditLog
 
 logger = logging.getLogger(__name__)
+
+
+def utc_now() -> datetime:
+    """Get current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class AccountLockoutService:
@@ -51,8 +56,8 @@ class AccountLockoutService:
         """
         record = cls._get_or_create_record(identifier, identifier_type, attempt_type, db)
         
-        if record.locked_until and record.locked_until > datetime.utcnow():
-            remaining = (record.locked_until - datetime.utcnow()).total_seconds()
+        if record.locked_until and record.locked_until > utc_now():
+            remaining = (record.locked_until - utc_now()).total_seconds()
             return {
                 'is_locked': True,
                 'remaining_seconds': int(remaining),
@@ -94,14 +99,14 @@ class AccountLockoutService:
         record = cls._get_or_create_record(identifier, identifier_type, attempt_type, db)
         
         # Check if we're outside the attempt window - reset if so
-        window_start = datetime.utcnow() - timedelta(minutes=cls.ATTEMPT_WINDOW_MINUTES)
+        window_start = utc_now() - timedelta(minutes=cls.ATTEMPT_WINDOW_MINUTES)
         if record.last_attempt_at and record.last_attempt_at < window_start:
             record.attempt_count = 0
             record.locked_until = None
         
         # Increment attempt count
         record.attempt_count += 1
-        record.last_attempt_at = datetime.utcnow()
+        record.last_attempt_at = utc_now()
         record.ip_address = ip_address
         record.user_agent = user_agent
         
@@ -113,7 +118,7 @@ class AccountLockoutService:
                 cls.LOCKOUT_DURATION_MINUTES * (2 ** lockout_multiplier),
                 cls.MAX_LOCKOUT_DURATION_MINUTES
             )
-            record.locked_until = datetime.utcnow() + timedelta(minutes=lockout_minutes)
+            record.locked_until = utc_now() + timedelta(minutes=lockout_minutes)
             
             # Log security event
             logger.warning(
@@ -144,8 +149,8 @@ class AccountLockoutService:
         delay_seconds = cls._calculate_delay(record.attempt_count)
         remaining_attempts = max(0, cls.MAX_ATTEMPTS - record.attempt_count)
         
-        if record.locked_until and record.locked_until > datetime.utcnow():
-            remaining = (record.locked_until - datetime.utcnow()).total_seconds()
+        if record.locked_until and record.locked_until > utc_now():
+            remaining = (record.locked_until - utc_now()).total_seconds()
             return {
                 'is_locked': True,
                 'remaining_attempts': 0,
@@ -190,7 +195,7 @@ class AccountLockoutService:
         if record:
             record.attempt_count = 0
             record.locked_until = None
-            record.last_attempt_at = datetime.utcnow()
+            record.last_attempt_at = utc_now()
             db.commit()
     
     @classmethod
@@ -247,7 +252,7 @@ class AccountLockoutService:
         Returns:
             Number of deleted records
         """
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = utc_now() - timedelta(days=days)
         deleted = db.query(FailedLoginAttempt).filter(
             FailedLoginAttempt.updated_at < cutoff
         ).delete()

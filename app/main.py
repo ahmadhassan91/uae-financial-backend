@@ -140,8 +140,9 @@ async def log_requests(request: Request, call_next):
     """Log requests and response times."""
     start_time = time.time()
     
-    # Log request
-    logger.info(f"{request.method} {request.url.path} - {request.client.host}")
+    # Log request (handle None client in test environment)
+    client_host = request.client.host if request.client else "unknown"
+    logger.info(f"{request.method} {request.url.path} - {client_host}")
     
     # Process request
     response = await call_next(request)
