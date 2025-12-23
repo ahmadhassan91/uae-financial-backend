@@ -6,13 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
 
-# Import PDPL-compliant consent models
-from app.models_consent import (
-    UserConsent,
-    ConsentAuditLog,
-    DataProcessingActivity,
-    DataSubjectRequest
-)
+# Note: models_consent module removed - consent models integrated elsewhere
 
 
 class User(Base):
