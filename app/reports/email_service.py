@@ -15,6 +15,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 
 from app.models import SurveyResponse, CustomerProfile, ReportDelivery
 from app.config import settings
+from app.utils.asset_helper import replace_s3_urls_with_local
 
 
 class EmailReportService:
@@ -165,8 +166,8 @@ class EmailReportService:
         download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content."""
-        # Get base URL for assets (frontend URL)
-        base_url = settings.base_url
+        # Get base URL for assets (backend URL for static files)
+        base_url = settings.api_base_url
         
         # Try to use the new Financial Clinic email template
         if self.jinja_env:
@@ -176,7 +177,7 @@ class EmailReportService:
                 # Prepare products list (can be customized based on score)
                 products = self._get_recommended_products(survey_response, language)
                 
-                return template.render(
+                content = template.render(
                     language=language,
                     customer_name=customer_profile.first_name if customer_profile else "Valued Customer",
                     overall_score=int(survey_response.overall_score) if survey_response.overall_score else 0,
@@ -186,12 +187,19 @@ class EmailReportService:
                     current_year=datetime.now().year,
                     branding_config=branding_config or {}
                 )
+                
+                # Replace S3 URLs with local static URLs
+                content = replace_s3_urls_with_local(content)
+                return content
             except Exception as e:
                 print(f"Template error: {e}")
                 pass  # Fall back to inline template
         
         # Fallback to inline HTML template
-        return self._get_inline_html_template(survey_response, customer_profile, language, branding_config, download_url)
+        content = self._get_inline_html_template(survey_response, customer_profile, language, branding_config, download_url)
+        # Replace S3 URLs with local static URLs
+        content = replace_s3_urls_with_local(content)
+        return content
     
     def _generate_email_text(
         self,
@@ -372,6 +380,11 @@ National Bonds Team
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content
         else:
             html_content = f"""
 <!DOCTYPE html>
@@ -435,6 +448,11 @@ National Bonds Team
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content
         
         return html_content
     
@@ -571,6 +589,11 @@ National Bonds Team
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content
     
     def _get_reminder_content_ar(self, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get Arabic reminder email content."""
@@ -640,6 +663,11 @@ National Bonds Team
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content
     
     async def send_financial_clinic_report(
         self,
@@ -1474,6 +1502,8 @@ If you didn't request this code, please ignore this email."""
             template = self.jinja_env.get_template(template_name)
             html_content = template.render(otp_code=otp_code)
             print(f"✅ Template loaded successfully: {template_name}")
+            # Replace S3 URLs with local static URLs
+            html_content = replace_s3_urls_with_local(html_content)
             return html_content
         except Exception as e:
             print(f"❌ Could not load template {template_name}: {e}")
@@ -1645,6 +1675,11 @@ If you didn't request this code, please ignore this email."""
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content
         else:
             # Generate individual digit boxes for English
             otp_digits_html = ""
@@ -1791,3 +1826,8 @@ If you didn't request this code, please ignore this email."""
 </body>
 </html>
 """
+        
+        # Replace S3 URLs with local static URLs
+        content = html_content
+        content = replace_s3_urls_with_local(content)
+        return content

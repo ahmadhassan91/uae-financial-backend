@@ -2,10 +2,12 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import JSONResponse
 import logging
 import time
+from pathlib import Path
 
 from app.config import settings
 from app.database import engine, Base
@@ -241,6 +243,14 @@ app.include_router(admin_localization_router, prefix="/api/v1")
 app.include_router(simple_admin_router, prefix="/api/v1")
 from app.admin import variation_routes
 app.include_router(variation_routes.router, prefix="/api/v1")
+
+# Mount static files for serving assets in emails and PDFs
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+    logger.info(f"✅ Static files mounted at /static from {static_dir}")
+else:
+    logger.warning(f"⚠️ Static directory not found at {static_dir}")
 
 
 # Startup event
