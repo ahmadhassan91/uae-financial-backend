@@ -958,16 +958,16 @@ async def get_latest_financial_clinic_result(
     Returns:
         Latest assessment result with all details
     """
-    from app.models import FinancialClinicResponse
+    from app.models import FinancialClinicResponse, FinancialClinicProfile
     
     # Find user by email
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Get latest response for this user
-    response = db.query(FinancialClinicResponse).filter(
-        FinancialClinicResponse.user_id == user.id
+    # Get latest response for this user (join through profile)
+    response = db.query(FinancialClinicResponse).join(FinancialClinicProfile).filter(
+        FinancialClinicProfile.user_id == user.id
     ).order_by(FinancialClinicResponse.created_at.desc()).first()
     
     if not response:
