@@ -96,8 +96,8 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_ar="ما النسبة التي تستطيعون ادخارها من إجمالي دخلكم شهريًا؟",
         options=[
                             FinancialClinicOption(value=5, label_en="More than 20% of my income", label_ar="أكثر من ٪20 من دخلي"),
-                            FinancialClinicOption(value=4, label_en="15% to 20% of my income", label_ar="إ ٪15 من دخلي إلى %20"),  # Fixed Arabic format
-                        FinancialClinicOption(value=3, label_en="5% to 15% of my income", label_ar="من ٪5 إلى ٪15 من دخلي"),  # Fixed Arabic format
+                            FinancialClinicOption(value=4, label_en="15% to 20% of my income", label_ar="إ ٪15 من دخلي إلى ٪20"),  # Fixed Arabic format
+                        FinancialClinicOption(value=3, label_en="5% to 15% of my income",label_ar="إ ٪5 من دخلي إلى ٪15"),  # Fixed Arabic format
                         FinancialClinicOption(value=2, label_en="Up to 5% of my income", label_ar="حتى ٪5 من دخلي"),
                         FinancialClinicOption(value=1, label_en="I am not able to save from my income", label_ar="أنا غير قادر على الادخار من دخلي"),
         ]
