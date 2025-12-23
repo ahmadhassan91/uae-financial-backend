@@ -86,6 +86,7 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
     ),
     
     # ==================== SAVINGS HABIT (Q3-Q5) - 20% ====================
+    
     FinancialClinicQuestion(
         id="fc_q3",
         number=3,
