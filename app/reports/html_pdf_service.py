@@ -145,23 +145,31 @@ class HTMLPDFService:
             # Load template
             template = self.jinja_env.get_template('financial_clinic_pdf_template.html')
             
-            # Download logos from URLs (more reliable than file paths)
-            import urllib.request
-            import tempfile
+            # Use local SVG logo files (same as used in header/footer)
+            import os
             
-            financial_clinic_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
-            national_bonds_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+            # Get the frontend public directory path
+            frontend_public_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'frontend', 'public')
+            national_bonds_logo_path = os.path.join(frontend_public_dir, 'homepage', 'images', 'NATIONAL BONDS LOGO.svg')
+            financial_clinic_logo_path = os.path.join(frontend_public_dir, 'homepage', 'icons', 'logo.svg')
             
             try:
-                # Download Financial Clinic logo
-                fc_logo_data, _ = urllib.request.urlretrieve(financial_clinic_logo_url)
-                with open(fc_logo_data, 'rb') as f:
-                    financial_clinic_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                # Read National Bonds SVG logo
+                if os.path.exists(national_bonds_logo_path):
+                    with open(national_bonds_logo_path, 'rb') as f:
+                        national_bonds_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                else:
+                    print(f"National Bonds logo not found at: {national_bonds_logo_path}")
+                    national_bonds_logo_base64 = ""
                 
-                # Download National Bonds logo  
-                nb_logo_data, _ = urllib.request.urlretrieve(national_bonds_logo_url)
-                with open(nb_logo_data, 'rb') as f:
-                    national_bonds_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                # Read Financial Clinic SVG logo
+                if os.path.exists(financial_clinic_logo_path):
+                    with open(financial_clinic_logo_path, 'rb') as f:
+                        financial_clinic_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                else:
+                    print(f"Financial Clinic logo not found at: {financial_clinic_logo_path}")
+                    financial_clinic_logo_base64 = ""
+                    
             except Exception as logo_error:
                 print(f"Error loading logos: {logo_error}")
                 financial_clinic_logo_base64 = ""
