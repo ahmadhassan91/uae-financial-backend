@@ -145,13 +145,13 @@ class HTMLPDFService:
             # Load template
             template = self.jinja_env.get_template('financial_clinic_pdf_template.html')
             
-            # Use local SVG logo files (same as used in header/footer)
+            # Use local SVG logo files from backend static directory
             import os
             
-            # Get the frontend public directory path
-            frontend_public_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'frontend', 'public')
-            national_bonds_logo_path = os.path.join(frontend_public_dir, 'homepage', 'images', 'NATIONAL BONDS LOGO.svg')
-            financial_clinic_logo_path = os.path.join(frontend_public_dir, 'homepage', 'icons', 'logo.svg')
+            # Get the static logos directory path
+            static_logos_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'logos')
+            national_bonds_logo_path = os.path.join(static_logos_dir, 'NATIONAL BONDS LOGO.svg')
+            financial_clinic_logo_path = os.path.join(static_logos_dir, 'financial-clinic-logo.svg')
             
             try:
                 # Read National Bonds SVG logo
@@ -159,7 +159,7 @@ class HTMLPDFService:
                     with open(national_bonds_logo_path, 'rb') as f:
                         national_bonds_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
                 else:
-                    print(f"National Bonds logo not found at: {national_bonds_logo_path}")
+                    logger.warning(f"National Bonds logo not found at: {national_bonds_logo_path}")
                     national_bonds_logo_base64 = ""
                 
                 # Read Financial Clinic SVG logo
@@ -167,11 +167,11 @@ class HTMLPDFService:
                     with open(financial_clinic_logo_path, 'rb') as f:
                         financial_clinic_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
                 else:
-                    print(f"Financial Clinic logo not found at: {financial_clinic_logo_path}")
+                    logger.warning(f"Financial Clinic logo not found at: {financial_clinic_logo_path}")
                     financial_clinic_logo_base64 = ""
                     
             except Exception as logo_error:
-                print(f"Error loading logos: {logo_error}")
+                logger.error(f"Error loading logos: {logo_error}")
                 financial_clinic_logo_base64 = ""
                 national_bonds_logo_base64 = ""
             
