@@ -1359,19 +1359,26 @@ Next Steps:
             except Exception as e:
                 logging.error(f"❌ NFS storage error: {e}, falling back to local storage")
         
-        # Fallback to local storage
-        downloads_dir = settings.DOWNLOAD_DIR
-        os.makedirs(downloads_dir, exist_ok=True)
+        # Store PDF in static/reports folder for local serving
+        from pathlib import Path
+        static_reports_dir = Path(__file__).parent.parent / "static" / "reports"
         
-        file_path = os.path.join(downloads_dir, filename)
+        # Generate unique filename with token
+        filename = f"{token}_financial_clinic_report.pdf"
+        file_path = static_reports_dir / filename
+        
+        # Ensure static/reports directory exists
+        static_reports_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Write PDF to static storage
         with open(file_path, 'wb') as f:
             f.write(pdf_content)
         
-        # Generate download URL for local storage
+        # Generate download URL using static file serving
         base_url = settings.api_base_url
-        download_url = f"{base_url}/api/v1/reports/download-public/{token}"
+        download_url = f"{base_url}/static/reports/{filename}"
         
-        logging.info(f"📁 PDF stored locally: {download_url}")
+        logging.info(f"📁 PDF stored in static folder: {download_url}")
         return download_url
     
     async def send_otp_email(
