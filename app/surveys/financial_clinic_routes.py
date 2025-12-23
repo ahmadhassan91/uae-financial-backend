@@ -960,14 +960,9 @@ async def get_latest_financial_clinic_result(
     """
     from app.models import FinancialClinicResponse, FinancialClinicProfile
     
-    # Find user by email
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Get latest response for this user (join through profile)
+    # Get latest response for this email (Financial Clinic is standalone, doesn't use User model)
     response = db.query(FinancialClinicResponse).join(FinancialClinicProfile).filter(
-        FinancialClinicProfile.user_id == user.id
+        FinancialClinicProfile.email == email
     ).order_by(FinancialClinicResponse.created_at.desc()).first()
     
     if not response:
@@ -977,10 +972,9 @@ async def get_latest_financial_clinic_result(
         "id": response.id,
         "total_score": response.total_score,
         "status_band": response.status_band,
-        "status_level": response.status_level,
         "category_scores": response.category_scores,
         "insights": response.insights,
-        "products": response.recommended_products,
+        "products": response.product_recommendations,
         "questions_answered": response.questions_answered,
         "total_questions": response.total_questions,
         "created_at": response.created_at.isoformat(),
