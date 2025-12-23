@@ -942,6 +942,60 @@ async def get_financial_clinic_history(
     } for r in responses]
 
 
+@router.get("/latest/{email}")
+async def get_latest_financial_clinic_result(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the latest Financial Clinic assessment result by email.
+    Public endpoint for results page access.
+    
+    Args:
+        email: User's email address
+        db: Database session
+        
+    Returns:
+        Latest assessment result with all details
+    """
+    from app.models import FinancialClinicResponse
+    
+    # Find user by email
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get latest response for this user
+    response = db.query(FinancialClinicResponse).filter(
+        FinancialClinicResponse.user_id == user.id
+    ).order_by(FinancialClinicResponse.created_at.desc()).first()
+    
+    if not response:
+        raise HTTPException(status_code=404, detail="No assessment found for this user")
+    
+    return {
+        "id": response.id,
+        "total_score": response.total_score,
+        "status_band": response.status_band,
+        "status_level": response.status_level,
+        "category_scores": response.category_scores,
+        "insights": response.insights,
+        "products": response.recommended_products,
+        "questions_answered": response.questions_answered,
+        "total_questions": response.total_questions,
+        "created_at": response.created_at.isoformat(),
+        "profile": {
+            "name": response.profile.name,
+            "date_of_birth": response.profile.date_of_birth,
+            "gender": response.profile.gender,
+            "nationality": response.profile.nationality,
+            "children": response.profile.children,
+            "employment_status": response.profile.employment_status,
+            "email": email
+        } if response.profile else None
+    }
+
+
 @router.get("/{response_id}")
 async def get_financial_clinic_result(
     response_id: int,
