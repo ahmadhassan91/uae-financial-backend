@@ -166,8 +166,8 @@ class EmailReportService:
         download_url: Optional[str] = None
     ) -> str:
         """Generate HTML email content."""
-        # Get base URL for assets (backend URL for static files)
-        base_url = settings.api_base_url
+        # Get base URL for assets (frontend URL)
+        base_url = settings.base_url
         
         # Try to use the new Financial Clinic email template
         if self.jinja_env:
@@ -177,7 +177,7 @@ class EmailReportService:
                 # Prepare products list (can be customized based on score)
                 products = self._get_recommended_products(survey_response, language)
                 
-                content = template.render(
+                return template.render(
                     language=language,
                     customer_name=customer_profile.first_name if customer_profile else "Valued Customer",
                     overall_score=int(survey_response.overall_score) if survey_response.overall_score else 0,
@@ -187,19 +187,12 @@ class EmailReportService:
                     current_year=datetime.now().year,
                     branding_config=branding_config or {}
                 )
-                
-                # Replace S3 URLs with local static URLs
-                content = replace_s3_urls_with_local(content)
-                return content
             except Exception as e:
                 print(f"Template error: {e}")
                 pass  # Fall back to inline template
         
         # Fallback to inline HTML template
-        content = self._get_inline_html_template(survey_response, customer_profile, language, branding_config, download_url)
-        # Replace S3 URLs with local static URLs
-        content = replace_s3_urls_with_local(content)
-        return content
+        return self._get_inline_html_template(survey_response, customer_profile, language, branding_config, download_url)
     
     def _generate_email_text(
         self,
@@ -380,11 +373,71 @@ National Bonds Team
 </body>
 </html>
 """
+        else:
+            html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Financial Health Report is Ready</title>
+    <style>
+        body {{ font-family: 'Poppins', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }}
+        .container {{ max-width: 720px; margin: 0 auto; background-color: #ffffff; }}
+        .hero {{ background: linear-gradient(to right, rgba(0,0,0,0.5), transparent), url('https://images.pexels.com/photos/5668858/pexels-photo-5668858.jpeg'); background-size: cover; background-position: center; padding: 60px 40px; text-align: right; }}
+        .hero h1 {{ color: #ffffff; font-size: 32px; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }}
+        .content {{ padding: 40px; }}
+        .greeting {{ font-size: 16px; font-weight: 600; margin-bottom: 20px; }}
+        .paragraph {{ font-size: 16px; margin-bottom: 20px; line-height: 1.6; }}
+        .score-box {{ background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0; }}
+        .score-box .score {{ font-size: 72px; font-weight: bold; color: #ffffff; margin: 0; }}
+        .score-box .label {{ font-size: 18px; color: #ffffff; margin-top: 10px; }}
+        .benefits {{ background-color: #f8fbfd; border: 1px solid #bdcdd6; border-radius: 8px; padding: 24px; margin: 30px 0; }}
+        .benefits h3 {{ color: {primary_color}; margin-bottom: 16px; }}
+        .benefits ul {{ list-style: none; padding: 0; }}
+        .benefits li {{ padding-left: 24px; position: relative; margin-bottom: 12px; color: #767f87; }}
+        .benefits li::before {{ content: '✓'; position: absolute; left: 0; color: {secondary_color}; font-weight: bold; }}
+        .footer {{ background-color: #f8fbfd; border-top: 1px solid #bdcdd6; padding: 40px; text-align: center; }}
+        .footer-text {{ font-size: 11px; color: #a1aeb7; margin-top: 20px; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>Your Financial Health<br>Report is Ready!</h1>
+        </div>
+        <div class="content">
+            <p class="greeting">Dear {customer_profile.first_name if customer_profile else "Valued Customer"},</p>
+            <p class="paragraph">Congratulations—you've just completed your Financial Checkup!</p>
+            <p class="paragraph">Your personalized Financial Health Report is ready, giving you a clear snapshot of your current financial wellbeing and practical steps to strengthen it.</p>
+            
+            <div class="score-box">
+                <div class="score">{int(survey_response.overall_score) if survey_response.overall_score else 0}</div>
+                <div class="label">Overall Financial Health Score out of 100</div>
+            </div>
+            
+            <div class="benefits">
+                <h3>Inside your report, you'll find:</h3>
+                <ul>
+                    <li><strong>Your Financial Health Score:</strong> a transparent breakdown of your performance across key areas</li>
+                    <li><strong>Personalized Recommendations:</strong> simple, actionable ways to improve your score</li>
+                    <li><strong>90-Day Action Plan:</strong> clear steps to build a stronger financial future</li>
+                </ul>
+            </div>
+            
+            <p class="paragraph">Take a few minutes to review your results—it's the first step toward a stronger, more confident financial future.</p>
+            
+            {download_button}
+        </div>
+        <div class="footer">
+            <p class="footer-text">This report is for informational purposes only and does not constitute financial advice.<br>© {datetime.now().year} National Bonds. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
         
-        # Replace S3 URLs with local static URLs
-        content = html_content
-        content = replace_s3_urls_with_local(content)
-        return content
+        return html_content
     
     def _generate_score_summary_html(self, survey_response: SurveyResponse, language: str) -> str:
         """Generate HTML summary of scores by category."""
@@ -519,11 +572,6 @@ National Bonds Team
 </body>
 </html>
 """
-        
-        # Replace S3 URLs with local static URLs
-        content = html_content
-        content = replace_s3_urls_with_local(content)
-        return content
     
     def _get_reminder_content_ar(self, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get Arabic reminder email content."""
@@ -593,11 +641,6 @@ National Bonds Team
 </body>
 </html>
 """
-        
-        # Replace S3 URLs with local static URLs
-        content = html_content
-        content = replace_s3_urls_with_local(content)
-        return content
     
     async def send_financial_clinic_report(
         self,
@@ -1439,8 +1482,6 @@ If you didn't request this code, please ignore this email."""
             template = self.jinja_env.get_template(template_name)
             html_content = template.render(otp_code=otp_code)
             print(f"✅ Template loaded successfully: {template_name}")
-            # Replace S3 URLs with local static URLs
-            html_content = replace_s3_urls_with_local(html_content)
             return html_content
         except Exception as e:
             print(f"❌ Could not load template {template_name}: {e}")
@@ -1612,11 +1653,6 @@ If you didn't request this code, please ignore this email."""
 </body>
 </html>
 """
-        
-        # Replace S3 URLs with local static URLs
-        content = html_content
-        content = replace_s3_urls_with_local(content)
-        return content
         else:
             # Generate individual digit boxes for English
             otp_digits_html = ""
@@ -1763,8 +1799,3 @@ If you didn't request this code, please ignore this email."""
 </body>
 </html>
 """
-        
-        # Replace S3 URLs with local static URLs
-        content = html_content
-        content = replace_s3_urls_with_local(content)
-        return content
