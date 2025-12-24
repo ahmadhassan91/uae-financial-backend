@@ -449,19 +449,8 @@ async def post_survey_registration(
 from pydantic import BaseModel, EmailStr
 from app.auth.otp_service import OTPService
 from app.reports.email_service import EmailReportService
+from app.auth.schemas import OTPRequest, OTPVerifyRequest
 import re
-
-
-class OTPRequest(BaseModel):
-    """Request schema for OTP generation."""
-    email: EmailStr
-    language: str = "en"
-
-
-class OTPVerifyRequest(BaseModel):
-    """Request schema for OTP verification."""
-    email: EmailStr
-    code: str
 
 
 @router.post("/otp/request")
@@ -500,7 +489,7 @@ async def request_otp(
         email_result = await email_service.send_otp_email(
             recipient_email=email,
             otp_code=result['code'],
-            language=request.language
+            language=otp_request.language
         )
         
         if not email_result['success']:
@@ -515,7 +504,7 @@ async def request_otp(
         audit_log = AuditLog(
             action="otp_requested",
             entity_type="otp",
-            details={"email": email, "language": request.language}
+            details={"email": email, "language": otp_request.language}
         )
         db.add(audit_log)
         db.commit()
@@ -707,11 +696,12 @@ async def verify_otp(
 
 @router.post("/otp/resend")
 async def resend_otp(
-    request: OTPRequest,
+    request: Request,
+    otp_request: OTPRequest,
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Resend OTP code. Same rate limits apply.
     """
     # This is essentially the same as request_otp
-    return await request_otp(request, db)
+    return await request_otp(request, otp_request, db)
