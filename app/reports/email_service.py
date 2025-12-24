@@ -1347,11 +1347,15 @@ Next Steps:
         with open(file_path, 'wb') as f:
             f.write(pdf_content)
         
-        # Generate download URL using static file serving
-        base_url = settings.static_assets_url
-        download_url = f"{base_url}/static/reports/{filename}"
+        # Generate secure download token for PDF
+        from app.reports.routes import generate_download_token
+        download_token = generate_download_token(filename, expires_in=3600)  # 1 hour expiry
         
-        logging.info(f"📁 PDF stored in static folder: {download_url}")
+        # Generate secure download URL
+        base_url = settings.api_base_url
+        download_url = f"{base_url}/api/reports/download/{download_token}"
+        
+        logging.info(f"📁 PDF stored with secure token: {download_url}")
         return download_url
     
     async def send_otp_email(

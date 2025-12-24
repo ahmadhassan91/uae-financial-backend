@@ -4,11 +4,16 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, EmailStr
+import secrets
+import hashlib
+import time
+from pathlib import Path
 
 from app.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models import User, SurveyResponse, CustomerProfile
 from .delivery_service import ReportDeliveryService
+from app.config import settings
 
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -433,3 +438,107 @@ async def download_nfs_report(filename: str):
             "Content-Disposition": f"attachment; filename=financial_clinic_report.pdf"
         }
     )
+
+
+# Token-based secure PDF download system
+download_tokens = {}  # In-memory storage for tokens (consider Redis for production)
+
+def generate_download_token(filename: str, expires_in: int = 3600) -> str:
+    """Generate a secure token for PDF download."""
+    token = secrets.token_urlsafe(32)
+    expiry = time.time() + expires_in
+    
+    # Store token data
+    download_tokens[token] = {
+        "filename": filename,
+        "expires": expiry,
+        "created": time.time()
+    }
+    
+    return token
+
+def validate_download_token(token: str) -> Optional[str]:
+    """Validate a download token and return filename if valid."""
+    if token not in download_tokens:
+        return None
+    
+    token_data = download_tokens[token]
+    
+    # Check if token has expired
+    if time.time() > token_data["expires"]:
+        del download_tokens[token]
+        return None
+    
+    return token_data["filename"]
+
+@router.get("/download/{token}")
+async def download_report_secure(token: str):
+    """Secure PDF download endpoint using temporary tokens."""
+    filename = validate_download_token(token)
+    
+    if not filename:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid or expired download link"
+        )
+    
+    # Validate filename to prevent path traversal
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
+    
+    # Construct file path
+    static_reports_dir = Path(__file__).parent / "static" / "reports"
+    file_path = static_reports_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found"
+        )
+    
+    # Clean up token after use
+    del download_tokens[token]
+    
+    return FileResponse(
+        path=file_path,
+        filename="financial_clinic_report.pdf",
+        media_type="application/pdf"
+    )
+
+@router.post("/generate-download-link")
+async def generate_download_link(
+    filename: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Generate a secure download link for a PDF report."""
+    # Validate filename
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
+    
+    # Check if file exists
+    static_reports_dir = Path(__file__).parent / "static" / "reports"
+    file_path = static_reports_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found"
+        )
+    
+    # Generate secure token
+    token = generate_download_token(filename, expires_in=3600)  # 1 hour expiry
+    
+    # Return secure URL
+    download_url = f"{settings.api_base_url}/api/reports/download/{token}"
+    
+    return {
+        "download_url": download_url,
+        "expires_in": 3600,
+        "filename": filename
+    }
