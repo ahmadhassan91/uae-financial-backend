@@ -1,7 +1,12 @@
 # Add this location block to your nginx config inside the HTTPS server block
 # This should be added BEFORE the /api/ location block
 
-    # Serve static files (icons, images, PDFs)
+    # Block direct public access to reports (they are served via secure API)
+    location /static/reports/ {
+        return 403;
+    }
+
+    # Serve public static files (icons, images)
     location /static/ {
         alias /path/to/your/backend/app/static/;
         expires 30d;

@@ -505,7 +505,12 @@ async def download_report_secure(token: str):
     return FileResponse(
         path=file_path,
         filename="financial_clinic_report.pdf",
-        media_type="application/pdf"
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 @router.post("/generate-download-link")
