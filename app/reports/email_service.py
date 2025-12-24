@@ -753,7 +753,7 @@ National Bonds Team
         logger.info(f"📧 EMAIL HTML - Language repr: {repr(language)}")
         
         # Get backend URL for static assets
-        base_url = settings.api_base_url
+        base_url = settings.static_assets_url
         
         # Handle case where result might be a string (shouldn't happen but defensive programming)
         if isinstance(result, str):
@@ -1348,7 +1348,7 @@ Next Steps:
             f.write(pdf_content)
         
         # Generate download URL using static file serving
-        base_url = settings.api_base_url
+        base_url = settings.static_assets_url
         download_url = f"{base_url}/static/reports/{filename}"
         
         logging.info(f"📁 PDF stored in static folder: {download_url}")
@@ -1495,7 +1495,7 @@ If you didn't request this code, please ignore this email."""
     def _generate_fallback_otp_html(self, otp_code: str, language: str) -> str:
         """Generate simple OTP HTML email fallback when template is not available."""
         # Get backend URL for static assets
-        base_url = settings.api_base_url
+        base_url = settings.static_assets_url
         
         if language == "ar":
             # Generate individual digit boxes for Arabic
