@@ -471,7 +471,7 @@ def validate_download_token(token: str) -> Optional[str]:
     
     return token_data["filename"]
 
-@router.get("/download/{token}")
+@router.get("/secure-download/{token}")
 async def download_report_secure(token: str):
     """Secure PDF download endpoint using temporary tokens."""
     filename = validate_download_token(token)
@@ -490,7 +490,7 @@ async def download_report_secure(token: str):
         )
     
     # Construct file path
-    static_reports_dir = Path(__file__).parent / "static" / "reports"
+    static_reports_dir = Path(__file__).parent.parent / "static" / "reports"
     file_path = static_reports_dir / filename
     
     if not file_path.exists():
@@ -522,7 +522,7 @@ async def generate_download_link(
         )
     
     # Check if file exists
-    static_reports_dir = Path(__file__).parent / "static" / "reports"
+    static_reports_dir = Path(__file__).parent.parent / "static" / "reports"
     file_path = static_reports_dir / filename
     
     if not file_path.exists():
@@ -535,7 +535,7 @@ async def generate_download_link(
     token = generate_download_token(filename, expires_in=3600)  # 1 hour expiry
     
     # Return secure URL
-    download_url = f"{settings.api_base_url}/api/reports/download/{token}"
+    download_url = f"{settings.api_base_url}/api/v1/reports/secure-download/{token}"
     
     return {
         "download_url": download_url,

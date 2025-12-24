@@ -1353,7 +1353,7 @@ Next Steps:
         
         # Generate secure download URL
         base_url = settings.api_base_url
-        download_url = f"{base_url}/api/reports/download/{download_token}"
+        download_url = f"{base_url}/api/v1/reports/secure-download/{download_token}"
         
         logging.info(f"📁 PDF stored with secure token: {download_url}")
         return download_url
