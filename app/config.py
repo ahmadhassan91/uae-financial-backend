@@ -156,6 +156,16 @@ class Settings(BaseSettings):
         return self.BACKEND_BASE_URL
     
     @property
+    def static_assets_url(self) -> str:
+        """Get the appropriate URL for static assets (icons, images, etc.)."""
+        if self.USE_NFS_STORAGE and self.NFS_PUBLIC_URL_BASE:
+            # For on-prem deployment with nginx proxy
+            return self.NFS_PUBLIC_URL_BASE
+        else:
+            # For cloud deployment (Heroku) or development
+            return self.api_base_url
+    
+    @property
     def s3_pdf_base_url(self) -> str:
         """Get S3 base URL for PDF downloads."""
         if self.AWS_S3_BUCKET:
