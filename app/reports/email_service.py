@@ -752,8 +752,8 @@ National Bonds Team
         logger.info(f"📧 EMAIL HTML - Is Arabic check: {language == 'ar'}")
         logger.info(f"📧 EMAIL HTML - Language repr: {repr(language)}")
         
-        # Get frontend URL for images
-        frontend_url = settings.base_url
+        # Get backend URL for static assets
+        base_url = settings.api_base_url
         
         # Handle case where result might be a string (shouldn't happen but defensive programming)
         if isinstance(result, str):
