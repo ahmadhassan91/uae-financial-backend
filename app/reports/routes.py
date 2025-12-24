@@ -443,8 +443,11 @@ async def download_nfs_report(filename: str):
 # Token-based secure PDF download system
 download_tokens = {}  # In-memory storage for tokens (consider Redis for production)
 
-def generate_download_token(filename: str, expires_in: int = 3600) -> str:
-    """Generate a secure token for PDF download."""
+def generate_download_token(filename: str, expires_in: Optional[int] = None) -> str:
+    """Generate a secure token for PDF download (default from settings)."""
+    if expires_in is None:
+        expires_in = settings.PDF_TOKEN_EXPIRY_SECONDS
+        
     token = secrets.token_urlsafe(32)
     expiry = time.time() + expires_in
     
@@ -499,8 +502,8 @@ async def download_report_secure(token: str):
             detail="Report file not found"
         )
     
-    # Clean up token after use
-    del download_tokens[token]
+    # Allow multiple downloads (do not delete token)
+    # del download_tokens[token]
     
     return FileResponse(
         path=file_path,
@@ -537,13 +540,14 @@ async def generate_download_link(
         )
     
     # Generate secure token
-    token = generate_download_token(filename, expires_in=3600)  # 1 hour expiry
+    expires_in = settings.PDF_TOKEN_EXPIRY_SECONDS
+    token = generate_download_token(filename, expires_in=expires_in)
     
     # Return secure URL
     download_url = f"{settings.api_base_url}/api/v1/reports/secure-download/{token}"
     
     return {
         "download_url": download_url,
-        "expires_in": 3600,
+        "expires_in": expires_in,
         "filename": filename
     }

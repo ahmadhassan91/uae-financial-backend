@@ -1349,7 +1349,7 @@ Next Steps:
         
         # Generate secure download token for PDF
         from app.reports.routes import generate_download_token
-        download_token = generate_download_token(filename, expires_in=3600)  # 1 hour expiry
+        download_token = generate_download_token(filename, expires_in=settings.PDF_TOKEN_EXPIRY_SECONDS)
         
         # Generate secure download URL
         base_url = settings.api_base_url

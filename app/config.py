@@ -121,6 +121,9 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
+    # PDF Download Security
+    PDF_TOKEN_EXPIRY_SECONDS: int = 604800  # Default 7 days (7 * 24 * 60 * 60)
+    
     # AWS S3 Configuration
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
