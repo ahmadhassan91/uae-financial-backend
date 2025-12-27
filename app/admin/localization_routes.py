@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/localized-content", tags=["admin", "localization"])
 
 
-@router.get("/", response_model=LocalizedContentListResponse)
+@router.get("", response_model=LocalizedContentListResponse)
 async def list_localized_content(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user),
@@ -115,7 +115,7 @@ async def list_localized_content(
         )
 
 
-@router.post("/", response_model=LocalizedContentResponse)
+@router.post("", response_model=LocalizedContentResponse)
 async def create_localized_content(
     content_data: LocalizedContentCreate,
     db: Session = Depends(get_db),
@@ -440,7 +440,7 @@ async def get_localization_analytics(
 workflow_router = APIRouter(prefix="/admin/translation-workflows", tags=["admin", "translation-workflows"])
 
 
-@workflow_router.post("/", response_model=TranslationWorkflowResponse)
+@workflow_router.post("", response_model=TranslationWorkflowResponse)
 async def create_translation_workflow(
     workflow_data: TranslationWorkflowRequest,
     db: Session = Depends(get_db),
@@ -518,7 +518,7 @@ async def create_translation_workflow(
         )
 
 
-@workflow_router.get("/")
+@workflow_router.get("")
 async def list_translation_workflows(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user)

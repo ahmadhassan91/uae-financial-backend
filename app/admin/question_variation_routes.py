@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/question-variations", tags=["admin", "question-variations"])
 
 
-@router.get("/", response_model=QuestionVariationListResponse)
+@router.get("", response_model=QuestionVariationListResponse)
 async def list_question_variations(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user),
@@ -137,7 +137,7 @@ async def list_question_variations(
         )
 
 
-@router.post("/", response_model=QuestionVariationResponse)
+@router.post("", response_model=QuestionVariationResponse)
 async def create_question_variation(
     variation_data: QuestionVariationCreate,
     db: Session = Depends(get_db),

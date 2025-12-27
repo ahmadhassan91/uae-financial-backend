@@ -108,6 +108,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Add Security Headers Middleware (added first so it runs last)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Handle Proxy Headers (X-Forwarded-Proto, etc.)
+# This is crucial for on-prem deployments behind Nginx to correctly identify HTTPS
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
 # Trusted Host Middleware - Validate Host header to prevent Host Header Injection
 # Use allowed hosts from environment settings
 app.add_middleware(
