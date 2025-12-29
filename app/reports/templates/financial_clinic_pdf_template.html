@@ -10,10 +10,6 @@
       {% if language == 'ar' %}تقرير الصحة المالية{% else %}Financial Health
       Report{% endif %}
     </title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
     <style>
       * {
         margin: 0;
@@ -27,7 +23,7 @@
       }
 
       body {
-        font-family: "Poppins", Arial, sans-serif;
+        font-family: "Arial", "Helvetica", sans-serif;
         background-color: #ffffff;
         color: #333333;
         line-height: 1.4;
@@ -426,11 +422,10 @@
         }
       }
 
-      /* RTL Support - Minimal for Heroku compatibility (no direction/unicode-bidi) */
+      /* RTL Support - Simplified for better compatibility */
       .rtl {
-        /* NO direction: rtl or unicode-bidi - causes Heroku pango/cairo crash */
         text-align: right;
-        font-family: "Tajawal", "Almarai", "Arial", sans-serif;
+        font-family: "Arial", "Arial Unicode MS", "Tahoma", sans-serif;
       }
 
       .rtl .hero,

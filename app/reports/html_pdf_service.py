@@ -242,9 +242,94 @@ class HTMLPDFService:
                 current_year=datetime.now().year
             )
             
-            # Generate PDF from HTML using WeasyPrint
+            # Generate PDF from HTML using WeasyPrint with enhanced error handling
             pdf_bytes = io.BytesIO()
-            HTML(string=html_content).write_pdf(pdf_bytes)
+            
+            try:
+                # Configure WeasyPrint to handle SSL issues and Arabic text
+                import os
+                # Disable SSL verification for WeasyPrint (on-prem environments)
+                os.environ['CURL_CA_BUNDLE'] = ''
+                os.environ['SSL_VERIFY'] = 'false'
+                
+                from weasyprint import HTML, CSS
+                from weasyprint.text.fonts import FontConfiguration
+                
+                font_config = FontConfiguration()
+                
+                # Add robust CSS for Arabic font support with fallbacks
+                css_content = """
+                    @page {
+                        size: A4;
+                        margin: 8mm;
+                    }
+                    
+                    body {
+                        font-family: Arial, sans-serif !important;
+                        line-height: 1.4;
+                        color: #333;
+                    }
+                    
+                    body[lang="ar"] {
+                        font-family: Arial, "Arial Unicode MS", Tahoma, sans-serif !important;
+                        text-align: right;
+                    }
+                    
+                    body[lang="en"] {
+                        font-family: Arial, Helvetica, sans-serif !important;
+                        text-align: left;
+                    }
+                    
+                    .rtl {
+                        text-align: right;
+                        font-family: Arial, "Arial Unicode MS", Tahoma, sans-serif !important;
+                    }
+                    
+                    /* Remove problematic external font references */
+                    * {
+                        font-family: Arial, sans-serif !important;
+                    }
+                """
+                
+                # Clean HTML content to remove problematic font references
+                cleaned_html = html_content.replace('"Tajawal"', '"Arial"').replace('"Almarai"', '"Arial"')
+                
+                css_arabic = CSS(string=css_content, font_config=font_config)
+                
+                # Create HTML with cleaned content
+                html_doc = HTML(string=cleaned_html, base_url='.')
+                
+                # Generate PDF with font configuration and Arabic support
+                html_doc.write_pdf(
+                    pdf_bytes,
+                    stylesheets=[css_arabic],
+                    font_config=font_config,
+                    optimize_images=False,  # Disable image optimization to prevent issues
+                    presentational_hints=True
+                )
+                
+            except Exception as weasy_error:
+                logger.error(f"WeasyPrint error: {str(weasy_error)}")
+                
+                # Fallback: Try with minimal CSS and no external fonts
+                try:
+                    simple_css = CSS(string="""
+                        @page { size: A4; margin: 10mm; }
+                        body { font-family: Arial, sans-serif; font-size: 12px; line-height: 1.4; }
+                        .rtl { text-align: right; }
+                    """)
+                    
+                    # Strip all complex styling and use only basic fonts
+                    basic_html = html_content.replace('"Tajawal"', '"Arial"').replace('"Almarai"', '"Arial"')
+                    basic_html = basic_html.replace('font-family: "Tajawal"', 'font-family: Arial')
+                    basic_html = basic_html.replace('font-family: "Almarai"', 'font-family: Arial')
+                    
+                    HTML(string=basic_html).write_pdf(pdf_bytes, stylesheets=[simple_css])
+                    logger.info("PDF generated successfully with fallback method")
+                    
+                except Exception as fallback_error:
+                    logger.error(f"Fallback PDF generation failed: {str(fallback_error)}")
+                    raise Exception(f"PDF generation failed: WeasyPrint error: {str(weasy_error)}, Fallback error: {str(fallback_error)}")
             pdf_content = pdf_bytes.getvalue()
             
             return pdf_content
