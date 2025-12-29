@@ -1,4 +1,3 @@
-
 """
 Financial Clinic Survey Questions
 6 Categories, 15 Questions, 0-100 Scoring System
@@ -95,50 +94,49 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         weight=10,  # 10% of total score
         text_en="How much of your total income are you able to save every month?",
         text_ar="ما النسبة التي تستطيعون ادخارها من إجمالي دخلكم شهريًا؟",
-        options = [
-            FinancialClinicOption(
-                value=5,
-                label_en="More than 20% of my income",
-                label_ar="أكثر من \u200E20%\u200E من دخلي"
-            ),
-            FinancialClinicOption(
-                value=4,
-                label_en="15% to 20% of my income",
-                label_ar="\u200E20%\u200E من دخلي إلى \u200E15%\u200E"
-            ),
-            FinancialClinicOption(
-                value=3,
-                label_en="5% to 15% of my income",
-                label_ar="\u200E15%\u200E من دخلي إلى \u200E5%\u200E"
-            ),
-            FinancialClinicOption(
-                value=2,
-                label_en="Up to 5% of my income",
-                label_ar="حتى \u200E5%\u200E من دخلي"
-            ),
-            FinancialClinicOption(
-                value=1,
-                label_en="I am not able to save from my income",
-                label_ar="أنا غير قادر على الادخار من دخلي"
-            ),
-        ]
-
-    ),
-    FinancialClinicQuestion(
-        id="fc_q4",
-        number=4,
-        category=FinancialClinicCategory.SAVINGS_HABIT,
-        weight=5,  # 5% of total score
-        text_en="What is the typical duration of your savings goals?",
-        text_ar="ما هي المدة المعتادة لتحقيق أهدافكم الادخارية؟",
         options=[
-                            FinancialClinicOption(value=5, label_en="I primarily save and invest for long-term goals (over 3 years)", label_ar="أدّخر وأستثمر بشكل أساسي لتحقيق أهداف طويلة الأجل (أكثر من 3 سنوات)"),
-                            FinancialClinicOption(value=4, label_en="I save for medium-term goals (1–3 years)", label_ar="أدّخر لتحقيق أهداف متوسّطة الأجل (سنة إلى 3 سنوات)"),
-                        FinancialClinicOption(value=3, label_en="I save for both short- and long-term goals", label_ar="أدّخر لتحقيق أهداف قصيرة وطويلة الأجل على حدّ سواء"),
-                        FinancialClinicOption(value=2, label_en="I save for short-term goals (less than 1 year)", label_ar="أدّخر لتحقيق أهداف قصيرة الأجل (أقلّ من سنة)"),
-                        FinancialClinicOption(value=1, label_en="I usually save only for immediate needs or emergencies", label_ar="عادةً ما أدّخر فقط للاحتياجات العاجلة أو لحالات الطوارئ"),
+                            FinancialClinicOption(value=5, label_en="More than 20% of my income", label_ar="أكثر من ٪20 من دخلي"),
+                            FinancialClinicOption(value=4, label_en="15% to 20% of my income", label_ar="من 15٪ إلى 20٪ من دخلي"),  # Fixed Arabic format
+                        FinancialClinicOption(value=3, label_en="5% to 15% of my income", label_ar="من 5٪ إلى 15٪ من دخلي"),  # Fixed Arabic format
+                        FinancialClinicOption(value=2, label_en="Up to 5% of my income", label_ar="حتى ٪5 من دخلي"),
+                        FinancialClinicOption(value=1, label_en="I am not able to save from my income", label_ar="أنا غير قادر على الادخار من دخلي"),
         ]
     ),
+FinancialClinicQuestion(
+    id="fc_q3",
+    number=3,
+    category=FinancialClinicCategory.SAVINGS_HABIT,
+    weight=10,
+    text_en="How much of your total income are you able to save every month?",
+    text_ar="ما النسبة التي تستطيعون ادخارها من إجمالي دخلكم شهريًا؟",
+    options=[
+        FinancialClinicOption(
+            value=5,
+            label_en="More than 20% of my income",
+            label_ar="أكثر من \u200E20%\u200E من دخلي"
+        ),
+        FinancialClinicOption(
+            value=4,
+            label_en="15% to 20% of my income",
+            label_ar="من \u200E15%\u200E إلى \u200E20%\u200E من دخلي"
+        ),
+        FinancialClinicOption(
+            value=3,
+            label_en="5% to 15% of my income",
+            label_ar="من \u200E5%\u200E إلى \u200E15%\u200E من دخلي"
+        ),
+        FinancialClinicOption(
+            value=2,
+            label_en="Up to 5% of my income",
+            label_ar="حتى \u200E5%\u200E من دخلي"
+        ),
+        FinancialClinicOption(
+            value=1,
+            label_en="I am not able to save from my income",
+            label_ar="أنا غير قادر على الادخار من دخلي"
+        ),
+    ]
+),
     FinancialClinicQuestion(
         id="fc_q5",
         number=5,
