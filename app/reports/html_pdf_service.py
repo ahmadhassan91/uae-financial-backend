@@ -175,6 +175,19 @@ class HTMLPDFService:
                 financial_clinic_logo_base64 = ""
                 national_bonds_logo_base64 = ""
             
+            from app.utils.svg_to_png import svg_base64_to_png_base64
+            logos_are_png = True
+            if national_bonds_logo_base64:
+                converted = svg_base64_to_png_base64(national_bonds_logo_base64, output_width=900)
+                if converted == national_bonds_logo_base64:
+                    logos_are_png = False
+                national_bonds_logo_base64 = converted
+            if financial_clinic_logo_base64:
+                converted = svg_base64_to_png_base64(financial_clinic_logo_base64, output_width=900)
+                if converted == financial_clinic_logo_base64:
+                    logos_are_png = False
+                financial_clinic_logo_base64 = converted
+            
             # Prepare category translations, descriptions, and colors
             category_translations = {}
             category_descriptions = {}
@@ -239,6 +252,7 @@ class HTMLPDFService:
                 insights=insights,
                 financial_clinic_logo_base64=financial_clinic_logo_base64,
                 national_bonds_logo_base64=national_bonds_logo_base64,
+                logos_are_png=logos_are_png,
                 current_year=datetime.now().year
             )
             
