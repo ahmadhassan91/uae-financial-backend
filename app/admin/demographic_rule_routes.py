@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin/demographic-rules", tags=["admin", "demographic-rules"])
 
 
-@router.get("/", response_model=DemographicRuleListResponse)
+@router.get("", response_model=DemographicRuleListResponse)
 async def list_demographic_rules(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_admin_user),
@@ -104,7 +104,7 @@ async def list_demographic_rules(
         )
 
 
-@router.post("/", response_model=DemographicRuleResponse)
+@router.post("", response_model=DemographicRuleResponse)
 async def create_demographic_rule(
     rule_data: DemographicRuleCreate,
     db: Session = Depends(get_db),
