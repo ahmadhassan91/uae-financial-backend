@@ -134,6 +134,10 @@ async def get_financial_clinic_questions(
     # Get base questions
     questions = get_questions_for_profile(children_count=children)
     
+    # Create deep copies to avoid modifying the original base questions
+    import copy
+    questions = copy.deepcopy(questions)
+    
     # If company URL provided, check for variations (only if explicitly enabled)
     if company_url:
         from ..models import CompanyTracker, QuestionVariation, VariationSet
