@@ -811,6 +811,9 @@ class CompanyDetails(Base):
     phone_number = Column(String(20), nullable=True)
     additional_details = Column(Text, nullable=True)
     
+    # Status
+    is_active = Column(Boolean, default=True, nullable=False)  # Enable/disable company
+    
     # Metadata
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
