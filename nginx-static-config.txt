@@ -1,0 +1,27 @@
+# Add this location block to your nginx config inside the HTTPS server block
+# This should be added BEFORE the /api/ location block
+
+    # Block direct public access to reports (they are served via secure API)
+    location /static/reports/ {
+        return 403;
+    }
+
+    # Serve public static files (icons, images)
+    location /static/ {
+        alias /path/to/your/backend/app/static/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        
+        # CORS headers for email clients
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "GET, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Range" always;
+        
+        # Handle preflight requests
+        if ($request_method = 'OPTIONS') {
+            return 204;
+        }
+    }
+
+# IMPORTANT: Replace /path/to/your/backend/app/static/ with the actual path
+# For example: /home/ubuntu/uae-financial-backend/app/static/

@@ -40,22 +40,22 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "income_above_30k": {
                 "en": (
                     "Your income sources seem limited or inconsistent. Focus on creating stability by building "
-                    "a consistent income stream and a small safety buffer with our regular saving plans"
+                    "a consistent income stream and a small safety buffer with our regular saving plans."
                 ),
                 "ar": (
                     "يبدو أن مصادر دخلك محدودة أو غير مستقرة. ركز على خلق الاستقرار من خلال بناء تدفق دخل ثابت "
-                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة"
+                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة."
                 ),
             },
             "default": {
                 "en": (
                     "Your income sources seem limited or inconsistent. Focus on creating stability by building "
                     "a consistent income stream and a small safety buffer with our regular saving plans starting "
-                    "with AED 100 through My Million plan"
+                    "with AED 100 through My Million plan."
                 ),
                 "ar": (
                     "يبدو أن مصادر دخلك محدودة أو غير مستقرة. ركز على خلق الاستقرار من خلال بناء تدفق دخل ثابت "
-                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة التي تبدأ من 100 درهم إماراتي من خلال خطة مليوني"
+                    "ووسادة أمان صغيرة مع خطط الادخار المنتظمة التي تبدأ من 100 درهم إماراتي من خلال خطة مليوني."
                 ),
             },
         },
@@ -93,10 +93,10 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "default": {
                 "en": (
                     "You have a stable, consistent income. Now focus on long-term growth and wealth accumulation "
-                    "through My Million plan"
+                    "through My Million plan."
                 ),
                 "ar": (
-                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وتراكم الثروة من خلال خطة مليوني"
+                    "لديك دخل ثابت ومتسق. ركز الآن على النمو طويل الأجل وتراكم الثروة من خلال خطة مليوني."
                 ),
             },
         },
@@ -115,10 +115,10 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             },
             "income_above_30k": {
                 "en": (
-                    "Your savings habit seems irregular or minimal. Increase your savings safety net with Saving Bonds"
+                    "Your savings habit seems irregular or minimal. Increase your savings safety net with Saving Bonds."
                 ),
                 "ar": (
-                    "يبدو أن عادة الادخار لديك غير منتظمة أو ضئيلة. زد شبكة الأمان الادخارية الخاصة بك مع سندات الادخار"
+                    "يبدو أن عادة الادخار لديك غير منتظمة أو ضئيلة. زد شبكة الأمان الادخارية الخاصة بك مع سندات الادخار."
                 ),
             },
             "default": {
@@ -136,10 +136,10 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "default": {
                 "en": (
                     "You save occasionally, but your rate could improve. Set clear goals and increase your savings "
-                    "percentage gradually"
+                    "percentage gradually."
                 ),
                 "ar": (
-                    "تدخر بشكل متقطع، ولكن معدلك يمكن أن يتحسن. حدد أهدافًا واضحة وزد نسبة مدخراتك تدريجيًا"
+                    "تدخر بشكل متقطع، ولكن معدلك يمكن أن يتحسن. حدد أهدافًا واضحة وزد نسبة مدخراتك تدريجيًا."
                 ),
             },
         },
@@ -148,11 +148,11 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
                 "en": (
                     "You maintain a strong savings routine. Continue optimizing returns through structured plans and "
                     "smart investments. Consider long term savings with our Booster offerings for enhanced savings "
-                    "growth over 3 to 5 years"
+                    "growth over 3 to 5 years."
                 ),
                 "ar": (
                     "تحافظ على روتين ادخار قوي. استمر في تحسين العوائد من خلال الخطط المنظمة والاستثمارات الذكية. "
-                    "فكر في الادخار طويل الأجل مع عروض بوستر لتعزيز نمو المدخرات على مدى 3 إلى 5 سنوات"
+                    "فكر في الادخار طويل الأجل مع عروض بوستر لتعزيز نمو المدخرات على مدى 3 إلى 5 سنوات."
                 ),
             },
         },
@@ -172,19 +172,19 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "emirati_woman": {
                 "en": (
                     "You've built a partial safety net. Keep growing it to cover 6 months of living expenses for stronger security. "
-                    "Enhance your emergency savings with Ahed savings plan"
+                    "Enhance your emergency savings with Ahed savings plan."
                 ),
                 "ar": (
                     "لقد بنيت شبكة أمان جزئية. استمر في تنميتها لتغطية 6 أشهر من نفقات المعيشة لأمن أقوى. "
-                    "عزز مدخرات الطوارئ الخاصة بك مع خطة ادخار عهد"
+                    "عزز مدخرات الطوارئ الخاصة بك مع خطة ادخار عهد."
                 ),
             },
             "else": {
                 "en": (
-                    "Enhance your emergency savings with our myPlan monthly savings plan"
+                    "Enhance your emergency savings with our myPlan monthly savings plan."
                 ),
                 "ar": (
-                    "عزز مدخرات الطوارئ الخاصة بك مع خطة الادخار الشهرية خطتي"
+                    "عزز مدخرات الطوارئ الخاصة بك مع خطة الادخار الشهرية خطتي."
                 ),
             },
             "default": {
@@ -200,10 +200,10 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "default": {
                 "en": (
                     "You're well-prepared for emergencies. Consider investing your surplus for sustainable long-term growth with National Bonds Term "
-                    "Sukuk or Booster Offerings"
+                    "Sukuk or Booster Offerings."
                 ),
                 "ar": (
-                    "أنت مستعد جيدًا للطوارئ. فكر في استثمار فائضك للنمو المستدام طويل الأجل مع صكوك الصكوك الوطنية أو عروض بوستر"
+                    "أنت مستعد جيدًا للطوارئ. فكر في استثمار فائضك للنمو المستدام طويل الأجل مع صكوك الصكوك الوطنية أو عروض Booster."
                 ),
             },
         },
@@ -263,11 +263,11 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             },
             "else": {
                 "en": (
-                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward "
-                    "your retirement goals with our Global Savings Club or Second Salary plan"
+                    "You've started saving but may not be contributing enough. Regularly review and increase your contributions toward"
+                    "your retirement goals with our Global Savings Club or Second Salary plan."
                 ),
                 "ar": (
-                    "لقد بدأت في الادخار ولكن قد لا تساهم بما فيه الكفاية. راجع وزد مساهماتك بانتظام نحو أهداف التقاعد الخاصة بك مع نادي الادخار العالمي أو خطة الراتب الثاني"
+                    "لقد بدأت في الادخار ولكن قد لا تساهم بما فيه الكفاية. راجع وزد مساهماتك بانتظام نحو أهداف التقاعد الخاصة بك مع نادي الادخار العالمي أو خطة الراتب الثاني."
                 ),
             },
             "default": {
@@ -334,21 +334,21 @@ INSIGHTS_MATRIX: Dict[str, Dict[str, Dict[str, Dict[str, str]]]] = {
             "children_zero": {
                 "en": (
                     "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
-                    "You can also strengthen your family's financial future with My Million plan"
+                    "You can also strengthen your family's financial future with My Million plan."
                 ),
                 "ar": (
                     "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك. "
-                    "يمكنك أيضًا تعزيز مستقبل عائلتك المالي مع خطة مليوني"
+                    "يمكنك أيضًا تعزيز مستقبل عائلتك المالي مع خطة مليوني."
                 ),
             },
             "else": {
                 "en": (
                     "You have strong financial protection in place. Keep it updated as your lifestyle and responsibilities change. "
-                    "You can also save to secure your family's financial future with Junior Million plan"
+                    "You can also save to secure your family's financial future with Junior Million plan."
                 ),
                 "ar": (
                     "لديك حماية مالية قوية. حافظ على تحديثها مع تغير نمط حياتك ومسؤولياتك. "
-                    "يمكنك أيضًا الادخار لتأمين مستقبل عائلتك المالي مع خطة مليون جونيور"
+                    "يمكنك أيضًا الادخار لتأمين مستقبل عائلتك المالي مع خطة المليونير الصغير."
                 ),
             },
             "default": {

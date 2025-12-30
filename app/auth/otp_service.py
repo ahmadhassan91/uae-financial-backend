@@ -1,11 +1,15 @@
 """OTP Service for email verification and authentication."""
 import secrets
+import logging
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
 from app.models import OTPCode, User
+from app.auth.account_lockout import AccountLockoutService
+
+logger = logging.getLogger(__name__)
 
 
 class OTPService:
@@ -15,7 +19,7 @@ class OTPService:
     OTP_EXPIRATION_MINUTES = 5
     OTP_MAX_ATTEMPTS = 3
     RATE_LIMIT_MINUTES = 15
-    RATE_LIMIT_MAX_OTPS = 5  # Increased from 3 to 5 OTP requests per 15 minutes
+    RATE_LIMIT_MAX_OTPS = 5  # Maximum 5 OTP requests per 15 minutes
     
     @staticmethod
     def generate_otp(email: str, db: Session) -> Dict[str, Any]:
@@ -69,18 +73,45 @@ class OTPService:
         }
     
     @staticmethod
-    def verify_otp(email: str, code: str, db: Session) -> Dict[str, Any]:
+    def verify_otp(
+        email: str, 
+        code: str, 
+        db: Session,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Verify OTP code.
+        Verify OTP code with account lockout protection.
         
         Args:
             email: User's email address
             code: 6-digit OTP code
             db: Database session
+            ip_address: Client IP for lockout tracking
+            user_agent: Client user agent for logging
             
         Returns:
             Dict with success status, user info, and message
         """
+        # Check if account is locked out
+        lockout_check = AccountLockoutService.check_lockout(
+            identifier=email,
+            identifier_type="email",
+            attempt_type="otp_verify",
+            db=db
+        )
+        
+        if lockout_check['is_locked']:
+            logger.warning(f"OTP verification blocked - Account locked: {email}")
+            return {
+                'success': False,
+                'message': lockout_check['message'],
+                'user_exists': False,
+                'user_id': None,
+                'is_locked': True,
+                'remaining_seconds': lockout_check['remaining_seconds']
+            }
+        
         # Find most recent unused OTP for this email
         otp = db.query(OTPCode).filter(
             and_(
@@ -91,11 +122,27 @@ class OTPService:
         ).order_by(OTPCode.created_at.desc()).first()
         
         if not otp:
+            # Record failed attempt
+            lockout_result = AccountLockoutService.record_failed_attempt(
+                identifier=email,
+                identifier_type="email",
+                attempt_type="otp_verify",
+                db=db,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            
+            message = 'Invalid OTP code'
+            if lockout_result.get('message'):
+                message += f". {lockout_result['message']}"
+            
             return {
                 'success': False,
-                'message': 'Invalid OTP code',
+                'message': message,
                 'user_exists': False,
-                'user_id': None
+                'user_id': None,
+                'remaining_attempts': lockout_result.get('remaining_attempts'),
+                'is_locked': lockout_result.get('is_locked', False)
             }
         
         # Check expiration
@@ -107,7 +154,7 @@ class OTPService:
                 'user_id': None
             }
         
-        # Check attempt count
+        # Check attempt count on the OTP itself
         if otp.attempt_count >= OTPService.OTP_MAX_ATTEMPTS:
             return {
                 'success': False,
@@ -116,13 +163,24 @@ class OTPService:
                 'user_id': None
             }
         
-        # Valid OTP - mark as used
+        # Valid OTP - mark as used and reset lockout counter
         otp.is_used = True
         otp.used_at = datetime.utcnow()
+        
+        # Reset lockout counter on successful verification
+        AccountLockoutService.record_successful_attempt(
+            identifier=email,
+            identifier_type="email",
+            attempt_type="otp_verify",
+            db=db
+        )
+        
         db.commit()
         
         # Check if user exists
         user = db.query(User).filter(User.email == email).first()
+        
+        logger.info(f"OTP verified successfully for: {email}")
         
         return {
             'success': True,

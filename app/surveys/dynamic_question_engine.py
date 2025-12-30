@@ -395,7 +395,7 @@ class DynamicQuestionEngine:
             options=options,
             required=base_question.required,
             factor=FinancialFactor(variation.factor),
-            weight=variation.weight,
+            weight=base_question.weight,  # Use base question weight for consistent scoring
             conditional=base_question.conditional
         )
     

@@ -86,34 +86,55 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
     ),
     
     # ==================== SAVINGS HABIT (Q3-Q5) - 20% ====================
+    
     FinancialClinicQuestion(
-        id="fc_q3",
-        number=3,
-        category=FinancialClinicCategory.SAVINGS_HABIT,
-        weight=10,  # 10% of total score
-        text_en="How much of your total income are you able to save every month?",
-        text_ar="ما النسبة التي تستطيعون ادخارها من إجمالي دخلكم شهريًا؟",
-        options=[
-              FinancialClinicOption(value=5, label_en="More than 20% of my income", label_ar="أكثر من %20 من دخلي"),
-               FinancialClinicOption(value=4, label_en="15% to 20% of my income", label_ar="%15 إلى %20 من دخلي"),
-            FinancialClinicOption(value=3, label_en="5% to 15% of my income", label_ar="%5 إلى %15 من دخلي"),
-            FinancialClinicOption(value=2, label_en="Up to 5% of my income", label_ar="حتى %5 من دخلي"),
-            FinancialClinicOption(value=1, label_en="I am not able to save from my income", label_ar="أنا غير قادر على الادخار من دخلي"),
-        ]
-    ),
+    id="fc_q3",
+    number=3,
+    category=FinancialClinicCategory.SAVINGS_HABIT,
+    weight=10,
+    text_en="How much of your total income are you able to save every month?",
+    text_ar="ما النسبة التي تستطيعون ادخارها من إجمالي دخلكم شهريًا؟",
+    options=[
+        FinancialClinicOption(
+            value=5,
+            label_en="More than 20% of my income",
+            label_ar="أكثر من 20% من دخلي"
+        ),
+        FinancialClinicOption(
+            value=4,
+            label_en="15% to 20% of my income",
+            label_ar="من دخلي إلى 20% 15%"
+        ),
+        FinancialClinicOption(
+            value=3,
+            label_en="5% to 15% of my income",
+            label_ar="من دخلي إلى 15% 5%"
+        ),
+        FinancialClinicOption(
+            value=2,
+            label_en="Up to 5% of my income",
+            label_ar="حتى 50% من دخلي"
+        ),
+        FinancialClinicOption(
+            value=1,
+            label_en="I am not able to save from my income",
+            label_ar="أنا غير قادر على الادخار من دخلي"
+        ),
+    ]
+),
     FinancialClinicQuestion(
         id="fc_q4",
         number=4,
         category=FinancialClinicCategory.SAVINGS_HABIT,
         weight=5,  # 5% of total score
-        text_en="What is the typical duration of your savings goals?",
-        text_ar="ما هي المدة المعتادة لتحقيق أهدافكم الادخارية؟",
+        text_en="Do you have specific financial goals you're saving for?",
+        text_ar="هل لديكم أهداف مالية محددة تدخرون من أجلها؟",
         options=[
-                            FinancialClinicOption(value=5, label_en="I primarily save and invest for long-term goals (over 3 years)", label_ar="أدّخر وأستثمر بشكل أساسي لتحقيق أهداف طويلة الأجل (أكثر من 3 سنوات)"),
-                            FinancialClinicOption(value=4, label_en="I save for medium-term goals (1–3 years)", label_ar="أدّخر لتحقيق أهداف متوسّطة الأجل (سنة إلى 3 سنوات)"),
-                        FinancialClinicOption(value=3, label_en="I save for both short- and long-term goals", label_ar="أدّخر لتحقيق أهداف قصيرة وطويلة الأجل على حدّ سواء"),
-                        FinancialClinicOption(value=2, label_en="I save for short-term goals (less than 1 year)", label_ar="أدّخر لتحقيق أهداف قصيرة الأجل (أقلّ من سنة)"),
-                        FinancialClinicOption(value=1, label_en="I usually save only for immediate needs or emergencies", label_ar="عادةً ما أدّخر فقط للاحتياجات العاجلة أو لحالات الطوارئ"),
+            FinancialClinicOption(value=5, label_en="Yes, I have clear goals and regular savings", label_ar="نعم، لدي أهداف واضعة وأدخر بانتظام"),
+            FinancialClinicOption(value=4, label_en="Yes, but I save irregularly", label_ar="نعم، لكن أدخر بشكل غير منتظم"),
+            FinancialClinicOption(value=3, label_en="I have goals but struggle to save consistently", label_ar="لدي أهداف لكن أعاني من الادخار بانتظام"),
+            FinancialClinicOption(value=2, label_en="I don't have specific goals", label_ar="ليس لدي أهداف محددة"),
+            FinancialClinicOption(value=1, label_en="I don't save at all", label_ar="لا أدخر إطلاقاً"),
         ]
     ),
     FinancialClinicQuestion(

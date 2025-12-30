@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Health Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+        .score-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #059669;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            color: #059669;
+            margin: 0;
+        }
+        .score-label {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .content {
+            padding: 20px;
+            background-color: #fff;
+        }
+        .section {
+            margin: 20px 0;
+        }
+        .section h3 {
+            color: #1e3a8a;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .score-item {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #1e3a8a;
+        }
+        .score-item-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .score-item-value {
+            font-size: 18px;
+            color: #059669;
+            font-weight: bold;
+        }
+        .recommendations {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .recommendation-item {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 6px;
+            border-left: 4px solid #fbbf24;
+        }
+        .recommendation-title {
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #1e3a8a;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-radius: 0 0 8px 8px;
+        }
+        .social-links {
+            margin: 15px 0;
+        }
+        .social-links a {
+            color: #1e3a8a;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        @media (max-width: 600px) {
+            .score-breakdown {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            
+            <h1>Financial Health Assessment Report</h1>
+            <p>National Bonds</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello Ahmed,</h2>
+            
+            <p>Thank you for completing the Financial Health Assessment. We're excited to share your personalized results and recommendations to help you achieve your financial goals.</p>
+            
+            <div class="score-box">
+                <div class="score">72.0</div>
+                <div class="score-label">Overall Financial Health Score out of 100</div>
+            </div>
+            
+            <div class="section">
+                <h3>Your Score Breakdown</h3>
+                <div class="score-breakdown">
+                    <div class="score-item">
+                        <div class="score-item-name">Budgeting & Income</div>
+                        <div class="score-item-value">75.0/100</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-name">Savings</div>
+                        <div class="score-item-value">60.0/100</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-name">Debt Management</div>
+                        <div class="score-item-value">85.0/100</div>
+                    </div>
+                    <div class="score-item">
+                        <div class="score-item-name">Financial Planning</div>
+                        <div class="score-item-value">65.0/100</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>What This Means</h3>
+                
+                <p><strong>Good!</strong> You have a solid financial foundation with some areas for improvement. Focus on the recommendations below to strengthen your financial position.</p>
+                
+            </div>
+            
+            <div class="recommendations">
+                <h3>Top Recommendations</h3>
+                <div class="recommendation-item">
+                    <div class="recommendation-title">📊 Review Your Detailed Report</div>
+                    <p>Your attached PDF contains comprehensive analysis, personalized recommendations, and a 90-day action plan.</p>
+                </div>
+                <div class="recommendation-item">
+                    <div class="recommendation-title">🎯 Start with High-Priority Actions</div>
+                    <p>Focus on the recommendations marked as "High Priority" for the biggest impact on your financial health.</p>
+                </div>
+                <div class="recommendation-item">
+                    <div class="recommendation-title">📈 Track Your Progress</div>
+                    <p>Retake the assessment in 3 months to measure your improvement and adjust your strategy.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h3>What's Next?</h3>
+                <ul>
+                    <li><strong>Download your detailed report</strong> - Complete analysis with charts and recommendations</li>
+                    <li><strong>Follow the 90-day action plan</strong> - Step-by-step guide to improve your financial health</li>
+                    <li><strong>Set up monthly check-ins</strong> - Review your progress and adjust your strategy</li>
+                    <li><strong>Consider professional advice</strong> - For complex situations, consult with a financial advisor</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="cta-button">Access Your Dashboard</a>
+            </div>
+            
+            <p>If you have any questions about your results or need guidance on implementing the recommendations, our financial wellness team is here to help.</p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Important:</strong> This report is for informational purposes only and does not constitute financial advice. Please consult with a qualified financial advisor for personalized guidance.</p>
+            
+            <div class="social-links">
+                <a href="https://www.nationalbonds.ae">Visit Our Website</a> |
+                <a href="mailto:support@nationalbonds.ae">Contact Support</a> |
+                <a href="#">Privacy Policy</a>
+            </div>
+            
+            <p>© National Bonds | Financial Health Assessment</p>
+        </div>
+    </div>
+</body>
+</html>

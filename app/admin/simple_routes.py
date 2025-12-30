@@ -148,7 +148,8 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
         return query
     
     # Apply predefined date range filters
-    now = datetime.now()
+    import pytz
+    now = datetime.now(pytz.UTC)
     
     if date_range == "7d":
         start_date = now - timedelta(days=7)
@@ -1766,6 +1767,8 @@ async def get_age_breakdown(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -1792,6 +1795,9 @@ async def get_age_breakdown(
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
         
+        # Apply date range filter
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
         
@@ -1809,47 +1815,60 @@ async def get_age_breakdown(
             profile = response.profile
             if profile.date_of_birth:
                 try:
-                    parts = profile.date_of_birth.strip().split('/')
-                    if len(parts) == 3:
-                        day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
-                        try:
-                            birth_date = datetime(year, month, day)
-                        except ValueError:
-                            birth_date = datetime(year, 1, 1)
+                    dob_str = profile.date_of_birth.strip()
+                    
+                    # Handle both DD/MM/YYYY and YYYY-MM-DD formats
+                    if '/' in dob_str:
+                        # DD/MM/YYYY format
+                        parts = dob_str.split('/')
+                        if len(parts) == 3:
+                            day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+                    elif '-' in dob_str:
+                        # YYYY-MM-DD format
+                        parts = dob_str.split('-')
+                        if len(parts) == 3:
+                            year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                    else:
+                        continue  # Skip if format not recognized
+                    
+                    try:
+                        birth_date = datetime(year, month, day)
+                    except ValueError:
+                        birth_date = datetime(year, 1, 1)
                         
-                        today = datetime.now()
-                        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                    today = datetime.now()
+                    age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                    
+                    # Categorize into age groups
+                    if age < 18:
+                        age_group = "< 18"
+                    elif age <= 25:
+                        age_group = "18-25"
+                    elif age <= 35:
+                        age_group = "26-35"
+                    elif age <= 45:
+                        age_group = "36-45"
+                    elif age <= 60:
+                        age_group = "46-60"
+                    else:
+                        age_group = "60+"
                         
-                        # Categorize into age groups
-                        if age < 18:
-                            age_group = "< 18"
-                        elif age <= 25:
-                            age_group = "18-25"
-                        elif age <= 35:
-                            age_group = "26-35"
-                        elif age <= 45:
-                            age_group = "36-45"
-                        elif age <= 60:
-                            age_group = "46-60"
-                        else:
-                            age_group = "60+"
-                        
-                        if age_group not in age_group_data:
-                            age_group_data[age_group] = {"scores": [], "count": 0}
-                        
-                        age_group_data[age_group]["scores"].append(response.total_score)
-                        age_group_data[age_group]["count"] += 1
-                except:
-                    pass
+                    if age_group not in age_group_data:
+                        age_group_data[age_group] = {'count': 0, 'total_score': 0}
+                    age_group_data[age_group]['count'] += 1
+                    age_group_data[age_group]['total_score'] += response.total_score
+                    
+                except Exception:
+                    continue
         
         # Format response
         age_groups = []
         for age_group, data in age_group_data.items():
-            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+            avg_score = round(data['total_score'] / data['count'], 2) if data['count'] > 0 else 0
             age_groups.append({
                 "age_group": age_group,
                 "count": data["count"],
-                "avg_score": round(avg_score, 2)
+                "avg_score": avg_score
             })
         
         # Sort by age group
@@ -1994,7 +2013,26 @@ async def get_companies_analytics(
         company_data = {}
         
         for response in unique_responses:
-            if response.company_tracker_id:
+            # Check for company from profile.company_name (new CSV system)
+            profile = db.query(FinancialClinicProfile).filter(
+                FinancialClinicProfile.id == response.profile_id
+            ).first()
+            
+            if profile and profile.company_name:
+                company_key = f"profile_{profile.company_name}"
+                
+                if company_key not in company_data:
+                    company_data[company_key] = {
+                        "company_name": profile.company_name,
+                        "scores": [],
+                        "status_bands": []
+                    }
+                
+                company_data[company_key]["scores"].append(response.total_score)
+                company_data[company_key]["status_bands"].append(response.status_band)
+            
+            # Also check for old company_tracker_id system
+            elif response.company_tracker_id:
                 company_id = response.company_tracker_id
                 
                 if company_id not in company_data:
@@ -2350,14 +2388,10 @@ async def get_submissions(
         # Format submissions
         submissions = []
         for response, profile in results:
-            # Get company name if exists
-            company_name = None
-            if response.company_tracker_id:
-                company = db.query(CompanyTracker).filter(
-                    CompanyTracker.id == response.company_tracker_id
-                ).first()
-                if company:
-                    company_name = company.company_name
+            # Get company name from profile (from Customer Profile form)
+            company_name = profile.company_name if profile.company_name else None
+            print(f"🔧 [DEBUG] Processing submission {response.id}: company_name = {company_name}")
+            print(f"🔧 [DEBUG] Profile data: company_name field = {getattr(profile, 'company_name', 'FIELD_NOT_FOUND')}")
             
             submissions.append({
                 'id': response.id,

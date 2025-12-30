@@ -134,6 +134,10 @@ async def get_financial_clinic_questions(
     # Get base questions
     questions = get_questions_for_profile(children_count=children)
     
+    # Create deep copies to avoid modifying the original base questions
+    import copy
+    questions = copy.deepcopy(questions)
+    
     # If company URL provided, check for variations (only if explicitly enabled)
     if company_url:
         from ..models import CompanyTracker, QuestionVariation, VariationSet
@@ -400,6 +404,7 @@ async def submit_financial_clinic_survey(
         # 2. Create or get profile
         profile_data = request.profile.dict() if request.profile else {}
         logger.info(f"📝 Profile data received: {profile_data}")
+        logger.info(f"📝 Company name in profile data: {profile_data.get('company_name', 'MISSING')}")
         
         # Check if profile exists by email
         existing_profile = None
@@ -407,6 +412,8 @@ async def submit_financial_clinic_survey(
             existing_profile = db.query(FinancialClinicProfile).filter(
                 FinancialClinicProfile.email == profile_data['email']
             ).first()
+            if existing_profile:
+                logger.info(f"📝 Found existing profile with company_name: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
         
         # Convert age to date_of_birth if age is provided but date_of_birth is not
         if 'age' in profile_data and profile_data['age'] and not profile_data.get('date_of_birth'):
@@ -425,6 +432,7 @@ async def submit_financial_clinic_survey(
                     setattr(existing_profile, key, value)
             profile = existing_profile
             logger.info(f"📝 Updated existing profile for: {existing_profile.email}")
+            logger.info(f"📝 Profile company_name after update: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
         else:
             # Create new profile with flexible fields for resumed surveys
             profile = FinancialClinicProfile(
@@ -437,10 +445,12 @@ async def submit_financial_clinic_survey(
                 income_range=profile_data.get('income_range', 'Not Specified'),
                 emirate=profile_data.get('emirate', 'Not Specified'),
                 email=profile_data.get('email', ''),
-                mobile_number=profile_data.get('mobile_number')
+                mobile_number=profile_data.get('mobile_number'),
+                company_name=profile_data.get('company_name')  # Add company_name field
             )
             db.add(profile)
             logger.info(f"📝 Created new profile for: {profile.email}")
+            logger.info(f"📝 New profile company_name: {getattr(profile, 'company_name', 'NOT_SET')}")
             db.flush()  # Get profile.id
         
         # 3. Create survey response
@@ -940,6 +950,54 @@ async def get_financial_clinic_history(
         "category_scores": r.category_scores,
         "questions_answered": r.questions_answered
     } for r in responses]
+
+
+@router.get("/latest/{email}")
+async def get_latest_financial_clinic_result(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get the latest Financial Clinic assessment result by email.
+    Public endpoint for results page access.
+    
+    Args:
+        email: User's email address
+        db: Database session
+        
+    Returns:
+        Latest assessment result with all details
+    """
+    from app.models import FinancialClinicResponse, FinancialClinicProfile
+    
+    # Get latest response for this email (Financial Clinic is standalone, doesn't use User model)
+    response = db.query(FinancialClinicResponse).join(FinancialClinicProfile).filter(
+        FinancialClinicProfile.email == email
+    ).order_by(FinancialClinicResponse.created_at.desc()).first()
+    
+    if not response:
+        raise HTTPException(status_code=404, detail="No assessment found for this user")
+    
+    return {
+        "id": response.id,
+        "total_score": response.total_score,
+        "status_band": response.status_band,
+        "category_scores": response.category_scores,
+        "insights": response.insights,
+        "products": response.product_recommendations,
+        "questions_answered": response.questions_answered,
+        "total_questions": response.total_questions,
+        "created_at": response.created_at.isoformat(),
+        "profile": {
+            "name": response.profile.name,
+            "date_of_birth": response.profile.date_of_birth,
+            "gender": response.profile.gender,
+            "nationality": response.profile.nationality,
+            "children": response.profile.children,
+            "employment_status": response.profile.employment_status,
+            "email": email
+        } if response.profile else None
+    }
 
 
 @router.get("/{response_id}")

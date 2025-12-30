@@ -92,6 +92,11 @@ class Settings(BaseSettings):
             "localhost", 
             "127.0.0.1", 
             "0.0.0.0",
+            "uae-financial-health-filters-68ab0c8434cb.herokuapp.com",
+            "financial-clinic.netlify.app",
+            "financialclinic.ae",      # On-prem production domain
+            "www.financialclinic.ae",  # On-prem production domain with www
+            ".financialclinic.ae",     # All subdomains of financialclinic.ae
             ".herokuapp.com",  # Allow all Heroku subdomains
             ".netlify.app",    # Allow all Netlify subdomains
         ]
@@ -116,12 +121,22 @@ class Settings(BaseSettings):
     DOWNLOAD_DIR: str = "./downloads"
     MAX_FILE_SIZE: int = 10485760  # 10MB
     
+    # PDF Download Security
+    PDF_TOKEN_EXPIRY_SECONDS: int = 604800  # Default 7 days (7 * 24 * 60 * 60)
+    
     # AWS S3 Configuration
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
     AWS_S3_BUCKET: str = ""
     USE_S3_STORAGE: bool = False  # Set to True to use S3 instead of local storage
+    
+    # NFS Storage Configuration (for on-prem deployment)
+    USE_NFS_STORAGE: bool = False  # Set to True to use NFS mounted storage
+    NFS_MOUNT_PATH: str = "/mnt/financialclinic"  # Local mount point for NFS share
+    NFS_REPORTS_SUBDIR: str = "reports"  # Subdirectory for PDF reports
+    NFS_ICONS_SUBDIR: str = "icons"  # Subdirectory for static icons
+    NFS_PUBLIC_URL_BASE: str = ""  # Base URL for accessing NFS files via web (e.g., https://financialclinic.nationalbonds.ae/storage)
     
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
@@ -142,6 +157,16 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return self.PRODUCTION_BACKEND_URL
         return self.BACKEND_BASE_URL
+    
+    @property
+    def static_assets_url(self) -> str:
+        """Get the appropriate URL for static assets (icons, images, etc.)."""
+        if self.USE_NFS_STORAGE and self.NFS_PUBLIC_URL_BASE:
+            # For on-prem deployment with nginx proxy
+            return self.NFS_PUBLIC_URL_BASE
+        else:
+            # For cloud deployment (Heroku) or development
+            return self.api_base_url
     
     @property
     def s3_pdf_base_url(self) -> str:

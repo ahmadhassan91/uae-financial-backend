@@ -1,10 +1,11 @@
 """Authentication routes for user registration, login, and token management."""
 from datetime import datetime, timedelta
 from typing import Any, Dict
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, AuditLog, SimpleSession
+from app.middleware.rate_limiter import limiter, OTP_REQUEST_LIMIT, OTP_VERIFY_LIMIT, AUTH_RATE_LIMIT
 from app.auth.schemas import (
     UserCreate, UserLogin, UserResponse, Token, 
     RefreshTokenRequest, ChangePassword, SimpleAuthRequest, SimpleAuthResponse,
@@ -186,17 +187,15 @@ async def refresh_access_token(
         )
         
         # Optionally create new refresh token (for enhanced security)
-        refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        new_refresh_token = create_access_token(
-            data={"sub": str(user.id), "type": "refresh"},
-            expires_delta=refresh_token_expires
+        new_refresh_token = create_refresh_token(
+            data={"sub": str(user.id), "email": user.email}
         )
         
         return {
             "access_token": access_token,
             "refresh_token": new_refresh_token,
             "token_type": "bearer",
-            "expires_in": expire_minutes * 60,  # Return in seconds
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # Return in seconds
             "user_type": "admin" if user.is_admin else "user"
         }
         
@@ -450,38 +449,30 @@ async def post_survey_registration(
 from pydantic import BaseModel, EmailStr
 from app.auth.otp_service import OTPService
 from app.reports.email_service import EmailReportService
+from app.auth.schemas import OTPRequest, OTPVerifyRequest
 import re
 
 
-class OTPRequest(BaseModel):
-    """Request schema for OTP generation."""
-    email: EmailStr
-    language: str = "en"
-
-
-class OTPVerifyRequest(BaseModel):
-    """Request schema for OTP verification."""
-    email: EmailStr
-    code: str
-
-
 @router.post("/otp/request")
+@limiter.limit(OTP_REQUEST_LIMIT)
 async def request_otp(
-    request: OTPRequest,
+    request: Request,
+    otp_request: OTPRequest,
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Request OTP code to be sent via email.
     
     Rate Limits:
-    - Maximum 3 OTPs per email per 15 minutes
+    - IP-based: 5 requests per minute
+    - Email-based: Maximum 5 OTPs per email per 15 minutes
     """
     # Debug: Log the received language
-    print(f"🌐 OTP Request - Language received: {request.language}")
-    print(f"📧 OTP Request - Email: {request.email}")
+    print(f"🌐 OTP Request - Language received: {otp_request.language}")
+    print(f"📧 OTP Request - Email: {otp_request.email}")
     
     # Validate email format (extra validation)
-    email = request.email.lower().strip()
+    email = otp_request.email.lower().strip()
     
     # Generate OTP
     result = OTPService.generate_otp(email, db)
@@ -498,7 +489,7 @@ async def request_otp(
         email_result = await email_service.send_otp_email(
             recipient_email=email,
             otp_code=result['code'],
-            language=request.language
+            language=otp_request.language
         )
         
         if not email_result['success']:
@@ -513,7 +504,7 @@ async def request_otp(
         audit_log = AuditLog(
             action="otp_requested",
             entity_type="otp",
-            details={"email": email, "language": request.language}
+            details={"email": email, "language": otp_request.language}
         )
         db.add(audit_log)
         db.commit()
@@ -535,19 +526,24 @@ async def request_otp(
 
 
 @router.post("/otp/verify", response_model=OTPVerifyResponse)
+@limiter.limit(OTP_VERIFY_LIMIT)
 async def verify_otp(
-    request: OTPVerifyRequest,
+    request: Request,
+    otp_verify: OTPVerifyRequest,
     db: Session = Depends(get_db)
 ) -> Any:
     """
     Verify OTP code and login/register user.
     
+    Rate Limits:
+    - IP-based: 10 requests per minute
+    
     Behavior:
     - If user exists: Login (create session)
     - If new user: Auto-create account and login
     """
-    email = request.email.lower().strip()
-    code = request.code.strip()
+    email = otp_verify.email.lower().strip()
+    code = otp_verify.code.strip()
     
     # Validate code format
     if not re.match(r'^\d{6}$', code):
@@ -556,21 +552,47 @@ async def verify_otp(
             detail="Invalid code format. Code must be 6 digits."
         )
     
-    # Verify OTP
-    result = OTPService.verify_otp(email, code, db)
+    # Get client info for security tracking
+    client_ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or \
+                request.headers.get("X-Real-IP", "") or \
+                (request.client.host if request.client else "unknown")
+    user_agent = request.headers.get("User-Agent", "")
+    
+    # Verify OTP with account lockout protection
+    result = OTPService.verify_otp(
+        email=email,
+        code=code,
+        db=db,
+        ip_address=client_ip,
+        user_agent=user_agent
+    )
     
     if not result['success']:
-        # Increment attempt count
+        # Increment attempt count on OTP record
         OTPService.increment_attempt(email, code, db)
         
-        # Audit log
+        # Audit log with security details
         audit_log = AuditLog(
             action="otp_verification_failed",
             entity_type="otp",
-            details={"email": email, "reason": result['message']}
+            details={
+                "email": email,
+                "reason": result['message'],
+                "is_locked": result.get('is_locked', False),
+                "remaining_attempts": result.get('remaining_attempts')
+            },
+            ip_address=client_ip,
+            user_agent=user_agent
         )
         db.add(audit_log)
         db.commit()
+        
+        # Return 429 if account is locked
+        if result.get('is_locked'):
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=result['message']
+            )
         
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -674,11 +696,12 @@ async def verify_otp(
 
 @router.post("/otp/resend")
 async def resend_otp(
-    request: OTPRequest,
+    request: Request,
+    otp_request: OTPRequest,
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
     Resend OTP code. Same rate limits apply.
     """
     # This is essentially the same as request_otp
-    return await request_otp(request, db)
+    return await request_otp(request, otp_request, db)

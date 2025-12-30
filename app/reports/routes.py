@@ -4,11 +4,16 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel, EmailStr
+import secrets
+import hashlib
+import time
+from pathlib import Path
 
 from app.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models import User, SurveyResponse, CustomerProfile
 from .delivery_service import ReportDeliveryService
+from app.config import settings
 
 
 router = APIRouter(prefix="/reports", tags=["reports"])
@@ -394,27 +399,155 @@ async def get_delivery_stats(
 
 from app.config import settings
 
-@router.get("/download-public/{file_token}")
-async def download_public_report(file_token: str):
-    """Public download endpoint for PDF reports via email links."""
-    import os
+# Note: PDF download endpoint removed - PDFs are now served directly from /static/reports
+# This simplifies the architecture and uses the same static file serving as other assets
+
+
+@router.get("/download-nfs/{filename}")
+async def download_nfs_report(filename: str):
+    """Download endpoint for PDF reports stored on NFS (on-prem deployment)."""
+    from app.reports.nfs_storage import nfs_storage
     
-    # Define downloads directory
-    downloads_dir = settings.DOWNLOAD_DIR
+    if not settings.USE_NFS_STORAGE:
+        raise HTTPException(
+            status_code=404,
+            detail="NFS storage is not enabled"
+        )
     
-    # Look for file matching the token
-    for filename in os.listdir(downloads_dir):
-        if filename.startswith(file_token) and filename.endswith('.pdf'):
-            file_path = os.path.join(downloads_dir, filename)
-            if os.path.exists(file_path):
-                return FileResponse(
-                    path=file_path,
-                    filename=f"financial_clinic_report.pdf",
-                    media_type="application/pdf",
-                    headers={"Content-Disposition": "attachment; filename=financial_clinic_report.pdf"}
-                )
+    # Validate filename to prevent path traversal
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
     
-    raise HTTPException(
-        status_code=404,
-        detail="Report file not found or expired"
+    # Get PDF from NFS storage
+    pdf_content = nfs_storage.get_pdf(filename)
+    
+    if pdf_content is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found or expired"
+        )
+    
+    from fastapi.responses import Response
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=financial_clinic_report.pdf"
+        }
     )
+
+
+# Token-based secure PDF download system
+download_tokens = {}  # In-memory storage for tokens (consider Redis for production)
+
+def generate_download_token(filename: str, expires_in: Optional[int] = None) -> str:
+    """Generate a secure token for PDF download (default from settings)."""
+    if expires_in is None:
+        expires_in = settings.PDF_TOKEN_EXPIRY_SECONDS
+        
+    token = secrets.token_urlsafe(32)
+    expiry = time.time() + expires_in
+    
+    # Store token data
+    download_tokens[token] = {
+        "filename": filename,
+        "expires": expiry,
+        "created": time.time()
+    }
+    
+    return token
+
+def validate_download_token(token: str) -> Optional[str]:
+    """Validate a download token and return filename if valid."""
+    if token not in download_tokens:
+        return None
+    
+    token_data = download_tokens[token]
+    
+    # Check if token has expired
+    if time.time() > token_data["expires"]:
+        del download_tokens[token]
+        return None
+    
+    return token_data["filename"]
+
+@router.get("/secure-download/{token}")
+async def download_report_secure(token: str):
+    """Secure PDF download endpoint using temporary tokens."""
+    filename = validate_download_token(token)
+    
+    if not filename:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid or expired download link"
+        )
+    
+    # Validate filename to prevent path traversal
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
+    
+    # Construct file path
+    static_reports_dir = Path(__file__).parent.parent / "static" / "reports"
+    file_path = static_reports_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found"
+        )
+    
+    # Allow multiple downloads (do not delete token)
+    # del download_tokens[token]
+    
+    return FileResponse(
+        path=file_path,
+        filename="financial_clinic_report.pdf",
+        media_type="application/pdf",
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
+
+@router.post("/generate-download-link")
+async def generate_download_link(
+    filename: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Generate a secure download link for a PDF report."""
+    # Validate filename
+    if '..' in filename or '/' in filename or '\\' in filename:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename"
+        )
+    
+    # Check if file exists
+    static_reports_dir = Path(__file__).parent.parent / "static" / "reports"
+    file_path = static_reports_dir / filename
+    
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Report file not found"
+        )
+    
+    # Generate secure token
+    expires_in = settings.PDF_TOKEN_EXPIRY_SECONDS
+    token = generate_download_token(filename, expires_in=expires_in)
+    
+    # Return secure URL
+    download_url = f"{settings.api_base_url}/api/v1/reports/secure-download/{token}"
+    
+    return {
+        "download_url": download_url,
+        "expires_in": expires_in,
+        "filename": filename
+    }
