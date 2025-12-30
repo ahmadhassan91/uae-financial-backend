@@ -178,12 +178,12 @@ class HTMLPDFService:
             from app.utils.svg_to_png import svg_base64_to_png_base64
             logos_are_png = True
             if national_bonds_logo_base64:
-                converted = svg_base64_to_png_base64(national_bonds_logo_base64, output_width=900)
+                converted = svg_base64_to_png_base64(national_bonds_logo_base64)
                 if converted == national_bonds_logo_base64:
                     logos_are_png = False
                 national_bonds_logo_base64 = converted
             if financial_clinic_logo_base64:
-                converted = svg_base64_to_png_base64(financial_clinic_logo_base64, output_width=900)
+                converted = svg_base64_to_png_base64(financial_clinic_logo_base64)
                 if converted == financial_clinic_logo_base64:
                     logos_are_png = False
                 financial_clinic_logo_base64 = converted
