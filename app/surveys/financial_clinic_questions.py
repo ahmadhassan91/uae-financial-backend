@@ -98,22 +98,22 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         FinancialClinicOption(
             value=5,
             label_en="More than 20% of my income",
-            label_ar="أكثر من \u200E20%\u200E من دخلي"
+            label_ar="\u2067أكثر من \u206620%\u2069 من دخلي\u2069"
         ),
         FinancialClinicOption(
-            value=4,
-            label_en="15% to 20% of my income",
-            label_ar="من \u200E15%\u200E إلى \u200E20%\u200E من دخلي"
-        ),
-        FinancialClinicOption(
-            value=3,
-            label_en="5% to 15% of my income",
-            label_ar="من \u200E5%\u200E إلى \u200E15%\u200E من دخلي"
-        ),
+                value=4,
+                label_en="15% to 20% of my income",
+                label_ar="\u200E20%\u200E من دخلي إلى \u200E15%\u200E"
+            ),
+            FinancialClinicOption(
+                value=3,
+                label_en="5% to 15% of my income",
+                label_ar="\u200E15%\u200E من دخلي إلى \u200E5%\u200E"
+            ),
         FinancialClinicOption(
             value=2,
             label_en="Up to 5% of my income",
-            label_ar="حتى \u200E5%\u200E من دخلي"
+           label_ar="\u2067حتى \u206650%\u2069 من دخلي\u2069"
         ),
         FinancialClinicOption(
             value=1,
