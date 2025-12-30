@@ -115,7 +115,7 @@ async def get_public_companies(
     limit: int = Query(100, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
-    query = db.query(CompanyDetails)
+    query = db.query(CompanyDetails).filter(CompanyDetails.is_active == True)
     
     if search:
         query = query.filter(
@@ -136,6 +136,54 @@ async def get_public_companies(
         }
         for company in companies
     ]
+
+
+@router.patch("/{company_id}/toggle-status")
+async def toggle_company_status(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Enable or disable a company."""
+    company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()
+    
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    company.is_active = not company.is_active
+    db.commit()
+    db.refresh(company)
+    
+    return {
+        "message": f"Company {'enabled' if company.is_active else 'disabled'} successfully",
+        "company": CompanyDetailsResponse.from_orm(company)
+    }
+
+
+@router.delete("/{company_id}")
+async def delete_company(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Delete a company permanently."""
+    print(f"🔧 [DEBUG] Backend: Delete request for company_id: {company_id}")
+    print(f"🔧 [DEBUG] Backend: User making request: {current_user.email}")
+    
+    company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()
+    
+    if not company:
+        print(f"🔧 [DEBUG] Backend: Company not found: {company_id}")
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    print(f"🔧 [DEBUG] Backend: Found company to delete: {company.company_name}")
+    
+    db.delete(company)
+    db.commit()
+    
+    print(f"🔧 [DEBUG] Backend: Company deleted successfully")
+    
+    return {"message": "Company deleted successfully"}
 
 
 @router.post("/customer-profile", response_model=CompanyCustomerProfileResponse)
