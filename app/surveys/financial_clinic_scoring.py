@@ -101,6 +101,7 @@ class FinancialClinicScorer:
         # Calculate category scores
         category_scores = {}
         total_score = 0.0
+        total_possible_score = 0.0
         
         for category in FinancialClinicCategory:
             category_score = self._calculate_category_score(
@@ -110,12 +111,19 @@ class FinancialClinicScorer:
             )
             category_scores[category.value] = category_score
             total_score += category_score.score
+            total_possible_score += category_score.max_possible
+        
+        # Normalize to 100-point scale
+        if total_possible_score > 0:
+            normalized_score = (total_score / total_possible_score) * 100
+        else:
+            normalized_score = 0.0
         
         # Determine overall status band
-        status_band = self._get_status_band(total_score)
+        status_band = self._get_status_band(normalized_score)
         
         return FinancialClinicScore(
-            total_score=round(total_score, 2),
+            total_score=round(normalized_score, 2),
             category_scores=category_scores,
             status_band=status_band,
             questions_answered=len(responses),
@@ -129,21 +137,28 @@ class FinancialClinicScorer:
         children_count: int = 0
     ) -> CategoryScore:
         """
-        Calculate score for a single category.
+        Calculate score for a specific category.
         
-        Formula:
-        Category Score = Σ(Answer Value × Question Weight) for all questions in category
-        
-        Example for Income Stream:
-        - Q1 (5% weight): Answer=4 → 4 × 5 = 20 points
-        - Q2 (10% weight): Answer=5 → 5 × 10 = 50 points
-        - Total: 20 + 50 = 70 points out of 75 possible (93.3%)
-        - But category is only 15% of total, so: 93.3% × 15% = 14.0 points
+        Args:
+            category: The category to calculate
+            responses: Dict of question_id -> answer_value (1-5)
+            children_count: Number of children (affects Q15 inclusion)
+            
+        Returns:
+            CategoryScore with detailed breakdown
+            
+        Example calculation for INCOME_STREAM (15% of total):
+        - User answers: fc_q1=4, fc_q2=3
+        - After inversion: fc_q1=2, fc_q2=3 (6-4=2, 6-3=3)
+        - Points earned: (2 × 5) + (3 × 10) = 10 + 30 = 40
+        - Max possible: (5 × 5) + (5 × 10) = 25 + 50 = 75
+        - Percentage: 40/75 = 53.3%
+        - But category is only 15% of total, so: 53.3% × 15% = 8.0 points
         """
-        # Get ALL questions for this category (including conditional ones)
-        # We need to calculate using all questions to maintain proper weighting
+        # Get questions that were actually answered for this category
+        applicable_questions = get_questions_for_profile(children_count=children_count)
         category_questions = [
-            q for q in FINANCIAL_CLINIC_QUESTIONS
+            q for q in applicable_questions
             if q.category == category
         ]
         
@@ -164,10 +179,13 @@ class FinancialClinicScorer:
             answer_value = responses.get(question.id, 0)
             question_weight = question.weight
             
-            # Points earned = answer_value × weight
-            actual_points += answer_value * question_weight
+            # Invert the score: 1 = best (6-1=5 points), 5 = worst (6-5=1 point)
+            inverted_value = 6 - answer_value  # Converts 1→5, 2→4, 3→3, 4→2, 5→1
             
-            # Max possible = 5 (best answer) × weight
+            # Points earned = inverted_value × weight
+            actual_points += inverted_value * question_weight
+            
+            # Max possible = 5 (best inverted value) × weight
             max_possible += 5 * question_weight
         
         # Calculate percentage score for this category
@@ -179,6 +197,11 @@ class FinancialClinicScorer:
         # The category contributes its percentage of total score
         # For example, if Income Stream (15%) scores 80%, it contributes 12 points to total
         category_weight = CATEGORY_WEIGHTS.get(category, 0)
+        
+        # Special case: PROTECTING_FAMILY only uses 5% when no children (only fc_q14)
+        if category == FinancialClinicCategory.PROTECTING_FAMILY and children_count == 0:
+            category_weight = 5  # Only fc_q14 is included, so use 5% instead of 10%
+        
         contribution_to_total = (category_percentage / 100) * category_weight
         
         # Determine status level
