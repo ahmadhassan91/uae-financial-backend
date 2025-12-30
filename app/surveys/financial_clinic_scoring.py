@@ -179,14 +179,14 @@ class FinancialClinicScorer:
             answer_value = responses.get(question.id, 0)
             question_weight = question.weight
             
-            # Invert score: 1 = best (5 points), 5 = worst (1 point)
-            # We need to invert because 1 should give highest score, 5 should give lowest
-            inverted_value = 6 - answer_value  # Converts 1→5, 2→4, 3→3, 4→2, 5→1
+            # Score: 5 = best (5 points), 1 = worst (1 point)
+            # No inversion needed - question options are already correctly weighted
+            score_value = answer_value
             
-            # Points earned = inverted_value × weight
-            actual_points += inverted_value * question_weight
+            # Points earned = score_value × weight
+            actual_points += score_value * question_weight
             
-            # Max possible = 5 (best inverted value) × weight
+            # Max possible = 5 (best score) × weight
             max_possible += 5 * question_weight
         
         # Calculate percentage score for this category

@@ -126,12 +126,11 @@ class SurveyScorer:
                     continue
                     
                 if question_id in response_map:
-                    # Invert the score: 1 = best (5 points), 5 = worst (1 point)
-                    # First option should be maximum score, last option should be minimum
+                    # Score: 5 = best (5 points), 1 = worst (1 point)
+                    # No inversion needed - question options are already correctly weighted
                     answer_value = response_map[question_id]
-                    inverted_value = 6 - answer_value  # Converts 1→5, 2→4, 3→3, 4→2, 5→1
                     
-                    pillar_score += inverted_value
+                    pillar_score += answer_value
                     pillar_question_count += 1
                     pillar_weight += self.QUESTION_WEIGHTS[question_id]
             
