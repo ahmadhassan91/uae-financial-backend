@@ -179,7 +179,8 @@ class FinancialClinicScorer:
             answer_value = responses.get(question.id, 0)
             question_weight = question.weight
             
-            # Invert the score: 1 = best (6-1=5 points), 5 = worst (6-5=1 point)
+            # Invert score: 1 = best (5 points), 5 = worst (1 point)
+            # We need to invert because 1 should give highest score, 5 should give lowest
             inverted_value = 6 - answer_value  # Converts 1→5, 2→4, 3→3, 4→2, 5→1
             
             # Points earned = inverted_value × weight
