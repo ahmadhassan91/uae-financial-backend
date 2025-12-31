@@ -6,7 +6,7 @@ import sys
 import os
 
 # Add the backend directory to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 
 from app.database import SessionLocal
 from app.models import User
@@ -26,8 +26,8 @@ def reset_admin_password():
         
         print(f"Found admin user: {admin_user.email}")
         
-        # Reset password to admin123
-        new_password = "admin123"
+        # Reset password to a strong password
+        new_password = "Nb@Admin2024!Secure"
         hashed_password = get_password_hash(new_password)
         
         admin_user.hashed_password = hashed_password
