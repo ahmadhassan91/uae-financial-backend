@@ -15,6 +15,7 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 email-validator==2.3.0
+slowapi==0.1.9
 
 # Environment & Configuration
 python-dotenv==1.0.0
@@ -46,9 +47,10 @@ APScheduler==3.10.4
 
 # Email & Reports
 jinja2==3.1.2
-weasyprint==63.1
+weasyprint>=67
 reportlab==4.0.7
 openpyxl==3.1.2
+cairosvg>=2.5.0
 
 # Arabic Text Processing
 arabic-reshaper==3.0.0

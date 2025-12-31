@@ -38,22 +38,34 @@
 
       /* Header (WeasyPrint-safe: table layout) */
       .header {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin-bottom: 8px;
+        padding: 0;
+        gap: 0;
       }
-      .header-cell {
-        display: table-cell;
-        vertical-align: middle;
-        text-align: center;
-        width: 49%;
+
+      .logo-left {
+        height: 70px;
+        width: auto;
+        max-width: 250px;
+        object-fit: contain;
+        margin-right: 20px;
+      }
+
+      .logo-right {
+        height: 70px;
+        width: auto;
+        max-width: 250px;
+        object-fit: contain;
+        margin-left: 20px;
       }
       .header-divider {
-        display: table-cell;
         width: 2px;
         height: 50px;
         background-color: #c2d1d9;
+        flex-shrink: 0;
       }
       .logo-left,
       .logo-right {
@@ -188,10 +200,18 @@
         height: 36px;
         line-height: 36px;
       }
-      .band-poor { background: #f00c01; }
-      .band-fair { background: #fe6521; }
-      .band-good { background: #fca924; }
-      .band-excellent { background: #6cc922; }
+      .band-poor {
+        background: #f00c01;
+      }
+      .band-fair {
+        background: #fe6521;
+      }
+      .band-good {
+        background: #fca924;
+      }
+      .band-excellent {
+        background: #6cc922;
+      }
 
       /* Section Title */
       .section-title {
@@ -357,25 +377,21 @@
     <div class="container">
       <!-- Header with Logos -->
       <div class="header">
-        <div class="header-cell">
-          {% if national_bonds_logo_base64 %}
-          <img
-            src="data:image/{% if logos_are_png %}png{% else %}svg+xml{% endif %};base64,{{ national_bonds_logo_base64 }}"
-            alt="National Bonds"
-            class="logo-left"
-          />
-          {% endif %}
-        </div>
+        {% if national_bonds_logo_base64 %}
+        <img
+          src="data:image/svg+xml;base64,{{ national_bonds_logo_base64 }}"
+          alt="National Bonds"
+          class="logo-left"
+        />
+        {% endif %}
         <div class="header-divider"></div>
-        <div class="header-cell">
-          {% if financial_clinic_logo_base64 %}
-          <img
-            src="data:image/{% if logos_are_png %}png{% else %}svg+xml{% endif %};base64,{{ financial_clinic_logo_base64 }}"
-            alt="Financial Clinic"
-            class="logo-right"
-          />
-          {% endif %}
-        </div>
+        {% if financial_clinic_logo_base64 %}
+        <img
+          src="data:image/svg+xml;base64,{{ financial_clinic_logo_base64 }}"
+          alt="Financial Clinic"
+          class="logo-right"
+        />
+        {% endif %}
       </div>
 
       <!-- Golden accent line below logos -->
@@ -441,10 +457,22 @@
           Score{% endif %}
         </h2>
         <div class="score-bands">
-          <div class="score-band band-excellent">{% if language == 'ar' %}ممتاز<br>80-100{% else %}80-100<br>Excellent{% endif %}</div>
-          <div class="score-band band-good">{% if language == 'ar' %}جيد<br>60-79{% else %}60-79<br>Good{% endif %}</div>
-          <div class="score-band band-fair">{% if language == 'ar' %}متوسط<br>30-59{% else %}30-59<br>Fair{% endif %}</div>
-          <div class="score-band band-poor">{% if language == 'ar' %}يحتاج إلى تحسين<br>1-29{% else %}1-29<br>Needs Improvement{% endif %}</div>
+          <div class="score-band band-excellent">
+            {% if language == 'ar' %}ممتاز<br />80-100{% else %}80-100<br />Excellent{%
+            endif %}
+          </div>
+          <div class="score-band band-good">
+            {% if language == 'ar' %}جيد<br />60-79{% else %}60-79<br />Good{%
+            endif %}
+          </div>
+          <div class="score-band band-fair">
+            {% if language == 'ar' %}متوسط<br />30-59{% else %}30-59<br />Fair{%
+            endif %}
+          </div>
+          <div class="score-band band-poor">
+            {% if language == 'ar' %}يحتاج إلى تحسين<br />1-29{% else %}1-29<br />Needs
+            Improvement{% endif %}
+          </div>
         </div>
       </div>
 
