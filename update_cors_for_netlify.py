@@ -6,6 +6,7 @@ This script adds the specific Netlify domain to the allowed origins
 
 import os
 import sys
+from typing import List
 
 def update_cors_config():
     """Update the CORS configuration to include the Netlify domain."""
