@@ -1,6 +1,6 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Union
 import os
 import json
 
