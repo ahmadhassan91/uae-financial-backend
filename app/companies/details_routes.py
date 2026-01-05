@@ -309,23 +309,6 @@ async def get_public_companies(
     ]
 
 
-@router.get("/public-companies")
-async def get_public_companies(db: Session = Depends(get_db)):
-    """Get active companies for public dropdown (no authentication required)."""
-    try:
-        companies = db.query(CompanyDetails).filter(
-            CompanyDetails.is_active == True
-        ).order_by(CompanyDetails.company_name).all()
-        
-        return [
-            {
-                "id": company.id,
-                "name": company.company_name
-            }
-            for company in companies
-        ]
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching companies: {str(e)}")
 
 
 @router.put("/{company_id}", response_model=CompanyDetailsResponse)
