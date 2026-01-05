@@ -33,6 +33,56 @@ def filter_unique_users(responses):
     
     return list(email_to_latest.values())
 
+def calculate_age_from_dob(dob_string: str) -> int:
+    """Calculate age from date string (supports DD/MM/YYYY and YYYY-MM-DD formats)."""
+    from datetime import datetime
+    try:
+        # Try DD/MM/YYYY format first
+        if '/' in dob_string:
+            day, month, year = map(int, dob_string.split('/'))
+        # Try YYYY-MM-DD format
+        elif '-' in dob_string:
+            year, month, day = map(int, dob_string.split('-'))
+        else:
+            return 0  # Unknown format
+            
+        birth_date = datetime(year, month, day)
+        today = datetime.now()
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        return age
+    except:
+        return 0  # Return 0 if parsing fails
+
+def filter_by_age_groups(responses: List, age_groups: List[str]) -> List:
+    """Filter responses by age groups using Python calculation."""
+    if not age_groups:
+        return responses
+    
+    filtered_responses = []
+    for response in responses:
+        if hasattr(response, 'profile') and response.profile.date_of_birth:
+            age = calculate_age_from_dob(response.profile.date_of_birth)
+            
+            # Check if age falls into any of the selected age groups
+            for age_group in age_groups:
+                if age_group == '18-25' and 18 <= age <= 25:
+                    filtered_responses.append(response)
+                    break
+                elif age_group == '26-35' and 26 <= age <= 35:
+                    filtered_responses.append(response)
+                    break
+                elif age_group == '36-45' and 36 <= age <= 45:
+                    filtered_responses.append(response)
+                    break
+                elif age_group == '46-55' and 46 <= age <= 55:
+                    filtered_responses.append(response)
+                    break
+                elif age_group == '55+' and age >= 55:
+                    filtered_responses.append(response)
+                    break
+    
+    return filtered_responses
+
 def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session):
     """
     Apply demographic filters to a SQLAlchemy query.
@@ -49,52 +99,9 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
     
     # Age groups filter - Financial Clinic uses date_of_birth, so we need to calculate age
     if filters.get('age_groups'):
-        from sqlalchemy import extract, func, and_
-        from datetime import datetime
-        
-        age_conditions = []
-        for age_group in filters['age_groups']:
-            if age_group == '18-25':
-                # Age between 18 and 25 inclusive
-                age_conditions.append(
-                    and_(
-                        # Calculate age from DD/MM/YYYY format
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 18,
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 25
-                    )
-                )
-            elif age_group == '26-35':
-                # Age between 26 and 35 inclusive
-                age_conditions.append(
-                    and_(
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 26,
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 35
-                    )
-                )
-            elif age_group == '36-45':
-                # Age between 36 and 45 inclusive
-                age_conditions.append(
-                    and_(
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 36,
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 45
-                    )
-                )
-            elif age_group == '46-55':
-                # Age between 46 and 55 inclusive
-                age_conditions.append(
-                    and_(
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 46,
-                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 55
-                    )
-                )
-            elif age_group == '55+':
-                # Age 55 and above
-                age_conditions.append(
-                    extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 55
-                )
-        
-        if age_conditions:
-            query = query.filter(or_(*age_conditions))
+        # For now, we'll filter in Python after getting the data
+        # This is less efficient but more reliable for DD/MM/YYYY format
+        pass  # Filtering will be done after query execution
     
     # Gender filter
     if filters.get('genders'):
@@ -1489,6 +1496,10 @@ async def get_overview_metrics(
         query = apply_demographic_filters(query, filters, db)
         
         responses = query.all()
+        
+        # Apply age group filtering (done in Python for DD/MM/YYYY format)
+        if filters.get('age_groups'):
+            responses = filter_by_age_groups(responses, filters['age_groups'])
         
         # Get total responses (before unique filter)
         all_responses_count = len(responses)
