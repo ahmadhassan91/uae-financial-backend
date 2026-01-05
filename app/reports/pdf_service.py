@@ -414,7 +414,7 @@ class PDFReportService:
             legend.dividerOffsY = 4.5
             legend.subCols.rpad = 30
             
-            legend.colorNamePairs = [(colors_list[i], labels[i]) for i in range(len(labels))]
+            legend.colorNamePairs = [(colors_List[i], labels[i]) for i in range(len(labels))]
             drawing.add(legend)
             
             return drawing

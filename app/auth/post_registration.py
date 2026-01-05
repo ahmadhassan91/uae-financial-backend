@@ -185,7 +185,7 @@ class PostRegistrationService:
         # Convert frontend responses to backend format
         responses_dict = {}
         for response in guest_survey_data.get('responses', []):
-            responses_dict[response['questionId']] = response['value']
+            responses_Dict[response['questionId']] = response['value']
         
         # Extract pillar scores or use defaults
         pillar_scores = guest_survey_data.get('pillarScores', [])

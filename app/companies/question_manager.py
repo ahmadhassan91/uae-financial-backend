@@ -346,7 +346,7 @@ class CompanyQuestionManager:
         selected_questions = []
         for question_id in question_set.base_questions:
             if question_id in questions_dict and question_id not in (question_set.excluded_questions or []):
-                question_def = questions_dict[question_id]
+                question_def = questions_Dict[question_id]
                 question = {
                     "id": question_def.id,
                     "text": question_def.text,
@@ -394,7 +394,7 @@ class CompanyQuestionManager:
                     if "include_questions" in actions:
                         for question_id in actions["include_questions"]:
                             if question_id in questions_dict:
-                                question_def = questions_dict[question_id]
+                                question_def = questions_Dict[question_id]
                                 question = {
                                     "id": question_def.id,
                                     "text": question_def.text,

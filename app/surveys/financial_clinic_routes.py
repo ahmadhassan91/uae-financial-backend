@@ -452,9 +452,9 @@ async def submit_financial_clinic_survey(
             profile_id=profile.id,
             company_tracker_id=company_tracker_id,
             answers=request.answers,
-            total_score=result_dict['total_score'],
-            status_band=result_dict['status_band'],
-            category_scores=result_dict['category_scores'],
+            total_score=result_Dict['total_score'],
+            status_band=result_Dict['status_band'],
+            category_scores=result_Dict['category_scores'],
             insights=result_dict.get('insights', []),
             product_recommendations=result_dict.get('products', []),
             questions_answered=result_dict.get('questions_answered', len(request.answers)),
@@ -476,8 +476,8 @@ async def submit_financial_clinic_survey(
                 department=profile_data.get('department'),
                 position_level=None,
                 responses=request.answers,
-                overall_score=result_dict['total_score'],
-                category_scores=result_dict['category_scores']
+                overall_score=result_Dict['total_score'],
+                category_scores=result_Dict['category_scores']
             )
             db.add(company_assessment)
             db.commit()

@@ -1,6 +1,6 @@
 """Pydantic schemas for consultation requests."""
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 
 
@@ -66,7 +66,7 @@ class ConsultationRequestFilters(BaseModel):
 
 class ScheduledEmailCreate(BaseModel):
     """Schema for creating a scheduled email."""
-    recipient_emails: list[EmailStr]
+    recipient_emails: List[EmailStr]
     subject: Optional[str] = None
     scheduled_datetime: datetime
     status_filter: Optional[str] = None
@@ -78,7 +78,7 @@ class ScheduledEmailCreate(BaseModel):
 class ScheduledEmailResponse(BaseModel):
     """Schema for scheduled email response."""
     id: int
-    recipient_emails: list[str]
+    recipient_emails: List[str]
     subject: str
     scheduled_datetime: datetime
     status_filter: Optional[str]
