@@ -49,12 +49,50 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
     
     # Age groups filter - Financial Clinic uses date_of_birth, so we need to calculate age
     if filters.get('age_groups'):
+        from sqlalchemy import extract, func, and_
+        from datetime import datetime
+        
         age_conditions = []
         for age_group in filters['age_groups']:
-            # For Financial Clinic, we need to parse the date_of_birth field
-            # This is complex to do in SQL with DD/MM/YYYY format, so we'll skip age filtering for now
-            # TODO: Implement age calculation from date_of_birth in DD/MM/YYYY format
-            pass
+            if age_group == '18-25':
+                # Age between 18 and 25 inclusive
+                age_conditions.append(
+                    and_(
+                        # Calculate age from DD/MM/YYYY format
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 18,
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 25
+                    )
+                )
+            elif age_group == '26-35':
+                # Age between 26 and 35 inclusive
+                age_conditions.append(
+                    and_(
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 26,
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 35
+                    )
+                )
+            elif age_group == '36-45':
+                # Age between 36 and 45 inclusive
+                age_conditions.append(
+                    and_(
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 36,
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 45
+                    )
+                )
+            elif age_group == '46-55':
+                # Age between 46 and 55 inclusive
+                age_conditions.append(
+                    and_(
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 46,
+                        extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) >= datetime.now().year - 55
+                    )
+                )
+            elif age_group == '55+':
+                # Age 55 and above
+                age_conditions.append(
+                    extract('year', func.to_date(func.replace(FinancialClinicProfile.date_of_birth, '/', '-'), 'DD-MM-YYYY')) <= datetime.now().year - 55
+                )
+        
         if age_conditions:
             query = query.filter(or_(*age_conditions))
     
