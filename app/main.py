@@ -21,6 +21,7 @@ from app.surveys.dynamic_routes import router as dynamic_questions_router
 from app.companies.routes import router as companies_router
 from app.companies.question_routes import router as company_questions_router
 from app.companies.url_config_routes import router as url_config_router
+from app.companies.details_routes import router as companies_details_router
 from app.reports.routes import router as reports_router
 from app.localization.routes import router as localization_router
 from app.admin.question_variation_routes import router as admin_question_variation_router
@@ -238,6 +239,7 @@ app.include_router(consultations_router, prefix="/api/v1")  # Consultation reque
 app.include_router(companies_router, prefix="/api/v1")
 app.include_router(company_questions_router, prefix="/api/v1")
 app.include_router(url_config_router, prefix="/api/v1")
+app.include_router(companies_details_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(localization_router, prefix="/api/v1")
 app.include_router(consent_router, prefix="/api/v1")  # PDPL-compliant consent management
