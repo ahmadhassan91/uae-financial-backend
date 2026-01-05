@@ -47,14 +47,71 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
     """
     from app.models import FinancialClinicProfile, CompanyTracker
     
-    # Age groups filter - Financial Clinic uses date_of_birth, so we need to calculate age
+    # Age groups filter - Financial Clinic uses date_of_birth in DD/MM/YYYY format
     if filters.get('age_groups'):
+        from sqlalchemy import text, or_
         age_conditions = []
         for age_group in filters['age_groups']:
-            # For Financial Clinic, we need to parse the date_of_birth field
-            # This is complex to do in SQL with DD/MM/YYYY format, so we'll skip age filtering for now
-            # TODO: Implement age calculation from date_of_birth in DD/MM/YYYY format
-            pass
+            if age_group == '15-24':
+                # Age 15-24: born between 2001-2010 (assuming current year 2025)
+                age_conditions.append(text("""
+                    CASE 
+                        WHEN financial_clinic_profiles.date_of_birth ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' 
+                             AND financial_clinic_profiles.date_of_birth NOT LIKE '%/02/29%'
+                             AND (SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer <= 2010 
+                                  AND SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer >= 2001)
+                        THEN TRUE
+                        ELSE FALSE
+                    END
+                """))
+            elif age_group == '25-34':
+                # Age 25-34: born between 1991-2000
+                age_conditions.append(text("""
+                    CASE 
+                        WHEN financial_clinic_profiles.date_of_birth ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' 
+                             AND financial_clinic_profiles.date_of_birth NOT LIKE '%/02/29%'
+                             AND (SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer <= 2000 
+                                  AND SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer >= 1991)
+                        THEN TRUE
+                        ELSE FALSE
+                    END
+                """))
+            elif age_group == '35-44':
+                # Age 35-44: born between 1981-1990
+                age_conditions.append(text("""
+                    CASE 
+                        WHEN financial_clinic_profiles.date_of_birth ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' 
+                             AND financial_clinic_profiles.date_of_birth NOT LIKE '%/02/29%'
+                             AND (SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer <= 1990 
+                                  AND SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer >= 1981)
+                        THEN TRUE
+                        ELSE FALSE
+                    END
+                """))
+            elif age_group == '45-54':
+                # Age 45-54: born between 1971-1980
+                age_conditions.append(text("""
+                    CASE 
+                        WHEN financial_clinic_profiles.date_of_birth ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' 
+                             AND financial_clinic_profiles.date_of_birth NOT LIKE '%/02/29%'
+                             AND (SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer <= 1980 
+                                  AND SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer >= 1971)
+                        THEN TRUE
+                        ELSE FALSE
+                    END
+                """))
+            elif age_group == '55+':
+                # Age 55+: born before 1970
+                age_conditions.append(text("""
+                    CASE 
+                        WHEN financial_clinic_profiles.date_of_birth ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' 
+                             AND financial_clinic_profiles.date_of_birth NOT LIKE '%/02/29%'
+                             AND SUBSTRING(financial_clinic_profiles.date_of_birth, 7, 4)::integer < 1971
+                        THEN TRUE
+                        ELSE FALSE
+                    END
+                """))
+        
         if age_conditions:
             query = query.filter(or_(*age_conditions))
     
@@ -97,7 +154,7 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
         if children_conditions:
             query = query.filter(or_(*children_conditions))
     
-    # Company filter
+    # Unique URL filter (CompanyTracker - legacy system)
     if filters.get('companies'):
         # Get company IDs from company names or URLs
         company_trackers = db.query(CompanyTracker).filter(
@@ -112,9 +169,23 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
             from app.models import FinancialClinicResponse
             query = query.filter(FinancialClinicResponse.company_tracker_id.in_(company_ids))
         else:
-            # If companies were requested but none found, return empty result
-            from sqlalchemy import literal
-            query = query.filter(literal(False))
+            # If no companies found, return empty result
+            return []
+
+    # Company filter (CompanyDetails - new system)
+    if filters.get('activeCompanies'):
+        from app.models import CompanyDetails, FinancialClinicProfile
+        
+        # Get company IDs from active companies
+        active_company_ids = [int(company_id) for company_id in filters['activeCompanies']]
+        
+        # Find profiles linked to these companies
+        profile_ids_with_companies = db.query(FinancialClinicProfile.id).filter(
+            FinancialClinicProfile.company_details_id.in_(active_company_ids)
+        ).subquery()
+        
+        # Filter responses by profiles with these companies
+        query = query.filter(FinancialClinicProfile.id.in_(profile_ids_with_companies))
     
     return query
 
@@ -181,7 +252,8 @@ def parse_filter_params(
     employment_statuses: Optional[str] = None,
     income_ranges: Optional[str] = None,
     children: Optional[str] = None,
-    companies: Optional[str] = None
+    companies: Optional[str] = None,
+    activeCompanies: Optional[str] = None
 ) -> Dict[str, List[str]]:
     """Parse comma-separated filter parameters into lists."""
     filters = {}
@@ -202,6 +274,8 @@ def parse_filter_params(
         filters['children'] = [c.strip() for c in children.split(',')]
     if companies:
         filters['companies'] = [c.strip() for c in companies.split(',')]
+    if activeCompanies:
+        filters['activeCompanies'] = [ac.strip() for ac in activeCompanies.split(',')]
     
     return filters
 
@@ -286,6 +360,7 @@ async def get_employment_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get breakdown by employment status."""
@@ -295,7 +370,7 @@ async def get_employment_breakdown(
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         query = db.query(
@@ -346,6 +421,7 @@ async def get_emirate_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get breakdown by emirate."""
@@ -355,7 +431,7 @@ async def get_emirate_breakdown(
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         query = db.query(
@@ -401,6 +477,7 @@ async def get_children_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get breakdown by number of children."""
@@ -410,7 +487,7 @@ async def get_children_breakdown(
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         query = db.query(
@@ -497,6 +574,7 @@ async def get_income_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get breakdown by income range."""
@@ -506,7 +584,7 @@ async def get_income_breakdown(
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         query = db.query(
@@ -583,6 +661,7 @@ async def get_gender_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get gender distribution breakdown."""
@@ -592,7 +671,7 @@ async def get_gender_breakdown(
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         query = db.query(
@@ -692,6 +771,7 @@ async def export_simple_admin_csv(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
@@ -703,7 +783,7 @@ async def export_simple_admin_csv(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
 
         # Build base query
@@ -890,6 +970,7 @@ async def export_simple_admin_excel(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
@@ -900,7 +981,7 @@ async def export_simple_admin_excel(
 
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
 
         # Build base query using correct Financial Clinic models
@@ -1426,6 +1507,7 @@ async def get_overview_metrics(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get overview metrics (KPIs) for the admin dashboard."""
@@ -1435,7 +1517,7 @@ async def get_overview_metrics(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1531,6 +1613,7 @@ async def get_score_distribution(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get score distribution by status bands."""
@@ -1540,7 +1623,7 @@ async def get_score_distribution(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1595,6 +1678,7 @@ async def get_category_performance(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get category performance (6 categories)."""
@@ -1604,7 +1688,7 @@ async def get_category_performance(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1707,6 +1791,7 @@ async def get_nationality_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get nationality breakdown (Emirati vs Non-Emirati)."""
@@ -1716,7 +1801,7 @@ async def get_nationality_breakdown(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1777,6 +1862,7 @@ async def get_age_breakdown(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get age breakdown."""
@@ -1786,7 +1872,7 @@ async def get_age_breakdown(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1901,6 +1987,7 @@ async def get_time_series(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get time series data (submissions over time)."""
@@ -1910,7 +1997,7 @@ async def get_time_series(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -1981,6 +2068,7 @@ async def get_companies_analytics(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get companies analytics."""
@@ -1990,7 +2078,7 @@ async def get_companies_analytics(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -2013,7 +2101,26 @@ async def get_companies_analytics(
         company_data = {}
         
         for response in unique_responses:
-            if response.company_tracker_id:
+            # Check for company from profile.company_name (new CSV system)
+            profile = db.query(FinancialClinicProfile).filter(
+                FinancialClinicProfile.id == response.profile_id
+            ).first()
+            
+            if profile and profile.company_name:
+                company_key = f"profile_{profile.company_name}"
+                
+                if company_key not in company_data:
+                    company_data[company_key] = {
+                        "company_name": profile.company_name,
+                        "scores": [],
+                        "status_bands": []
+                    }
+                
+                company_data[company_key]["scores"].append(response.total_score)
+                company_data[company_key]["status_bands"].append(response.status_band)
+            
+            # Also check for old company_tracker_id system
+            elif response.company_tracker_id:
                 company_id = response.company_tracker_id
                 
                 if company_id not in company_data:
@@ -2070,6 +2177,7 @@ async def get_score_analytics_table(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get score analytics table (question-level breakdown by nationality).
@@ -2084,7 +2192,7 @@ async def get_score_analytics_table(
         # Parse filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, companies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
         
         # Get all responses with filters applied
@@ -2369,14 +2477,10 @@ async def get_submissions(
         # Format submissions
         submissions = []
         for response, profile in results:
-            # Get company name if exists
-            company_name = None
-            if response.company_tracker_id:
-                company = db.query(CompanyTracker).filter(
-                    CompanyTracker.id == response.company_tracker_id
-                ).first()
-                if company:
-                    company_name = company.company_name
+            # Get company name from profile (from Customer Profile form)
+            company_name = profile.company_name if profile.company_name else None
+            print(f"🔧 [DEBUG] Processing submission {response.id}: company_name = {company_name}")
+            print(f"🔧 [DEBUG] Profile data: company_name field = {getattr(profile, 'company_name', 'FIELD_NOT_FOUND')}")
             
             submissions.append({
                 'id': response.id,

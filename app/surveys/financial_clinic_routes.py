@@ -76,6 +76,7 @@ class ProfileData(BaseModel):
     
     # Optional fields
     mobile_number: Optional[str] = None
+    company_name: Optional[str] = None  # Company selected from dropdown
 
 
 class FinancialClinicCalculateRequest(BaseModel):
@@ -404,6 +405,27 @@ async def submit_financial_clinic_survey(
         # 2. Create or get profile
         profile_data = request.profile.dict() if request.profile else {}
         logger.info(f"📝 Profile data received: {profile_data}")
+        logger.info(f"📝 Company name in profile data: {profile_data.get('company_name', 'MISSING')}")
+        
+        # Link company to CompanyDetails if company_name is provided
+        company_details_id = None
+        company_name = profile_data.get('company_name')
+        logger.info(f"📝 Company name from profile: {company_name}")
+        
+        if company_name and company_name.strip():
+            from app.models import CompanyDetails
+            logger.info(f"🔍 Searching for company: '{company_name.strip()}'")
+            company_details = db.query(CompanyDetails).filter(
+                CompanyDetails.company_name == company_name.strip(),
+                CompanyDetails.is_active == True
+            ).first()
+            if company_details:
+                company_details_id = company_details.id
+                logger.info(f"📝 Linked profile to CompanyDetails: {company_details.company_name} (ID: {company_details.id})")
+            else:
+                logger.warning(f"⚠️ Company '{company_name}' not found in CompanyDetails or inactive")
+        else:
+            logger.info(f"📝 No company name provided or empty")
         
         # Check if profile exists by email
         existing_profile = None
@@ -411,6 +433,8 @@ async def submit_financial_clinic_survey(
             existing_profile = db.query(FinancialClinicProfile).filter(
                 FinancialClinicProfile.email == profile_data['email']
             ).first()
+            if existing_profile:
+                logger.info(f"📝 Found existing profile with company_name: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
         
         # Convert age to date_of_birth if age is provided but date_of_birth is not
         if 'age' in profile_data and profile_data['age'] and not profile_data.get('date_of_birth'):
@@ -427,8 +451,16 @@ async def submit_financial_clinic_survey(
             for key, value in profile_data.items():
                 if hasattr(existing_profile, key) and value is not None and value != "":
                     setattr(existing_profile, key, value)
+                    logger.info(f"📝 Updated {key}: {value}")
+            # Update company_details_id if found
+            if company_details_id:
+                existing_profile.company_details_id = company_details_id
+                logger.info(f"📝 Updated company_details_id: {company_details_id}")
             profile = existing_profile
             logger.info(f"📝 Updated existing profile for: {existing_profile.email}")
+            logger.info(f"📝 Profile company_name after update: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
+            logger.info(f"📝 Profile company_details_id after update: {getattr(existing_profile, 'company_details_id', 'NOT_SET')}")
+            db.flush()  # Save changes to database
         else:
             # Create new profile with flexible fields for resumed surveys
             profile = FinancialClinicProfile(
@@ -441,10 +473,13 @@ async def submit_financial_clinic_survey(
                 income_range=profile_data.get('income_range', 'Not Specified'),
                 emirate=profile_data.get('emirate', 'Not Specified'),
                 email=profile_data.get('email', ''),
-                mobile_number=profile_data.get('mobile_number')
+                mobile_number=profile_data.get('mobile_number'),
+                company_name=profile_data.get('company_name'),  # Add company_name field
+                company_details_id=company_details_id  # Add company_details_id
             )
             db.add(profile)
             logger.info(f"📝 Created new profile for: {profile.email}")
+            logger.info(f"📝 New profile company_name: {getattr(profile, 'company_name', 'NOT_SET')}")
             db.flush()  # Get profile.id
         
         # 3. Create survey response
@@ -452,9 +487,9 @@ async def submit_financial_clinic_survey(
             profile_id=profile.id,
             company_tracker_id=company_tracker_id,
             answers=request.answers,
-            total_score=result_dict['total_score'],
-            status_band=result_dict['status_band'],
-            category_scores=result_dict['category_scores'],
+            total_score=result_Dict['total_score'],
+            status_band=result_Dict['status_band'],
+            category_scores=result_Dict['category_scores'],
             insights=result_dict.get('insights', []),
             product_recommendations=result_dict.get('products', []),
             questions_answered=result_dict.get('questions_answered', len(request.answers)),
@@ -476,8 +511,8 @@ async def submit_financial_clinic_survey(
                 department=profile_data.get('department'),
                 position_level=None,
                 responses=request.answers,
-                overall_score=result_dict['total_score'],
-                category_scores=result_dict['category_scores']
+                overall_score=result_Dict['total_score'],
+                category_scores=result_Dict['category_scores']
             )
             db.add(company_assessment)
             db.commit()

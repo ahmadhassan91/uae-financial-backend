@@ -644,12 +644,17 @@ class FinancialClinicProfile(Base):
     email = Column(String(255), nullable=False, index=True)
     mobile_number = Column(String(20), nullable=True)
     
+    # Company Information (optional)
+    company_name = Column(String(200), nullable=True, index=True)  # Company selected from CSV
+    company_details_id = Column(Integer, ForeignKey("company_details.id"), nullable=True, index=True)  # Link to CompanyDetails
+    
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     # Relationships
     survey_responses = relationship("FinancialClinicResponse", back_populates="profile")
+    company_details = relationship("CompanyDetails")
 
 
 class FinancialClinicResponse(Base):
@@ -794,5 +799,66 @@ class ScheduledEmail(Base):
     sent_at = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
+    creator = relationship("User")
+
+
+class CompanyDetails(Base):
+    """Company details uploaded via CSV for the Companies Details feature."""
+    __tablename__ = "company_details"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_name = Column(String(200), nullable=False, unique=True, index=True)
+    company_email = Column(String(255), nullable=True)
+    contact_person = Column(String(200), nullable=True)
+    phone_number = Column(String(20), nullable=True)
+    additional_details = Column(Text, nullable=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True, nullable=False)  # Enable/disable company
+    
+    # Metadata
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    uploader = relationship("User")
+    customer_profiles = relationship("CompanyCustomerProfile", back_populates="company")
+
+
+class CompanyCustomerProfile(Base):
+    """Customer profile linked to a company from the uploaded CSV data."""
+    __tablename__ = "company_customer_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("company_details.id"), nullable=False)
+    
+    # Personal Information
+    full_name = Column(String(200), nullable=False)
+    date_of_birth = Column(DateTime, nullable=False)
+    gender = Column(String(20), nullable=False)
+    nationality = Column(String(100), nullable=False)
+    
+    # Location
+    emirate = Column(String(50), nullable=False)
+    
+    # Family Information
+    children = Column(String(10), nullable=False)
+    
+    # Employment
+    employment_status = Column(String(50), nullable=False)
+    household_income = Column(String(50), nullable=False)
+    
+    # Contact Information
+    email = Column(String(255), nullable=False)
+    mobile_number = Column(String(20), nullable=False)
+    
+    # Metadata
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    company = relationship("CompanyDetails", back_populates="customer_profiles")
     creator = relationship("User")
 

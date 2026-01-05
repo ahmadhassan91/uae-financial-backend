@@ -63,7 +63,7 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
         text_ar="ما مدى نجاحكم في إدارة نفقات أسرتكم الشهرية؟",
         options=[
               FinancialClinicOption(value=5, label_en="My monthly expenses are always below my budget", label_ar="نفقاتي الشهرية دائماً أقلّ من ميزانيتي"),
-              FinancialClinicOption(value=4, label_en="I stay within my budget every month", label_ar="أنا ألتزم بميزانيتي كلّ شهر"),
+              FinancialClinicOption(value=4, label_en="I stay aligned with my budget every month", label_ar="ألتزم بميزانيتي كل شهر"),
             FinancialClinicOption(value=3, label_en="My budget stays on track on most months", label_ar="أنا أبقى ضمن حدود ميزانيتي في معظم الأشهر"),
             FinancialClinicOption(value=2, label_en="I usually go over budget with my spending", label_ar="تتجاوز نفقاتي عادة الميزانية المحدّدة"),
             FinancialClinicOption(value=1, label_en="I am unable to manage my monthly expenses", label_ar="أنا عاجز عن إدارة نفقاتي الشهرية"),
@@ -101,19 +101,19 @@ FINANCIAL_CLINIC_QUESTIONS: List[FinancialClinicQuestion] = [
             label_ar="\u2067أكثر من \u206620%\u2069 من دخلي\u2069"
         ),
         FinancialClinicOption(
-                value=4,
-                label_en="15% to 20% of my income",
-                label_ar="\u200E20%\u200E من دخلي إلى \u200E15%\u200E"
-            ),
-            FinancialClinicOption(
-                value=3,
-                label_en="5% to 15% of my income",
-                label_ar="\u200E15%\u200E من دخلي إلى \u200E5%\u200E"
-            ),
+            value=4,
+            label_en="15% to 20% of my income",
+            label_ar="\u200E20%\u200E من دخلي إلى \u200E15%\u200E"
+        ),
+        FinancialClinicOption(
+            value=3,
+            label_en="5% to 15% of my income",
+            label_ar="\u200E15%\u200E من دخلي إلى \u200E5%\u200E"
+        ),
         FinancialClinicOption(
             value=2,
             label_en="Up to 5% of my income",
-           label_ar="\u2067حتى \u206650%\u2069 من دخلي\u2069"
+            label_ar="\u2067حتى \u206650%\u2069 من دخلي\u2069"
         ),
         FinancialClinicOption(
             value=1,
