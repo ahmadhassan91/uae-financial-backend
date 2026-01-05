@@ -97,7 +97,7 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
         if children_conditions:
             query = query.filter(or_(*children_conditions))
     
-    # Company filter
+    # Unique URL filter (CompanyTracker - legacy system)
     if filters.get('companies'):
         # Get company IDs from company names or URLs
         company_trackers = db.query(CompanyTracker).filter(
@@ -112,9 +112,23 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
             from app.models import FinancialClinicResponse
             query = query.filter(FinancialClinicResponse.company_tracker_id.in_(company_ids))
         else:
-            # If companies were requested but none found, return empty result
-            from sqlalchemy import literal
-            query = query.filter(literal(False))
+            # If no companies found, return empty result
+            return []
+
+    # Company filter (CompanyDetails - new system)
+    if filters.get('activeCompanies'):
+        from app.models import CompanyDetails, FinancialClinicProfile
+        
+        # Get company IDs from active companies
+        active_company_ids = [int(company_id) for company_id in filters['activeCompanies']]
+        
+        # Find profiles linked to these companies
+        profile_ids_with_companies = db.query(FinancialClinicProfile.id).filter(
+            FinancialClinicProfile.company_details_id.in_(active_company_ids)
+        ).subquery()
+        
+        # Filter responses by profiles with these companies
+        query = query.filter(FinancialClinicProfile.id.in_(profile_ids_with_companies))
     
     return query
 
@@ -1981,6 +1995,7 @@ async def get_companies_analytics(
     income_ranges: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
     """Get companies analytics."""
@@ -1992,6 +2007,10 @@ async def get_companies_analytics(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies
         )
+        
+        # Add activeCompanies filter if provided
+        if activeCompanies:
+            filters['activeCompanies'] = [c.strip() for c in activeCompanies.split(',')]
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(

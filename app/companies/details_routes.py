@@ -8,7 +8,7 @@ from datetime import datetime
 
 from ..database import get_db
 from ..models import CompanyDetails, CompanyCustomerProfile, User
-from ..auth.dependencies import get_current_admin_user
+from ..auth.dependencies import get_current_admin_user, get_current_user
 from .schemas import (
     CompanyDetailsResponse, CompanyCustomerProfileResponse, 
     CSVUploadResponse, CompanyListResponse
@@ -38,25 +38,43 @@ async def upload_companies_csv(
         
         for row_num, row in enumerate(csv_reader, start=2):  # start=2 because header is row 1
             try:
-                # Validate required fields - only Company Name is required now
-                if not row.get('Company Name'):
-                    errors.append(f"Row {row_num}: Missing required field (Company Name)")
+                # Validate required fields - only company_name is required
+                company_name = row.get('company_name') or row.get('Company Name') or row.get('Company_Name')
+                if not company_name or not company_name.strip():
+                    errors.append(f"Row {row_num}: Missing required field (company_name)")
                     continue
                 
                 # Create company details with default values for optional fields
-                company = CompanyDetails(
-                    company_name=row['Company Name'].strip(),
-                    company_email=row.get('Email', '').strip() or 'no-email@example.com',
-                    contact_person=row.get('Contact', '').strip() or 'Not specified',
-                    phone_number=row.get('Phone', '').strip() if row.get('Phone') else None,
-                    additional_details=row.get('Details', '').strip() if row.get('Details') else None,
-                    uploaded_by=current_user.id
-                )
+                import re
+                # Clean company name for email generation
+                clean_name = re.sub(r'[^a-zA-Z0-9\s]', '', company_name.strip())
+                clean_name = re.sub(r'\s+', '', clean_name.lower())
                 
-                db.add(company)
-                db.flush()  # Get the ID without committing
+                # Check if company already exists
+                existing_company = db.query(CompanyDetails).filter(CompanyDetails.company_name == company_name.strip()).first()
                 
-                uploaded_companies.append(company)
+                if existing_company:
+                    # Update existing company
+                    existing_company.company_email = (row.get('company_email') or row.get('Email') or '').strip() or f"hr@{clean_name[:20]}.ae"
+                    existing_company.contact_person = (row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or 'Contact Person'
+                    existing_company.phone_number = (row.get('phone_number') or row.get('Phone') or '').strip() or None
+                    existing_company.additional_details = (row.get('additional_details') or row.get('Details') or '').strip() or None
+                    existing_company.updated_at = datetime.utcnow()
+                    uploaded_companies.append(existing_company)
+                else:
+                    # Create new company
+                    company = CompanyDetails(
+                        company_name=company_name.strip(),
+                        company_email=(row.get('company_email') or row.get('Email') or '').strip() or f"hr@{clean_name[:20]}.ae",
+                        contact_person=(row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or 'Contact Person',
+                        phone_number=(row.get('phone_number') or row.get('Phone') or '').strip() or None,
+                        additional_details=(row.get('additional_details') or row.get('Details') or '').strip() or None,
+                        uploaded_by=current_user.id
+                    )
+                    
+                    db.add(company)
+                    db.flush()  # Get the ID without committing
+                    uploaded_companies.append(company)
                 
             except Exception as e:
                 errors.append(f"Row {row_num}: {str(e)}")
@@ -101,11 +119,13 @@ async def get_uploaded_companies(
     total = query.count()
     companies = query.offset(skip).limit(limit).all()
     
-    company_responses = [CompanyDetailsResponse.from_orm(company) for company in companies]
+    company_responses = [CompanyDetailsResponse.model_validate(company) for company in companies]
     
     return CompanyListResponse(
         companies=company_responses,
-        total=total
+        total=total,
+        failed=0,
+        errors=[]
     )
 
 
@@ -136,6 +156,94 @@ async def get_public_companies(
         }
         for company in companies
     ]
+
+
+@router.get("/public-companies")
+async def get_public_companies(db: Session = Depends(get_db)):
+    """Get active companies for public dropdown (no authentication required)."""
+    try:
+        companies = db.query(CompanyDetails).filter(
+            CompanyDetails.is_active == True
+        ).order_by(CompanyDetails.company_name).all()
+        
+        return [
+            {
+                "id": company.id,
+                "name": company.company_name
+            }
+            for company in companies
+        ]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching companies: {str(e)}")
+
+
+@router.put("/{company_id}", response_model=CompanyDetailsResponse)
+async def update_company_details(
+    company_id: int,
+    company_update: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update company details."""
+    try:
+        company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        # Update fields
+        for field, value in company_update.items():
+            if hasattr(company, field) and field not in ['id', 'uploaded_by', 'created_at']:
+                setattr(company, field, value)
+        
+        company.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(company)
+        
+        return CompanyDetailsResponse.from_orm(company)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error updating company: {str(e)}")
+
+@router.delete("/{company_id}")
+async def delete_company_details(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete company details."""
+    try:
+        company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()
+        if not company:
+            raise HTTPException(status_code=404, detail="Company not found")
+        
+        db.delete(company)
+        db.commit()
+        
+        return {"message": "Company deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting company: {str(e)}")
+
+
+@router.get("/{company_id}", response_model=CompanyDetailsResponse)
+async def get_company_details(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Get specific company details by ID."""
+    
+    company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
+    return CompanyDetailsResponse.from_orm(company)
 
 
 @router.patch("/{company_id}/toggle-status")

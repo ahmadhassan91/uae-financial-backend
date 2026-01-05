@@ -646,6 +646,7 @@ class FinancialClinicProfile(Base):
     
     # Company Information (optional)
     company_name = Column(String(200), nullable=True, index=True)  # Company selected from CSV
+    company_details_id = Column(Integer, ForeignKey("company_details.id"), nullable=True, index=True)  # Link to CompanyDetails
     
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -653,6 +654,7 @@ class FinancialClinicProfile(Base):
     
     # Relationships
     survey_responses = relationship("FinancialClinicResponse", back_populates="profile")
+    company_details = relationship("CompanyDetails")
 
 
 class FinancialClinicResponse(Base):
@@ -805,7 +807,7 @@ class CompanyDetails(Base):
     __tablename__ = "company_details"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_name = Column(String(200), nullable=False, index=True)
+    company_name = Column(String(200), nullable=False, unique=True, index=True)
     company_email = Column(String(255), nullable=False)
     contact_person = Column(String(200), nullable=False)
     phone_number = Column(String(20), nullable=True)
