@@ -106,8 +106,8 @@ class BulkOperationResult(BaseModel):
 class CompanyDetailsBase(BaseModel):
     """Base schema for company details."""
     company_name: str
-    company_email: EmailStr
-    contact_person: str
+    company_email: Optional[EmailStr] = None
+    contact_person: Optional[str] = None
     phone_number: Optional[str] = None
     additional_details: Optional[str] = None
 

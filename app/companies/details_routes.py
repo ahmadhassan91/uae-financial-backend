@@ -17,6 +17,152 @@ from .schemas import (
 router = APIRouter(prefix="/companies-details", tags=["companies-details"])
 
 
+@router.post("/create-from-other", response_model=CompanyDetailsResponse)
+async def create_company_from_other(
+    company_name: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # Can be any user, not just admin
+):
+    """Create a company when user selects 'Other' and enters custom company name."""
+    
+    print(f"🔧 [DEBUG] Creating company from 'Other': {company_name}")
+    
+    if not company_name or not company_name.strip():
+        raise HTTPException(status_code=400, detail="Company name is required")
+    
+    try:
+        # Check if company already exists
+        existing_company = db.query(CompanyDetails).filter(CompanyDetails.company_name == company_name.strip()).first()
+        
+        if existing_company:
+            print(f"🔧 [DEBUG] Company already exists: {existing_company.company_name}")
+            return {
+                "id": str(existing_company.id),
+                "company_name": existing_company.company_name,
+                "company_email": existing_company.company_email,
+                "contact_person": existing_company.contact_person,
+                "phone_number": existing_company.phone_number,
+                "additional_details": existing_company.additional_details,
+                "created_at": existing_company.created_at.isoformat(),
+                "updated_at": existing_company.updated_at.isoformat() if existing_company.updated_at else None,
+                "is_active": existing_company.is_active,
+                "uploaded_by": existing_company.uploaded_by
+            }
+        else:
+            # Create new company with minimal info
+            company = CompanyDetails(
+                company_name=company_name.strip(),
+                company_email=None,
+                contact_person=None,
+                phone_number=None,
+                additional_details="Created via user submission (Other option)",
+                uploaded_by=current_user.id
+            )
+            
+            db.add(company)
+            db.commit()
+            db.refresh(company)
+            
+            print(f"🔧 [DEBUG] Created new company from 'Other': {company.company_name}")
+            
+            return {
+                "id": str(company.id),
+                "company_name": company.company_name,
+                "company_email": company.company_email,
+                "contact_person": company.contact_person,
+                "phone_number": company.phone_number,
+                "additional_details": company.additional_details,
+                "created_at": company.created_at.isoformat(),
+                "updated_at": company.updated_at.isoformat() if company.updated_at else None,
+                "is_active": company.is_active,
+                "uploaded_by": company.uploaded_by
+            }
+            
+    except Exception as e:
+        print(f"🔧 [DEBUG] Error creating company from 'Other': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create company: {str(e)}")
+
+
+@router.post("/create-company", response_model=CompanyDetailsResponse)
+async def create_company(
+    company_name: str = Form(...),
+    company_email: Optional[str] = Form(None),
+    contact_person: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    additional_details: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """Create a single company directly without CSV."""
+    
+    print(f"🔧 [DEBUG] Creating company: {company_name}")
+    print(f"🔧 [DEBUG] Email: {company_email}, Contact: {contact_person}")
+    
+    if not company_name or not company_name.strip():
+        raise HTTPException(status_code=400, detail="Company name is required")
+    
+    try:
+        # Check if company already exists
+        existing_company = db.query(CompanyDetails).filter(CompanyDetails.company_name == company_name.strip()).first()
+        
+        if existing_company:
+            # Update existing company
+            existing_company.company_email = company_email.strip() if company_email and company_email.strip() else None
+            existing_company.contact_person = contact_person.strip() if contact_person and contact_person.strip() else None
+            existing_company.phone_number = phone_number.strip() if phone_number and phone_number.strip() else None
+            existing_company.additional_details = additional_details.strip() if additional_details and additional_details.strip() else None
+            existing_company.updated_at = datetime.utcnow()
+            
+            db.commit()
+            print(f"🔧 [DEBUG] Updated existing company: {existing_company.company_name}")
+            
+            return {
+                "id": str(existing_company.id),
+                "company_name": existing_company.company_name,
+                "company_email": existing_company.company_email,
+                "contact_person": existing_company.contact_person,
+                "phone_number": existing_company.phone_number,
+                "additional_details": existing_company.additional_details,
+                "created_at": existing_company.created_at.isoformat(),
+                "updated_at": existing_company.updated_at.isoformat() if existing_company.updated_at else None,
+                "is_active": existing_company.is_active,
+                "uploaded_by": existing_company.uploaded_by
+            }
+        else:
+            # Create new company
+            company = CompanyDetails(
+                company_name=company_name.strip(),
+                company_email=company_email.strip() if company_email and company_email.strip() else None,
+                contact_person=contact_person.strip() if contact_person and contact_person.strip() else None,
+                phone_number=phone_number.strip() if phone_number and phone_number.strip() else None,
+                additional_details=additional_details.strip() if additional_details and additional_details.strip() else None,
+                uploaded_by=current_user.id
+            )
+            
+            db.add(company)
+            db.commit()
+            db.refresh(company)
+            
+            print(f"🔧 [DEBUG] Created new company: {company.company_name}")
+            
+            return {
+                "id": str(company.id),
+                "company_name": company.company_name,
+                "company_email": company.company_email,
+                "contact_person": company.contact_person,
+                "phone_number": company.phone_number,
+                "additional_details": company.additional_details,
+                "created_at": company.created_at.isoformat(),
+                "updated_at": company.updated_at.isoformat() if company.updated_at else None,
+                "is_active": company.is_active,
+                "uploaded_by": company.uploaded_by
+            }
+            
+    except Exception as e:
+        print(f"🔧 [DEBUG] Error creating company: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create company: {str(e)}")
+
+
 @router.post("/upload-csv", response_model=CSVUploadResponse)
 async def upload_companies_csv(
     file: UploadFile = File(...),
@@ -25,38 +171,43 @@ async def upload_companies_csv(
 ):
     """Upload a CSV file containing company details."""
     
+    print(f"🔧 [DEBUG] Received file: {file.filename}")
+    
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Only CSV files are allowed")
     
     try:
         # Read and parse CSV file
         contents = await file.read()
+        print(f"🔧 [DEBUG] File contents length: {len(contents)}")
+        print(f"🔧 [DEBUG] File contents preview: {contents.decode('utf-8')[:200]}...")
+        
         csv_reader = csv.DictReader(io.StringIO(contents.decode('utf-8')))
+        
+        print(f"🔧 [DEBUG] CSV fieldnames: {csv_reader.fieldnames}")
         
         uploaded_companies = []
         errors = []
         
         for row_num, row in enumerate(csv_reader, start=2):  # start=2 because header is row 1
             try:
+                print(f"🔧 [DEBUG] Processing row {row_num}: {row}")
+                
                 # Validate required fields - only company_name is required
                 company_name = row.get('company_name') or row.get('Company Name') or row.get('Company_Name')
+                print(f"🔧 [DEBUG] Company name extracted: '{company_name}'")
+                
                 if not company_name or not company_name.strip():
                     errors.append(f"Row {row_num}: Missing required field (company_name)")
                     continue
-                
-                # Create company details with default values for optional fields
-                import re
-                # Clean company name for email generation
-                clean_name = re.sub(r'[^a-zA-Z0-9\s]', '', company_name.strip())
-                clean_name = re.sub(r'\s+', '', clean_name.lower())
                 
                 # Check if company already exists
                 existing_company = db.query(CompanyDetails).filter(CompanyDetails.company_name == company_name.strip()).first()
                 
                 if existing_company:
                     # Update existing company
-                    existing_company.company_email = (row.get('company_email') or row.get('Email') or '').strip() or f"hr@{clean_name[:20]}.ae"
-                    existing_company.contact_person = (row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or 'Contact Person'
+                    existing_company.company_email = (row.get('company_email') or row.get('Email') or '').strip() or None
+                    existing_company.contact_person = (row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or None
                     existing_company.phone_number = (row.get('phone_number') or row.get('Phone') or '').strip() or None
                     existing_company.additional_details = (row.get('additional_details') or row.get('Details') or '').strip() or None
                     existing_company.updated_at = datetime.utcnow()
@@ -65,8 +216,8 @@ async def upload_companies_csv(
                     # Create new company
                     company = CompanyDetails(
                         company_name=company_name.strip(),
-                        company_email=(row.get('company_email') or row.get('Email') or '').strip() or f"hr@{clean_name[:20]}.ae",
-                        contact_person=(row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or 'Contact Person',
+                        company_email=(row.get('company_email') or row.get('Email') or '').strip() or None,
+                        contact_person=(row.get('contact_person') or row.get('Contact Person') or row.get('Contact') or '').strip() or None,
                         phone_number=(row.get('phone_number') or row.get('Phone') or '').strip() or None,
                         additional_details=(row.get('additional_details') or row.get('Details') or '').strip() or None,
                         uploaded_by=current_user.id
@@ -132,7 +283,7 @@ async def get_uploaded_companies(
 @router.get("/public-companies")
 async def get_public_companies(
     search: Optional[str] = None,
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(1000, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
     query = db.query(CompanyDetails).filter(CompanyDetails.is_active == True)

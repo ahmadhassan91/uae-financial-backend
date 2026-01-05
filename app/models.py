@@ -808,8 +808,8 @@ class CompanyDetails(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     company_name = Column(String(200), nullable=False, unique=True, index=True)
-    company_email = Column(String(255), nullable=False)
-    contact_person = Column(String(200), nullable=False)
+    company_email = Column(String(255), nullable=True)
+    contact_person = Column(String(200), nullable=True)
     phone_number = Column(String(20), nullable=True)
     additional_details = Column(Text, nullable=True)
     
