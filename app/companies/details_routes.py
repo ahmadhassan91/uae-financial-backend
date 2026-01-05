@@ -9,6 +9,10 @@ from datetime import datetime
 from ..database import get_db
 from ..models import CompanyDetails, CompanyCustomerProfile, User
 from ..auth.dependencies import get_current_admin_user, get_current_user
+from ..middleware.rate_limiter import limiter
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from fastapi import Request
 from .schemas import (
     CompanyDetailsResponse, CompanyCustomerProfileResponse, 
     CSVUploadResponse, CompanyListResponse
@@ -281,7 +285,9 @@ async def get_uploaded_companies(
 
 
 @router.get("/public-companies")
+@limiter.limit("10000/minute")  # Very high limit for public endpoint
 async def get_public_companies(
+    request: Request,
     search: Optional[str] = None,
     limit: int = Query(1000, ge=1, le=1000),
     db: Session = Depends(get_db),

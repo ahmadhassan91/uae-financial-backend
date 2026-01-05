@@ -42,7 +42,7 @@ def get_client_ip(request: Request) -> str:
 # Create limiter instance with custom key function
 limiter = Limiter(
     key_func=get_client_ip,
-    default_limits=["200/minute"],  # Default limit for all endpoints
+    default_limits=["1000/minute"],  # Increased default limit for all endpoints
     storage_uri="memory://",  # Use in-memory storage (use Redis in production for distributed systems)
     strategy="fixed-window",
 )
