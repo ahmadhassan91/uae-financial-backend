@@ -120,17 +120,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Temporarily disable other middleware to isolate CORS issue
 # Handle Proxy Headers (X-Forwarded-Proto, etc.)
-# This is crucial for on-prem deployments behind Nginx to correctly identify HTTPS
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+# from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+# app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 # Trusted Host Middleware - Validate Host header to prevent Host Header Injection
-# Use allowed hosts from environment settings
-app.add_middleware(
-    TrustedHostMiddleware,
-    allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
-)
+# app.add_middleware(
+#     TrustedHostMiddleware,
+#     allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
+# )
 
 # Initialize Rate Limiter (must be done during app initialization, not startup)
 setup_rate_limiter(app)
