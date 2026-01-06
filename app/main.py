@@ -109,6 +109,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Add Security Headers Middleware (added first so it runs last)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Configure CORS FIRST - This must be before other middleware
+origins = settings.allowed_origins
+print(f"🔧 [DEBUG] CORS Origins: {origins}")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
 # Handle Proxy Headers (X-Forwarded-Proto, etc.)
 # This is crucial for on-prem deployments behind Nginx to correctly identify HTTPS
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
@@ -119,17 +130,6 @@ app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
-)
-
-# Configure CORS
-origins = settings.allowed_origins
-print(f"🔧 [DEBUG] CORS Origins: {origins}")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
 )
 
 # Initialize Rate Limiter (must be done during app initialization, not startup)
