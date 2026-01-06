@@ -120,15 +120,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Test ProxyHeaders middleware first
+# Keep ProxyHeaders - it's not the issue
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-# Trusted Host Middleware - Temporarily disabled to test
-# app.add_middleware(
-#     TrustedHostMiddleware,
-#     allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
-# )
+# Now test TrustedHost middleware - this is likely the culprit
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
+)
 
 # Initialize Rate Limiter (must be done during app initialization, not startup)
 setup_rate_limiter(app)
