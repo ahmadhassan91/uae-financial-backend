@@ -2068,6 +2068,8 @@ async def get_companies_analytics(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -2097,6 +2099,9 @@ async def get_companies_analytics(
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
+        
+        # Apply date range filter
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
         
         responses = query.all()
         
