@@ -120,12 +120,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Temporarily disable other middleware to isolate CORS issue
-# Handle Proxy Headers (X-Forwarded-Proto, etc.)
-# from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-# app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+# Test ProxyHeaders middleware first
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
-# Trusted Host Middleware - Validate Host header to prevent Host Header Injection
+# Trusted Host Middleware - Temporarily disabled to test
 # app.add_middleware(
 #     TrustedHostMiddleware,
 #     allowed_hosts=settings.allowed_hosts_list if not settings.DEBUG else ["*"]
