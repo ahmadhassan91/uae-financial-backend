@@ -1,6 +1,6 @@
 """Add company_details_id column to financial_clinic_profiles
 
-Revision ID: 2026_01_06_1430-123456789abc
+Revision ID: 2026_01_06_1430_123456789abc
 Revises: 0188113496ea
 Create Date: 2026-01-06 14:30:00.000000
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '2026_01_06_1430-123456789abc'
+revision: str = '2026_01_06_1430_123456789abc'
 down_revision: Union[str, None] = '0188113496ea'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
