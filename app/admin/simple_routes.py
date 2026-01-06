@@ -1454,6 +1454,21 @@ async def get_filter_options(
             for c in companies
         ]
         
+        # Get company details for company management analytics
+        from app.models import CompanyDetails
+        company_details = db.query(CompanyDetails).filter(
+            CompanyDetails.is_active == True
+        ).order_by(CompanyDetails.company_name).all()
+        
+        active_companies_list = [
+            {
+                "id": c.id,
+                "name": c.company_name,
+                "unique_url": None  # CompanyDetails don't have URLs
+            }
+            for c in company_details
+        ]
+        
         return {
             "age_groups": all_age_groups,
             "genders": all_genders,
@@ -1462,7 +1477,8 @@ async def get_filter_options(
             "employment_statuses": all_employment_statuses,
             "income_ranges": all_income_ranges,
             "children_options": all_children_options,
-            "companies": company_list
+            "companies": company_list,           # For unique URL analytics
+            "activeCompanies": active_companies_list  # For company management analytics
         }
         
     except Exception as e:
