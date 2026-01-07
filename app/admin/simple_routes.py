@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_, desc
 import csv
 import io
+import os
 import traceback
 import logging
 
@@ -834,19 +835,29 @@ async def export_simple_admin_csv(
             except:
                 return 0
         
+        # Check if Companies Module is enabled
+        companies_module_enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
+        
         # Prepare CSV
         output = io.StringIO()
         writer = csv.writer(output)
 
         # Header with mobile number country code and 5 action plan columns
-        writer.writerow([
+        # Include Company column only if Companies Module is enabled
+        base_headers = [
             'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
-            'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
+            'Employment Status', 'Income Range'
+        ]
+        if companies_module_enabled:
+            base_headers.append('Company')
+        base_headers.extend([
+            'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
             'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
             'Action Plan 4', 'Action Plan 5', 'Submission Date'
         ])
+        writer.writerow(base_headers)
 
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
@@ -890,7 +901,8 @@ async def export_simple_admin_csv(
                     # Default to UAE country code if not specified
                     mobile_number = '+971 ' + mobile_number
             
-            writer.writerow([
+            # Build the row data
+            row_data = [
                 r.id,
                 profile.name if profile else '',
                 profile.email if profile else '',
@@ -902,7 +914,11 @@ async def export_simple_admin_csv(
                 profile.children if profile else '',
                 profile.employment_status if profile else '',
                 profile.income_range if profile else '',
-                '',  # Company (from company_tracker_id if needed)
+            ]
+            # Add company name if Companies Module is enabled
+            if companies_module_enabled:
+                row_data.append(profile.company_name if profile and profile.company_name else '')
+            row_data.extend([
                 round(r.total_score, 2) if r.total_score else 0,
                 r.status_band if r.status_band else '',
                 r.questions_answered if r.questions_answered else 0,
@@ -919,6 +935,7 @@ async def export_simple_admin_csv(
                 insights[4] if len(insights) > 4 else '',
                 r.created_at.strftime('%Y-%m-%d %H:%M:%S') if r.created_at else ''
             ])
+            writer.writerow(row_data)
 
         # Audit log
         audit_log = AuditLog(
@@ -990,6 +1007,9 @@ async def export_simple_admin_excel(
         responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
         if unique_users_only:
             responses = filter_unique_users(responses)
+
+        # Check if Companies Module is enabled
+        companies_module_enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
 
         # Helper function to calculate age from DOB string (DD/MM/YYYY)
         def calculate_age(dob_str):
@@ -1085,7 +1105,7 @@ async def export_simple_admin_excel(
                 'children': profile.children if profile else '',
                 'employment_status': profile.employment_status if profile else '',
                 'income_range': profile.income_range if profile else '',
-                'company': '',  # Company (from company_tracker_id if needed)
+                'company': profile.company_name if profile and profile.company_name else '',
                 'total_score': round(r.total_score, 2) if r.total_score else 0,
                 'status_band': r.status_band if r.status_band else '',
                 'questions_answered': r.questions_answered if r.questions_answered else 0,
@@ -1113,19 +1133,25 @@ async def export_simple_admin_excel(
         ws.title = "Financial Clinic Responses"
         
         # Add headers with mobile number country code and 5 action plan columns
+        # Include Company column only if Companies Module is enabled
         headers = [
             'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
-            'Employment Status', 'Income Range', 'Company', 'Total Score', 'Status Band',
+            'Employment Status', 'Income Range'
+        ]
+        if companies_module_enabled:
+            headers.append('Company')
+        headers.extend([
+            'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
             'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
             'Action Plan 4', 'Action Plan 5', 'Submission Date'
-        ]
+        ])
         ws.append(headers)
         
         # Add data rows
         for row in rows:
-            ws.append([
+            row_data = [
                 row['id'],
                 row['name'], 
                 row['email'],
@@ -1137,7 +1163,10 @@ async def export_simple_admin_excel(
                 row['children'],
                 row['employment_status'],
                 row['income_range'],
-                row['company'],
+            ]
+            if companies_module_enabled:
+                row_data.append(row['company'])
+            row_data.extend([
                 row['total_score'],
                 row['status_band'],
                 row['questions_answered'],
@@ -1154,6 +1183,7 @@ async def export_simple_admin_excel(
                 row['action_plan_5'],
                 row['created_at']
             ])
+            ws.append(row_data)
         
         wb.save(bio)
         bio.seek(0)
