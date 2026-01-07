@@ -1829,23 +1829,43 @@ async def get_nationality_breakdown(
             responses = filter_unique_users(responses)
         unique_responses = responses
         
-        emirati_scores = []
-        non_emirati_scores = []
+        emirati_responses = []
+        non_emirati_responses = []
         
         for response in unique_responses:
             if response.profile.nationality == "Emirati":
-                emirati_scores.append(response.total_score)
+                emirati_responses.append(response)
             else:
-                non_emirati_scores.append(response.total_score)
+                non_emirati_responses.append(response)
+        
+        def get_status_counts(responses_list):
+            """Calculate status band counts from responses."""
+            excellent = sum(1 for r in responses_list if r.status_band == "Excellent")
+            good = sum(1 for r in responses_list if r.status_band == "Good")
+            needs_improvement = sum(1 for r in responses_list if r.status_band == "Needs Improvement")
+            at_risk = sum(1 for r in responses_list if r.status_band == "At Risk")
+            return {
+                "excellent": excellent,
+                "good": good,
+                "needs_improvement": needs_improvement,
+                "at_risk": at_risk
+            }
+        
+        emirati_scores = [r.total_score for r in emirati_responses]
+        non_emirati_scores = [r.total_score for r in non_emirati_responses]
+        emirati_status = get_status_counts(emirati_responses)
+        non_emirati_status = get_status_counts(non_emirati_responses)
         
         return {
             "emirati": {
                 "count": len(emirati_scores),
-                "avg_score": round(sum(emirati_scores) / len(emirati_scores), 2) if emirati_scores else 0
+                "avg_score": round(sum(emirati_scores) / len(emirati_scores), 2) if emirati_scores else 0,
+                **emirati_status
             },
             "non_emirati": {
                 "count": len(non_emirati_scores),
-                "avg_score": round(sum(non_emirati_scores) / len(non_emirati_scores), 2) if non_emirati_scores else 0
+                "avg_score": round(sum(non_emirati_scores) / len(non_emirati_scores), 2) if non_emirati_scores else 0,
+                **non_emirati_status
             }
         }
         
