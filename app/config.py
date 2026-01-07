@@ -124,6 +124,9 @@ class Settings(BaseSettings):
     # PDF Download Security
     PDF_TOKEN_EXPIRY_SECONDS: int = 604800  # Default 7 days (7 * 24 * 60 * 60)
     
+    # Feature Flags
+    COMPANIES_MODULE_ENABLED: bool = True  # Set to False to disable company selection in customer profile
+    
     # AWS S3 Configuration
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""

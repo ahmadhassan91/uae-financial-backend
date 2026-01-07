@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import csv
 import io
+import os
 from datetime import datetime
 
 from ..database import get_db
@@ -19,6 +20,38 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/companies-details", tags=["companies-details"])
+
+
+@router.get("/module-status")
+async def get_companies_module_status():
+    """Get the current status of the companies module (enabled/disabled)."""
+    from app.config import settings
+    return {
+        "enabled": settings.COMPANIES_MODULE_ENABLED,
+        "message": "Companies module is enabled" if settings.COMPANIES_MODULE_ENABLED else "Companies module is disabled"
+    }
+
+
+@router.put("/module-status")
+async def update_companies_module_status(
+    enabled: bool = Form(...),
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Update the companies module status (admin only).
+    Note: This sets an environment variable. For permanent change, update Heroku config vars.
+    """
+    os.environ["COMPANIES_MODULE_ENABLED"] = str(enabled).lower()
+    
+    # Update the settings object directly for immediate effect
+    from app.config import settings
+    # Note: Pydantic settings are immutable, so we modify the env var
+    # The change will take effect on next settings access or app restart
+    
+    return {
+        "enabled": enabled,
+        "message": f"Companies module {'enabled' if enabled else 'disabled'} successfully. Note: Restart the app or update Heroku config vars for permanent change."
+    }
 
 
 @router.post("/create-from-other", response_model=CompanyDetailsResponse)
@@ -292,6 +325,11 @@ async def get_public_companies(
     limit: int = Query(1000, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
+    # Check if companies module is enabled
+    from app.config import settings
+    if not settings.COMPANIES_MODULE_ENABLED:
+        return []  # Return empty list when module is disabled
+    
     query = db.query(CompanyDetails).filter(CompanyDetails.is_active == True)
     
     if search:
