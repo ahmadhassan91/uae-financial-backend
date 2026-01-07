@@ -256,15 +256,15 @@ async def upload_companies_csv(
 
 @router.get("/companies", response_model=CompanyListResponse)
 async def get_uploaded_companies(
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_admin_user)
 ):
-    """Get list of uploaded companies with optional search."""
+    """Get list of uploaded companies with optional search and pagination."""
     
-    query = db.query(CompanyDetails)
+    query = db.query(CompanyDetails).order_by(CompanyDetails.created_at.desc())
     
     if search:
         query = query.filter(
