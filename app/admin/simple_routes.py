@@ -1542,10 +1542,10 @@ async def get_overview_metrics(
         if filters.get('age_groups'):
             responses = filter_by_age_groups(responses, filters['age_groups'])
         
-        # Get total responses (before unique filter)
+        # Get total responses (before unique filter) for percentage calculation
         all_responses_count = len(responses)
         
-        # Apply unique user filter only if requested
+        # Apply unique user filter if requested - this now affects ALL metrics
         if unique_users_only:
             responses = filter_unique_users(responses)
         
@@ -1556,6 +1556,7 @@ async def get_overview_metrics(
                 "total_responses": 0,
                 "total_submissions": 0,
                 "unique_completions": 0,
+                "all_submissions": all_responses_count,  # Raw count before unique filter
                 "cases_completed_percentage": 0.0,
                 "unique_completion_percentage": 0.0,
                 "average_score": 0,
@@ -1566,7 +1567,7 @@ async def get_overview_metrics(
                 "today_submissions": 0
             }
         
-        # Calculate metrics
+        # Calculate metrics from filtered responses
         total_score = sum(r.total_score for r in responses)
         average_score = total_score / total_responses if total_responses > 0 else 0
         
@@ -1577,18 +1578,18 @@ async def get_overview_metrics(
         at_risk_count = sum(1 for r in responses if r.status_band == "At Risk")
         
         # Calculate completion percentages
-        # For "cases completed" we use unique responses as the success metric
-        cases_completed_percentage = 100.0  # All retrieved responses are considered "completed" in Financial Clinic
+        cases_completed_percentage = 100.0  # All retrieved responses are considered "completed"
         unique_completion_percentage = (total_responses / all_responses_count * 100) if all_responses_count > 0 else 0.0
         
-        # Calculate today's submissions
+        # Calculate today's submissions from filtered responses
         today = datetime.now().date()
         today_submissions = sum(1 for r in responses if r.created_at.date() == today)
         
         return {
             "total_responses": total_responses,  # Keep for backward compatibility
-            "total_submissions": all_responses_count,  # Total including duplicates
-            "unique_completions": total_responses,  # Unique users who completed
+            "total_submissions": total_responses,  # Now reflects unique filter when enabled
+            "unique_completions": total_responses,  # Same as total when unique filter is on
+            "all_submissions": all_responses_count,  # Raw count before unique filter (for reference)
             "cases_completed_percentage": round(cases_completed_percentage, 2),
             "unique_completion_percentage": round(unique_completion_percentage, 2),
             "average_score": round(average_score, 2),
@@ -1596,7 +1597,7 @@ async def get_overview_metrics(
             "good_count": good_count,
             "needs_improvement_count": needs_improvement_count,
             "at_risk_count": at_risk_count,
-            "today_submissions": today_submissions  # New field for today's count
+            "today_submissions": today_submissions
         }
         
     except Exception as e:
