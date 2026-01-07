@@ -2102,9 +2102,19 @@ async def get_companies_analytics(
     activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
-    """Get companies analytics."""
+    """Get companies analytics - only for companies in CompanyDetails table."""
     try:
-        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker, CompanyDetails
+        
+        # Get list of valid company names from CompanyDetails table
+        valid_companies = db.query(CompanyDetails.company_name).filter(
+            CompanyDetails.is_active == True
+        ).all()
+        valid_company_names = set(c[0].lower().strip() for c in valid_companies if c[0])
+        
+        # If no companies in CompanyDetails, return empty list
+        if not valid_company_names:
+            return {"companies": []}
         
         # Parse filters
         filters = parse_filter_params(
@@ -2131,7 +2141,7 @@ async def get_companies_analytics(
             responses = filter_unique_users(responses)
         unique_responses = responses
         
-        # Group by company
+        # Group by company - only include companies that exist in CompanyDetails
         company_data = {}
         
         for response in unique_responses:
@@ -2141,6 +2151,11 @@ async def get_companies_analytics(
             ).first()
             
             if profile and profile.company_name:
+                # Only include if company exists in CompanyDetails table
+                company_name_lower = profile.company_name.lower().strip()
+                if company_name_lower not in valid_company_names:
+                    continue  # Skip companies not in CompanyDetails
+                    
                 company_key = f"profile_{profile.company_name}"
                 
                 if company_key not in company_data:
@@ -2156,9 +2171,15 @@ async def get_companies_analytics(
             # Also check for old company_tracker_id system
             elif response.company_tracker_id:
                 company_id = response.company_tracker_id
+                company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
+                
+                if company:
+                    # Only include if company exists in CompanyDetails table
+                    company_name_lower = company.company_name.lower().strip() if company.company_name else ""
+                    if company_name_lower not in valid_company_names:
+                        continue  # Skip companies not in CompanyDetails
                 
                 if company_id not in company_data:
-                    company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
                     company_data[company_id] = {
                         "company_name": company.company_name if company else f"Company {company_id}",
                         "scores": [],
@@ -2378,6 +2399,7 @@ async def get_submissions(
     status_band: Optional[str] = None,
     nationality: Optional[str] = None,
     company_id: Optional[int] = None,
+    company_name: Optional[str] = None,  # Filter by company name from CompanyDetails
     income_range: Optional[str] = None,
     age_group: Optional[str] = None,
     date_from: Optional[str] = None,
@@ -2417,8 +2439,21 @@ async def get_submissions(
         if nationality:
             query = query.filter(FinancialClinicProfile.nationality == nationality)
         
+        # Filter by unique URL (company_tracker_id)
         if company_id:
             query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+        
+        # Filter by company name from CompanyDetails
+        if company_name and company_name != 'other':
+            query = query.filter(FinancialClinicProfile.company_name == company_name)
+        elif company_name == 'other':
+            # Filter for submissions without a company or with null company_name
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.company_name.is_(None),
+                    FinancialClinicProfile.company_name == ''
+                )
+            )
         
         if income_range:
             query = query.filter(FinancialClinicProfile.income_range == income_range)
@@ -2556,39 +2591,145 @@ async def get_submissions(
 
 @simple_admin_router.get("/submissions/stats")
 async def get_submissions_stats(
+    search: Optional[str] = Query(None),
+    status_band: Optional[str] = Query(None),
+    nationality: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+    company_name: Optional[str] = Query(None),
+    income_range: Optional[str] = Query(None),
+    age_group: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
     """
-    Get statistics about Financial Clinic submissions.
+    Get statistics about Financial Clinic submissions with optional filtering.
     """
     try:
-        from app.models import FinancialClinicResponse
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
         
-        # Total submissions
-        total = db.query(FinancialClinicResponse).count()
+        # Build base query
+        query = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
         
-        # Today's submissions
+        # Apply filters
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.name.ilike(search_term),
+                    FinancialClinicProfile.email.ilike(search_term),
+                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                )
+            )
+        
+        if status_band:
+            query = query.filter(FinancialClinicResponse.status_band == status_band)
+        
+        if nationality:
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+        
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+        
+        if company_name and company_name != 'other':
+            query = query.filter(FinancialClinicProfile.company_name == company_name)
+        elif company_name == 'other':
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.company_name.is_(None),
+                    FinancialClinicProfile.company_name == ''
+                )
+            )
+        
+        if income_range:
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+        
+        # For age_group filtering, we need to filter in Python since DOB is a string
+        if age_group:
+            def calculate_age(dob_str):
+                if not dob_str:
+                    return None
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    try:
+                        dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                        today = datetime.today()
+                        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                        return age
+                    except:
+                        return None
+            
+            all_results = query.all()
+            filtered_ids = []
+            for response in all_results:
+                profile = db.query(FinancialClinicProfile).filter(
+                    FinancialClinicProfile.id == response.profile_id
+                ).first()
+                if profile:
+                    age = calculate_age(profile.date_of_birth)
+                    if age is not None:
+                        if age_group == "< 18" and age < 18:
+                            filtered_ids.append(response.id)
+                        elif age_group == "18-25" and 18 <= age <= 25:
+                            filtered_ids.append(response.id)
+                        elif age_group == "26-35" and 26 <= age <= 35:
+                            filtered_ids.append(response.id)
+                        elif age_group == "36-45" and 36 <= age <= 45:
+                            filtered_ids.append(response.id)
+                        elif age_group == "46-60" and 46 <= age <= 60:
+                            filtered_ids.append(response.id)
+                        elif age_group == "60+" and age > 60:
+                            filtered_ids.append(response.id)
+            
+            # Re-query with filtered IDs
+            if filtered_ids:
+                query = db.query(FinancialClinicResponse).filter(
+                    FinancialClinicResponse.id.in_(filtered_ids)
+                )
+            else:
+                # No results match the age filter
+                return {
+                    'total': 0,
+                    'today': 0,
+                    'this_week': 0,
+                    'this_month': 0,
+                    'average_score': 0.0
+                }
+        
+        # Total submissions with filters
+        total = query.count()
+        
+        # Today's submissions with filters
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        today = db.query(FinancialClinicResponse).filter(
+        today = query.filter(
             FinancialClinicResponse.created_at >= today_start
         ).count()
         
-        # This week's submissions
+        # This week's submissions with filters
         week_start = today_start - timedelta(days=today_start.weekday())
-        this_week = db.query(FinancialClinicResponse).filter(
+        this_week = query.filter(
             FinancialClinicResponse.created_at >= week_start
         ).count()
         
-        # This month's submissions
+        # This month's submissions with filters
         month_start = today_start.replace(day=1)
-        this_month = db.query(FinancialClinicResponse).filter(
+        this_month = query.filter(
             FinancialClinicResponse.created_at >= month_start
         ).count()
         
-        # Average score
+        # Average score with filters
         avg_score_result = db.query(
             func.avg(FinancialClinicResponse.total_score)
+        ).filter(
+            FinancialClinicResponse.id.in_(
+                query.with_entities(FinancialClinicResponse.id).subquery()
+            )
         ).scalar()
         average_score = float(avg_score_result) if avg_score_result else 0.0
         
