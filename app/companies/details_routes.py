@@ -25,10 +25,11 @@ router = APIRouter(prefix="/companies-details", tags=["companies-details"])
 @router.get("/module-status")
 async def get_companies_module_status():
     """Get the current status of the companies module (enabled/disabled)."""
-    from app.config import settings
+    # Check environment variable directly for dynamic updates
+    enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
     return {
-        "enabled": settings.COMPANIES_MODULE_ENABLED,
-        "message": "Companies module is enabled" if settings.COMPANIES_MODULE_ENABLED else "Companies module is disabled"
+        "enabled": enabled,
+        "message": "Companies module is enabled" if enabled else "Companies module is disabled"
     }
 
 
@@ -325,9 +326,9 @@ async def get_public_companies(
     limit: int = Query(1000, ge=1, le=1000),
     db: Session = Depends(get_db),
 ):
-    # Check if companies module is enabled
-    from app.config import settings
-    if not settings.COMPANIES_MODULE_ENABLED:
+    # Check if companies module is enabled - read from env var directly for dynamic updates
+    companies_enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
+    if not companies_enabled:
         return []  # Return empty list when module is disabled
     
     query = db.query(CompanyDetails).filter(CompanyDetails.is_active == True)
