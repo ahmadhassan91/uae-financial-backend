@@ -47,31 +47,31 @@
       }
 
       .logo-left {
-        height: 70px;
-        width: auto;
-        max-width: 250px;
+        width: 200px;
+        height: auto;
+        max-height: 80px;
         object-fit: contain;
         margin-right: 20px;
       }
 
       .logo-right {
-        height: 70px;
-        width: auto;
-        max-width: 250px;
+        width: 200px;
+        height: auto;
+        max-height: 80px;
         object-fit: contain;
         margin-left: 20px;
       }
       .header-divider {
         width: 2px;
-        height: 50px;
+        height: 60px;
         background-color: #c2d1d9;
         flex-shrink: 0;
       }
       .logo-left,
       .logo-right {
-        height: 70px;
-        width: auto;
-        max-width: 250px;
+        width: 200px;
+        height: auto;
+        max-height: 80px;
         display: inline-block;
       }
       /* Avoid any weird float behavior */
@@ -369,6 +369,18 @@
 
       .rtl .recommendation-number {
         margin-right: 12px;
+      }
+
+      /* RTL Logo adjustments - Arabic logos have different aspect ratio */
+      .rtl .logo-left {
+        width: auto;
+        height: 70px;
+        max-width: 180px;
+      }
+      .rtl .logo-right {
+        width: auto;
+        height: 70px;
+        max-width: 180px;
       }
     </style>
   </head>

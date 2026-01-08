@@ -197,16 +197,22 @@ class HTMLPDFService:
             
             from app.utils.svg_to_png import svg_base64_to_png_base64
             logos_are_png = True
-            if national_bonds_logo_base64:
+            
+            # Convert National Bonds logo if it's SVG
+            if national_bonds_logo_base64 and national_bonds_logo_mime == "image/svg+xml":
                 converted = svg_base64_to_png_base64(national_bonds_logo_base64, output_width=900)
                 if converted == national_bonds_logo_base64:
                     logos_are_png = False
                 national_bonds_logo_base64 = converted
-            if financial_clinic_logo_base64:
+                national_bonds_logo_mime = "image/png"  # Update MIME after conversion
+            
+            # Only convert Financial Clinic logo if it's SVG (not PNG)
+            if financial_clinic_logo_base64 and financial_clinic_logo_mime == "image/svg+xml":
                 converted = svg_base64_to_png_base64(financial_clinic_logo_base64, output_width=900)
                 if converted == financial_clinic_logo_base64:
                     logos_are_png = False
                 financial_clinic_logo_base64 = converted
+                financial_clinic_logo_mime = "image/png"  # Update MIME after conversion
             
             # Prepare category translations, descriptions, and colors
             category_translations = {}
