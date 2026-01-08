@@ -1105,23 +1105,22 @@ class PDFReportService:
         try:
             import urllib.request
             
-            # Download and add logos
-            financial_clinic_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
-            national_bonds_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
+            # Choose logos based on language
+            if language == 'ar':
+                financial_clinic_logo_url = "/app/static/logos/Financial-Clinic-logo-04.png"
+                national_bonds_logo_url = "/app/static/logos/Logo_arb.svg"
+            else:
+                financial_clinic_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764332361/financial_clinic_nep6cd.png"
+                national_bonds_logo_url = "https://res.cloudinary.com/dhujwbcor/image/upload/v1764334328/logo_bhsixi.png"
             
             # Create temporary files for logos
             import tempfile
             
-            # Download Financial Clinic logo
-            fc_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            urllib.request.urlretrieve(financial_clinic_logo_url, fc_logo_temp.name)
-            fc_logo = Image(fc_logo_temp.name, width=1.2*inch, height=0.5*inch)
+            # Add Financial Clinic logo
+            fc_logo = Image(financial_clinic_logo_url, width=1.2*inch, height=0.5*inch)
             
-            # Download National Bonds logo
-            nb_logo_temp = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-            urllib.request.urlretrieve(national_bonds_logo_url, nb_logo_temp.name)
-            # Set explicit dimensions for National Bonds logo
-            nb_logo = Image(nb_logo_temp.name, width=1.8*inch, height=0.625*inch)
+            # Add National Bonds logo
+            nb_logo = Image(national_bonds_logo_url, width=1.8*inch, height=0.625*inch)
             
             # Create header table with logos on left and right
             header_data = [[fc_logo, nb_logo]]

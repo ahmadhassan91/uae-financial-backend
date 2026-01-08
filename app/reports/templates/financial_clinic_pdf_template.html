@@ -379,7 +379,7 @@
       <div class="header">
         {% if national_bonds_logo_base64 %}
         <img
-          src="data:image/svg+xml;base64,{{ national_bonds_logo_base64 }}"
+          src="data:{{ national_bonds_logo_mime }};base64,{{ national_bonds_logo_base64 }}"
           alt="National Bonds"
           class="logo-left"
         />
@@ -387,7 +387,7 @@
         <div class="header-divider"></div>
         {% if financial_clinic_logo_base64 %}
         <img
-          src="data:image/svg+xml;base64,{{ financial_clinic_logo_base64 }}"
+          src="data:{{ financial_clinic_logo_mime }};base64,{{ financial_clinic_logo_base64 }}"
           alt="Financial Clinic"
           class="logo-right"
         />

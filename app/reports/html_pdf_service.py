@@ -150,25 +150,45 @@ class HTMLPDFService:
             
             # Get the static logos directory path
             static_logos_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'logos')
-            national_bonds_logo_path = os.path.join(static_logos_dir, 'NATIONAL BONDS LOGO.svg')
-            financial_clinic_logo_path = os.path.join(static_logos_dir, 'financial-clinic-logo.svg')
+            
+            # Choose logos based on language
+            if language == 'ar':
+                national_bonds_logo_path = os.path.join(static_logos_dir, 'Logo_arb.svg')
+                financial_clinic_logo_path = os.path.join(static_logos_dir, 'Financial-Clinic-logo-04.png')
+            else:
+                national_bonds_logo_path = os.path.join(static_logos_dir, 'NATIONAL BONDS LOGO.svg')
+                financial_clinic_logo_path = os.path.join(static_logos_dir, 'financial-clinic-logo.svg')
             
             try:
-                # Read National Bonds SVG logo
+                # Read National Bonds logo and detect format
+                national_bonds_logo_base64 = ""
+                national_bonds_logo_mime = "image/svg+xml"
                 if os.path.exists(national_bonds_logo_path):
                     with open(national_bonds_logo_path, 'rb') as f:
-                        national_bonds_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        logo_data = f.read()
+                        national_bonds_logo_base64 = base64.b64encode(logo_data).decode('utf-8')
+                        # Detect MIME type
+                        if national_bonds_logo_path.lower().endswith('.png'):
+                            national_bonds_logo_mime = "image/png"
+                        elif national_bonds_logo_path.lower().endswith('.jpg') or national_bonds_logo_path.lower().endswith('.jpeg'):
+                            national_bonds_logo_mime = "image/jpeg"
                 else:
                     logger.warning(f"National Bonds logo not found at: {national_bonds_logo_path}")
-                    national_bonds_logo_base64 = ""
                 
-                # Read Financial Clinic SVG logo
+                # Read Financial Clinic logo and detect format
+                financial_clinic_logo_base64 = ""
+                financial_clinic_logo_mime = "image/svg+xml"
                 if os.path.exists(financial_clinic_logo_path):
                     with open(financial_clinic_logo_path, 'rb') as f:
-                        financial_clinic_logo_base64 = base64.b64encode(f.read()).decode('utf-8')
+                        logo_data = f.read()
+                        financial_clinic_logo_base64 = base64.b64encode(logo_data).decode('utf-8')
+                        # Detect MIME type
+                        if financial_clinic_logo_path.lower().endswith('.png'):
+                            financial_clinic_logo_mime = "image/png"
+                        elif financial_clinic_logo_path.lower().endswith('.jpg') or financial_clinic_logo_path.lower().endswith('.jpeg'):
+                            financial_clinic_logo_mime = "image/jpeg"
                 else:
                     logger.warning(f"Financial Clinic logo not found at: {financial_clinic_logo_path}")
-                    financial_clinic_logo_base64 = ""
                     
             except Exception as logo_error:
                 logger.error(f"Error loading logos: {logo_error}")
@@ -252,6 +272,8 @@ class HTMLPDFService:
                 insights=insights,
                 financial_clinic_logo_base64=financial_clinic_logo_base64,
                 national_bonds_logo_base64=national_bonds_logo_base64,
+                financial_clinic_logo_mime=financial_clinic_logo_mime,
+                national_bonds_logo_mime=national_bonds_logo_mime,
                 logos_are_png=logos_are_png,
                 current_year=datetime.now().year
             )
