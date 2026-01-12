@@ -67,7 +67,6 @@ INSIGHTS_MATRIX = {
             }
         }
     },
-
     "Savings Habit": {
         "at_risk": {
             "income_below_30k": {
@@ -96,7 +95,6 @@ INSIGHTS_MATRIX = {
             }
         }
     },
-
     "Emergency Savings": {
         "at_risk": {
             "default": {
@@ -125,7 +123,6 @@ INSIGHTS_MATRIX = {
             }
         }
     },
-
     "Debt Management": {
         "at_risk": {
             "default": {
@@ -146,7 +143,6 @@ INSIGHTS_MATRIX = {
             }
         }
     },
-
     "Retirement Planning": {
         "at_risk": {
             "default": {
@@ -167,7 +163,6 @@ INSIGHTS_MATRIX = {
             }
         }
     },
-
     "Protecting Your Family": {
         "at_risk": {
             "default": {
@@ -197,7 +192,6 @@ INSIGHTS_MATRIX = {
         }
     }
 }
-
 
 # Category priority for tie-breaking (1 = highest priority)
 CATEGORY_PRIORITY: Dict[str, int] = {
