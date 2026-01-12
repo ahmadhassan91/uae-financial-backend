@@ -2132,17 +2132,17 @@ async def get_companies_analytics(
     activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
-    """Get companies analytics - only for companies in CompanyDetails table."""
+    """Get companies analytics - for companies in CompanyTracker table (created via Company Management under unique URL)."""
     try:
-        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker, CompanyDetails
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
         
-        # Get list of valid company names from CompanyDetails table
-        valid_companies = db.query(CompanyDetails.company_name).filter(
-            CompanyDetails.is_active == True
+        # Get list of valid company names from CompanyTracker table
+        valid_companies = db.query(CompanyTracker).filter(
+            CompanyTracker.is_active == True
         ).all()
-        valid_company_names = set(c[0].lower().strip() for c in valid_companies if c[0])
+        valid_company_names = {c.company_name.lower().strip(): c for c in valid_companies if c.company_name}
         
-        # If no companies in CompanyDetails, return empty list
+        # If no companies in CompanyTracker, return empty list
         if not valid_company_names:
             return {"companies": []}
         
@@ -2171,7 +2171,7 @@ async def get_companies_analytics(
             responses = filter_unique_users(responses)
         unique_responses = responses
         
-        # Group by company - only include companies that exist in CompanyDetails
+        # Group by company - only include companies that exist in CompanyTracker
         company_data = {}
         
         for response in unique_responses:
@@ -2181,10 +2181,10 @@ async def get_companies_analytics(
             ).first()
             
             if profile and profile.company_name:
-                # Only include if company exists in CompanyDetails table
+                # Only include if company exists in CompanyTracker table
                 company_name_lower = profile.company_name.lower().strip()
                 if company_name_lower not in valid_company_names:
-                    continue  # Skip companies not in CompanyDetails
+                    continue  # Skip companies not in CompanyTracker
                     
                 company_key = f"profile_{profile.company_name}"
                 
@@ -2204,20 +2204,21 @@ async def get_companies_analytics(
                 company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
                 
                 if company:
-                    # Only include if company exists in CompanyDetails table
-                    company_name_lower = company.company_name.lower().strip() if company.company_name else ""
-                    if company_name_lower not in valid_company_names:
-                        continue  # Skip companies not in CompanyDetails
-                
-                if company_id not in company_data:
-                    company_data[company_id] = {
-                        "company_name": company.company_name if company else f"Company {company_id}",
-                        "scores": [],
-                        "status_bands": []
-                    }
-                
-                company_data[company_id]["scores"].append(response.total_score)
-                company_data[company_id]["status_bands"].append(response.status_band)
+                    # Only include if company is active in CompanyTracker table
+                    if not company.is_active:
+                        continue  # Skip inactive companies
+                    
+                    company_key = f"tracker_{company_id}"
+                    
+                    if company_key not in company_data:
+                        company_data[company_key] = {
+                            "company_name": company.company_name if company else f"Company {company_id}",
+                            "scores": [],
+                            "status_bands": []
+                        }
+                    
+                    company_data[company_key]["scores"].append(response.total_score)
+                    company_data[company_key]["status_bands"].append(response.status_band)
         
         # Format response
         companies = []
