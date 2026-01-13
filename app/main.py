@@ -110,6 +110,60 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Add Security Headers Middleware (added first so it runs last)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# =============================================================================
+# Host Header Validation Middleware (Security Audit Requirement)
+# =============================================================================
+class HostHeaderValidationMiddleware(BaseHTTPMiddleware):
+    """
+    Explicit Host Header validation middleware.
+    Prevents Host Header Injection attacks by validating the Host header.
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        # Skip validation in development/debug mode
+        if settings.DEBUG:
+            return await call_next(request)
+        
+        # Get the host header
+        host = request.headers.get("host", "").lower().split(":")[0]  # Remove port if present
+        
+        # Define allowed hosts (production only)
+        allowed_hosts = [
+            "localhost",
+            "127.0.0.1",
+            "uae-financial-health-filters-68ab0c8434cb.herokuapp.com",
+            "financialclinic.ae",
+            "www.financialclinic.ae",
+        ]
+        
+        # Check if host is allowed (also allow subdomains of allowed domains)
+        is_allowed = False
+        for allowed_host in allowed_hosts:
+            if allowed_host.startswith("."):
+                # Wildcard subdomain match
+                if host.endswith(allowed_host) or host == allowed_host[1:]:
+                    is_allowed = True
+                    break
+            elif host == allowed_host or host.endswith(f".{allowed_host}"):
+                is_allowed = True
+                break
+            # Also check for herokuapp.com and netlify.app patterns
+            elif allowed_host in ["uae-financial-health-filters-68ab0c8434cb.herokuapp.com"]:
+                if host.endswith(".herokuapp.com") or host == allowed_host:
+                    is_allowed = True
+                    break
+        
+        if not is_allowed:
+            logger.warning(f"Host header validation failed: {host}")
+            return JSONResponse(
+                status_code=400,
+                content={"detail": "Invalid host header"}
+            )
+        
+        return await call_next(request)
+
+app.add_middleware(HostHeaderValidationMiddleware)
+
 # Configure CORS FIRST - This must be before other middleware
 origins = settings.allowed_origins
 print(f"🔧 [DEBUG] CORS Origins: {origins}")
