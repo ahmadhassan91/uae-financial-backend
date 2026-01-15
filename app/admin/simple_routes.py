@@ -2177,17 +2177,17 @@ async def get_companies_analytics(
     activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None)
 ):
-    """Get companies analytics - for companies in CompanyTracker table (created via Company Management under unique URL)."""
+    """Get companies analytics - for companies in CompanyDetails table."""
     try:
-        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker, CompanyDetails
         
-        # Get list of valid company names from CompanyTracker table
-        valid_companies = db.query(CompanyTracker).filter(
-            CompanyTracker.is_active == True
+        # Get list of valid company names from CompanyDetails table
+        valid_companies = db.query(CompanyDetails).filter(
+            CompanyDetails.is_active == True
         ).all()
         valid_company_names = {c.company_name.lower().strip(): c for c in valid_companies if c.company_name}
         
-        # If no companies in CompanyTracker, return empty list
+        # If no companies in CompanyDetails, return empty list
         if not valid_company_names:
             return {"companies": []}
         
@@ -2216,54 +2216,49 @@ async def get_companies_analytics(
             responses = filter_unique_users(responses)
         unique_responses = responses
         
-        # Group by company - only include companies that exist in CompanyTracker
+        # Group by company - only include companies that exist in CompanyDetails
         company_data = {}
         
         for response in unique_responses:
-            # Check for company from profile.company_name (new CSV system)
+            # Check for company from profile.company_name
             profile = db.query(FinancialClinicProfile).filter(
                 FinancialClinicProfile.id == response.profile_id
             ).first()
             
+            company_matched = False
+            matched_company_name = None
+            
             if profile and profile.company_name:
-                # Only include if company exists in CompanyTracker table
                 company_name_lower = profile.company_name.lower().strip()
-                if company_name_lower not in valid_company_names:
-                    continue  # Skip companies not in CompanyTracker
-                    
-                company_key = f"profile_{profile.company_name}"
+                if company_name_lower in valid_company_names:
+                    company_matched = True
+                    # Use the capitalized name from CompanyDetails
+                    matched_company_name = valid_company_names[company_name_lower].company_name
+            
+            # Also check for old company_tracker_id system if no profile match
+            # If matched, we attribute it to the CompanyDetails company with the same name
+            if not company_matched and response.company_tracker_id:
+                company_id = response.company_tracker_id
+                company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
+                
+                if company:
+                    company_name_lower = company.company_name.lower().strip()
+                    if company_name_lower in valid_company_names:
+                        company_matched = True
+                        matched_company_name = valid_company_names[company_name_lower].company_name
+            
+            if company_matched and matched_company_name:
+                company_key = f"company_{matched_company_name}"
                 
                 if company_key not in company_data:
                     company_data[company_key] = {
-                        "company_name": profile.company_name,
+                        "company_name": matched_company_name,
                         "scores": [],
                         "status_bands": []
                     }
                 
                 company_data[company_key]["scores"].append(response.total_score)
                 company_data[company_key]["status_bands"].append(response.status_band)
-            
-            # Also check for old company_tracker_id system
-            elif response.company_tracker_id:
-                company_id = response.company_tracker_id
-                company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
-                
-                if company:
-                    # Only include if company is active in CompanyTracker table
-                    if not company.is_active:
-                        continue  # Skip inactive companies
-                    
-                    company_key = f"tracker_{company_id}"
-                    
-                    if company_key not in company_data:
-                        company_data[company_key] = {
-                            "company_name": company.company_name if company else f"Company {company_id}",
-                            "scores": [],
-                            "status_bands": []
-                        }
-                    
-                    company_data[company_key]["scores"].append(response.total_score)
-                    company_data[company_key]["status_bands"].append(response.status_band)
         
         # Format response
         companies = []
