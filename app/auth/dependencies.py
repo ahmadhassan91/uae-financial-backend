@@ -89,6 +89,33 @@ async def get_current_full_admin_user(
     return current_user
 
 
+async def get_current_admin_or_ops_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    Get current user and verify admin or ops privileges.
+    
+    This dependency allows:
+    - full admin users (all access)
+    - ops admin users (Company Management access)
+    
+    It blocks view_only users from accessing these endpoints.
+    Use this for Company Management module routes.
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    # Allow full and ops roles, block view_only
+    if hasattr(current_user, 'admin_role') and current_user.admin_role == "view_only":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="View-only access: This action requires full admin or ops privileges"
+        )
+    return current_user
+
+
 async def get_optional_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
     db: Session = Depends(get_db)

@@ -9,7 +9,8 @@ from datetime import datetime
 
 from ..database import get_db
 from ..models import CompanyDetails, CompanyCustomerProfile, User
-from ..auth.dependencies import get_current_admin_user, get_current_user
+from ..auth.dependencies import get_current_admin_user, get_current_user, get_current_admin_or_ops_user
+from fastapi.responses import StreamingResponse
 from ..middleware.rate_limiter import limiter
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -315,6 +316,49 @@ async def get_uploaded_companies(
         total=total,
         failed=0,
         errors=[]
+    )
+
+
+@router.get("/export-csv")
+async def export_companies_csv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_or_ops_user)
+):
+    """
+    Export all companies to CSV format for download.
+    Accessible by admin and ops users.
+    """
+    # Get all companies ordered by name
+    companies = db.query(CompanyDetails).order_by(CompanyDetails.company_name).all()
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header row
+    writer.writerow(['company_name', 'company_email', 'contact_person', 'phone_number', 'additional_details'])
+    
+    # Write data rows
+    for company in companies:
+        writer.writerow([
+            company.company_name or '',
+            company.company_email or '',
+            company.contact_person or '',
+            company.phone_number or '',
+            company.additional_details or ''
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    
+    # Generate filename with timestamp
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+    filename = f"companies_export_{timestamp}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 

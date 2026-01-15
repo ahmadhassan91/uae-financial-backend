@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from ..database import get_db
 from ..models import CompanyTracker, CompanyAssessment, User
-from ..auth.dependencies import get_current_user, get_current_admin_user, get_current_full_admin_user, get_current_full_admin_user
+from ..auth.dependencies import get_current_user, get_current_admin_user, get_current_full_admin_user, get_current_admin_or_ops_user
 from ..config import settings
 from .qr_utils import generate_qr_code, get_qr_code_metadata
 from .schemas import (
@@ -42,9 +42,9 @@ def generate_unique_url(company_name: str, db: Session) -> str:
 async def create_company(
     company: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Create a new company for tracking. Admin only."""
+    """Create a new company for tracking. Admin and Ops only."""
     # Generate unique URL
     unique_url = generate_unique_url(company.company_name, db)
     
@@ -58,7 +58,8 @@ async def create_company(
         custom_branding=company.custom_branding,
         notification_settings=company.notification_settings,
         question_variation_mapping=company.question_variation_mapping,
-        variation_set_id=company.variation_set_id
+        variation_set_id=company.variation_set_id,
+        enable_company_field=company.enable_company_field if company.enable_company_field is not None else True
     )
     
     db.add(db_company)
@@ -73,9 +74,9 @@ async def export_companies_csv(
     include_analytics: bool = Query(False),
     active_only: bool = Query(True),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Export companies to CSV format. Admin only."""
+    """Export companies to CSV format for re-upload. Admin and Ops only."""
     import csv
     import io
     from fastapi.responses import StreamingResponse
@@ -91,13 +92,17 @@ async def export_companies_csv(
     output = io.StringIO()
     
     if include_analytics:
+        # Full export with analytics data
         fieldnames = [
             'id', 'company_name', 'company_email', 'contact_person', 'phone_number',
-            'unique_url', 'total_assessments', 'average_score', 'is_active', 'created_at'
+            'unique_url', 'total_assessments', 'average_score', 
+            'is_active', 'created_at'
         ]
     else:
+        # Simple export matching import format for re-upload
+        # Include unique_url to identify existing companies during import
         fieldnames = [
-            'company_name', 'company_email', 'contact_person', 'phone_number'
+            'unique_url', 'company_name', 'company_email', 'contact_person', 'phone_number'
         ]
     
     writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -108,8 +113,8 @@ async def export_companies_csv(
             row = {
                 'id': company.id,
                 'company_name': company.company_name,
-                'company_email': company.company_email,
-                'contact_person': company.contact_person,
+                'company_email': company.company_email or '',
+                'contact_person': company.contact_person or '',
                 'phone_number': company.phone_number or '',
                 'unique_url': company.unique_url,
                 'total_assessments': company.total_assessments,
@@ -119,9 +124,10 @@ async def export_companies_csv(
             }
         else:
             row = {
+                'unique_url': company.unique_url,
                 'company_name': company.company_name,
-                'company_email': company.company_email,
-                'contact_person': company.contact_person,
+                'company_email': company.company_email or '',
+                'contact_person': company.contact_person or '',
                 'phone_number': company.phone_number or ''
             }
         
@@ -145,9 +151,9 @@ async def list_companies(
     limit: int = Query(100, ge=1, le=1000),
     active_only: bool = Query(True),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """List all companies. Admin only."""
+    """List all companies. Admin and Ops only."""
     query = db.query(CompanyTracker)
     
     if active_only:
@@ -161,9 +167,9 @@ async def list_companies(
 async def get_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Get a specific company by ID. Admin only."""
+    """Get a specific company by ID. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -175,9 +181,9 @@ async def update_company(
     company_id: int,
     company_update: CompanyUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Update a company. Admin only."""
+    """Update a company. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -195,9 +201,9 @@ async def update_company(
 async def delete_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Delete a company and all related data. Admin only."""
+    """Delete a company and all related data. Admin and Ops only."""
     from app.models import CompanyAssessment, FinancialClinicResponse
     
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
@@ -228,9 +234,9 @@ async def generate_company_link(
     company_id: int,
     config: Optional[CompanyLinkConfig] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Generate a magic link for a company. Admin only."""
+    """Generate a magic link for a company. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -299,9 +305,9 @@ async def get_company_analytics(
     end_date: Optional[datetime] = Query(None),
     include_demographics: bool = Query(True),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Get comprehensive company analytics. Admin only."""
+    """Get comprehensive company analytics. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -400,9 +406,9 @@ async def renew_company_link(
     company_id: int,
     config: Optional[CompanyLinkConfig] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Renew an expired company link. Admin only."""
+    """Renew an expired company link. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -448,9 +454,9 @@ async def renew_company_link(
 async def get_link_status(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Get current link status for a company. Admin only."""
+    """Get current link status for a company. Admin and Ops only."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
@@ -515,9 +521,9 @@ async def compare_companies(
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Compare analytics across multiple companies. Admin only."""
+    """Compare analytics across multiple companies. Admin and Ops only."""
     
     # Parse company IDs
     try:
@@ -605,9 +611,9 @@ async def get_companies_dashboard(
     sort_by: str = Query("average_score", regex="^(company_name|total_responses|average_score|created_at)$"),
     sort_order: str = Query("desc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Get dashboard view of all companies with key metrics. Admin only."""
+    """Get dashboard view of all companies with key metrics. Admin and Ops only."""
     
     # Get all companies with basic info
     companies_query = db.query(CompanyTracker).filter(CompanyTracker.is_active == True)
@@ -704,9 +710,9 @@ async def get_companies_dashboard(
 async def create_companies_bulk(
     bulk_data: BulkCompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Create multiple companies at once. Admin only."""
+    """Create multiple companies at once. Admin and Ops only."""
     successful = 0
     failed = 0
     errors = []
@@ -783,9 +789,13 @@ async def import_companies_csv(
     expiry_days: int = Query(30),
     max_responses: int = Query(1000),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Import companies from CSV file. Admin only."""
+    """Import companies from CSV file. Admin and Ops only.
+    
+    Required columns: company_name
+    Optional columns: company_email, contact_person, phone_number
+    """
     import csv
     import io
     
@@ -795,14 +805,14 @@ async def import_companies_csv(
         csv_content = content.decode('utf-8')
         csv_reader = csv.DictReader(io.StringIO(csv_content))
         
-        # Expected columns: company_name, company_email, contact_person, phone_number
-        required_columns = ['company_name', 'company_email', 'contact_person']
+        # Only company_name is required
+        required_columns = ['company_name']
         
         # Validate CSV headers
         if not all(col in csv_reader.fieldnames for col in required_columns):
             raise HTTPException(
                 status_code=400, 
-                detail=f"CSV must contain columns: {', '.join(required_columns)}"
+                detail=f"CSV must contain column: company_name"
             )
         
         companies_data = []
@@ -812,8 +822,8 @@ async def import_companies_csv(
             
             companies_data.append(CompanyCreate(
                 company_name=row['company_name'].strip(),
-                company_email=row['company_email'].strip(),
-                contact_person=row['contact_person'].strip(),
+                company_email=row.get('company_email', '').strip() or None,
+                contact_person=row.get('contact_person', '').strip() or None,
                 phone_number=row.get('phone_number', '').strip() or None
             ))
         
@@ -855,9 +865,9 @@ async def bulk_generate_links(
     company_ids: List[int],
     config: CompanyLinkConfig,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Generate links for multiple companies at once. Admin only."""
+    """Generate links for multiple companies at once. Admin and Ops only."""
     
     if len(company_ids) > 50:
         raise HTTPException(status_code=400, detail="Maximum 50 companies can be processed at once")
@@ -902,9 +912,9 @@ async def bulk_generate_links(
 async def bulk_update_companies(
     request_data: dict,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Update multiple companies at once. Admin only."""
+    """Update multiple companies at once. Admin and Ops only."""
     
     updates = request_data.get('updates', [])
     
@@ -966,9 +976,9 @@ async def generate_automated_report(
     format: str = Query("json", regex="^(json|csv|pdf)$"),
     include_charts: bool = Query(False),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
-    """Generate automated reports for companies. Admin only."""
+    """Generate automated reports for companies. Admin and Ops only."""
     
     # Parse company IDs if provided
     target_companies = None
@@ -1290,7 +1300,7 @@ async def get_company_by_url(
     Used for validating company links on the frontend.
     
     Returns:
-        Basic company info: name, email, contact person, active status
+        Basic company info: name, email, contact person, active status, enable_company_field
     """
     company = db.query(CompanyTracker).filter(
         CompanyTracker.unique_url == company_url
@@ -1310,5 +1320,6 @@ async def get_company_by_url(
         "contact_person": company.contact_person,
         "unique_url": company.unique_url,
         "is_active": company.is_active,
-        "custom_branding": company.custom_branding
+        "custom_branding": company.custom_branding,
+        "enable_company_field": getattr(company, 'enable_company_field', True)  # Whether to show company field on profile page
     }

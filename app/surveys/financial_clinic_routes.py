@@ -447,20 +447,12 @@ async def submit_financial_clinic_survey(
                 profile_data['date_of_birth'] = '01/01/1990'  # Fallback
         
         if existing_profile:
-            # Update existing profile with non-empty values
-            for key, value in profile_data.items():
-                if hasattr(existing_profile, key) and value is not None and value != "":
-                    setattr(existing_profile, key, value)
-                    logger.info(f"📝 Updated {key}: {value}")
-            # Update company_details_id if found
-            if company_details_id:
-                existing_profile.company_details_id = company_details_id
-                logger.info(f"📝 Updated company_details_id: {company_details_id}")
+            # DO NOT update existing profile - preserve historical data integrity
+            # Each submission should have its own profile snapshot in the response
             profile = existing_profile
-            logger.info(f"📝 Updated existing profile for: {existing_profile.email}")
-            logger.info(f"📝 Profile company_name after update: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
-            logger.info(f"📝 Profile company_details_id after update: {getattr(existing_profile, 'company_details_id', 'NOT_SET')}")
-            db.flush()  # Save changes to database
+            logger.info(f"📝 Using existing profile (ID: {profile.id}) without modification to preserve historical data")
+            logger.info(f"📝 Profile email: {existing_profile.email}, company: {getattr(existing_profile, 'company_name', 'NOT_SET')}")
+            # Note: Profile data from current submission will be stored in response.profile_snapshot
         else:
             # Create new profile with flexible fields for resumed surveys
             profile = FinancialClinicProfile(
@@ -482,7 +474,22 @@ async def submit_financial_clinic_survey(
             logger.info(f"📝 New profile company_name: {getattr(profile, 'company_name', 'NOT_SET')}")
             db.flush()  # Get profile.id
         
-        # 3. Create survey response
+        # 3. Create survey response with profile snapshot
+        # Store a snapshot of the profile data at submission time to preserve historical accuracy
+        profile_snapshot = {
+            'name': profile_data.get('name', profile.name),
+            'email': profile_data.get('email', profile.email),
+            'mobile_number': profile_data.get('mobile_number', profile.mobile_number),
+            'company_name': profile_data.get('company_name', profile.company_name),
+            'date_of_birth': profile_data.get('date_of_birth', profile.date_of_birth),
+            'gender': profile_data.get('gender', profile.gender),
+            'nationality': profile_data.get('nationality', profile.nationality),
+            'children': profile_data.get('children', profile.children),
+            'employment_status': profile_data.get('employment_status', profile.employment_status),
+            'income_range': profile_data.get('income_range', profile.income_range),
+            'emirate': profile_data.get('emirate', profile.emirate),
+        }
+        
         survey_response = FinancialClinicResponse(
             profile_id=profile.id,
             company_tracker_id=company_tracker_id,
@@ -494,7 +501,9 @@ async def submit_financial_clinic_survey(
             product_recommendations=result_dict.get('products', []),
             questions_answered=result_dict.get('questions_answered', len(request.answers)),
             total_questions=result_dict.get('total_questions', 15),
-            completed_at=datetime.utcnow()  # Set completion timestamp
+            completed_at=datetime.utcnow(),  # Set completion timestamp
+            profile_snapshot=profile_snapshot,  # Store profile data at submission time
+            leads_requested=False  # Default to False, will be updated if consultation is requested
         )
         db.add(survey_response)
         db.commit()

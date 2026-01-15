@@ -1,7 +1,7 @@
 """Make company_email and contact_person nullable in company_details
 
 Revision ID: 50642fd6ec4c
-Revises: 28efd6746a4f
+Revises: aabcd0ff149b
 Create Date: 2026-01-06 00:32:45.089758
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision: str = '50642fd6ec4c'
-down_revision: Union[str, None] = '28efd6746a4f'
+down_revision: Union[str, None] = 'aabcd0ff149b'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

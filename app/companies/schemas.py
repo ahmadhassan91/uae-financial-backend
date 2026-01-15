@@ -1,18 +1,27 @@
 """Pydantic schemas for company management."""
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 
 class CompanyBase(BaseModel):
-    company_name: str
-    company_email: EmailStr
-    contact_person: str
+    company_name: str  # Only company name is required
+    company_email: Optional[EmailStr] = None  # Optional
+    contact_person: Optional[str] = None  # Optional
     phone_number: Optional[str] = None
     custom_branding: Optional[Dict[str, Any]] = None
     notification_settings: Optional[Dict[str, Any]] = None
     question_variation_mapping: Optional[Dict[str, int]] = None  # {"fc_q3": 123, "fc_q11": 456} - for API compatibility
     variation_set_id: Optional[int] = None  # Variation Set assignment
+    enable_company_field: Optional[bool] = True  # Enable/disable company field on profile page
+
+    @field_validator('company_email', 'contact_person', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Convert empty strings to None for optional fields."""
+        if v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
 
 
 class CompanyCreate(CompanyBase):
@@ -31,6 +40,15 @@ class CompanyUpdate(BaseModel):
     question_variation_mapping: Optional[Dict[str, int]] = None
     variation_set_id: Optional[int] = None  # Variation Set assignment
     is_active: Optional[bool] = None
+    enable_company_field: Optional[bool] = None  # Enable/disable company field on profile page
+
+    @field_validator('company_email', 'contact_person', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Convert empty strings to None for optional fields."""
+        if v == "" or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
 
 
 class CompanyResponse(CompanyBase):
@@ -45,6 +63,7 @@ class CompanyResponse(CompanyBase):
     enable_variations: Optional[bool] = False
     variations_enabled_at: Optional[datetime] = None
     variations_enabled_by: Optional[int] = None
+    enable_company_field: Optional[bool] = True  # Enable/disable company field on profile page
     created_at: datetime
     updated_at: Optional[datetime]
 

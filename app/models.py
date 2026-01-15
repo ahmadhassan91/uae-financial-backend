@@ -28,7 +28,7 @@ class User(Base):
     email_verified_at = Column(DateTime(timezone=True), nullable=True)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
-    admin_role = Column(String(20), default="full", nullable=False)  # "full" or "view_only"
+    admin_role = Column(String(20), default="full", nullable=False)  # "full", "view_only", or "ops"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -181,9 +181,12 @@ class CompanyTracker(Base):
     
     # Company information
     company_name = Column(String(200), nullable=False)
-    company_email = Column(String(255), nullable=False)
-    contact_person = Column(String(200), nullable=False)
+    company_email = Column(String(255), nullable=True)  # Made optional
+    contact_person = Column(String(200), nullable=True)  # Made optional
     phone_number = Column(String(20), nullable=True)
+    
+    # Company field visibility on profile page
+    enable_company_field = Column(Boolean, default=True, nullable=False)
     
     # Tracking details
     unique_url = Column(String(100), unique=True, index=True, nullable=False)
@@ -682,9 +685,13 @@ class FinancialClinicResponse(Base):
     insights = Column(JSON, nullable=True)  # Selected insights
     product_recommendations = Column(JSON, nullable=True)  # Recommended products
     
+    # Profile snapshot at time of submission (prevents data loss from profile updates)
+    profile_snapshot = Column(JSON, nullable=True)  # Stores profile data at time of submission
+    
     # Metadata
     questions_answered = Column(Integer, nullable=False)
     total_questions = Column(Integer, nullable=False)
+    leads_requested = Column(Boolean, default=False, nullable=False)  # Track if user requested consultation/lead
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True), nullable=True)  # When the survey was completed
     
@@ -741,6 +748,9 @@ class ConsultationRequest(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
+    # Link to survey response (to track leads_requested)
+    survey_response_id = Column(Integer, ForeignKey("financial_clinic_responses.id"), nullable=True, index=True)
+    
     # Contact information
     name = Column(String(255), nullable=False)
     email = Column(String(255), nullable=False, index=True)
@@ -762,12 +772,16 @@ class ConsultationRequest(Base):
     contacted_at = Column(DateTime(timezone=True), nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
     
+    # Relationship to survey response
+    survey_response = relationship("FinancialClinicResponse", backref="consultation_requests")
+    
     # Indexes for performance
     __table_args__ = (
         Index('idx_consultation_status', 'status'),
         Index('idx_consultation_source', 'source'),
         Index('idx_consultation_created_at', 'created_at'),
         Index('idx_consultation_email', 'email'),
+        Index('idx_consultation_survey_response', 'survey_response_id'),
     )
 
 

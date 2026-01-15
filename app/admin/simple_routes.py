@@ -854,13 +854,33 @@ async def export_simple_admin_csv(
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
-            'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
+            'Financial Knowledge Score', 'Leads Requested', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
             'Action Plan 4', 'Action Plan 5', 'Submission Date'
         ])
         writer.writerow(base_headers)
 
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
+            
+            # Use profile_snapshot if available (for historical accuracy), fallback to profile table
+            if r.profile_snapshot:
+                profile_data = r.profile_snapshot
+            elif profile:
+                profile_data = {
+                    'name': profile.name,
+                    'email': profile.email,
+                    'mobile_number': profile.mobile_number,
+                    'date_of_birth': profile.date_of_birth,
+                    'gender': profile.gender,
+                    'nationality': profile.nationality,
+                    'emirate': profile.emirate,
+                    'children': profile.children,
+                    'employment_status': profile.employment_status,
+                    'income_range': profile.income_range,
+                    'company_name': profile.company_name if hasattr(profile, 'company_name') else '',
+                }
+            else:
+                profile_data = {}
             
             # Extract category scores from JSON (using actual category enum values with spaces)
             income_stream_score = get_category_score(r.category_scores, 'Income Stream')
@@ -878,24 +898,25 @@ async def export_simple_admin_csv(
                         # Extract text from each insight dictionary
                         insight_texts = []
                         for insight in r.insights[:5]:
-                            if isinstance(insight, dict) and 'text' in insight:
-                                insight_texts.append(insight['text'])
+                            if isinstance(insight, dict):
+                                # Try multiple possible keys
+                                text = insight.get('text', '') or insight.get('title', '') or insight.get('message', '') or insight.get('description', '')
+                                if text:
+                                    insight_texts.append(text)
                             elif isinstance(insight, str):
                                 insight_texts.append(insight)
-                            else:
-                                insight_texts.append(str(insight))
                         insights = insight_texts + [''] * (5 - len(insight_texts))
                     elif isinstance(r.insights, str):
                         insights = [r.insights] + [''] * 4
                     else:
                         insights = [str(r.insights)] + [''] * 4
-                except:
+                except Exception as e:
+                    logger.warning(f"Error extracting insights for response {r.id}: {e}")
                     insights = ['', '', '', '', '']
             
             # Format mobile number with country code
-            mobile_number = ''
-            if profile and profile.mobile_number:
-                mobile_number = profile.mobile_number
+            mobile_number = profile_data.get('mobile_number', '')
+            if mobile_number:
                 # Add country code if not already present
                 if not mobile_number.startswith('+'):
                     # Default to UAE country code if not specified
@@ -904,20 +925,20 @@ async def export_simple_admin_csv(
             # Build the row data
             row_data = [
                 r.id,
-                profile.name if profile else '',
-                profile.email if profile else '',
+                profile_data.get('name', ''),
+                profile_data.get('email', ''),
                 mobile_number,
-                calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
-                profile.gender if profile else '',
-                profile.nationality if profile else '',
-                profile.emirate if profile else '',
-                profile.children if profile else '',
-                profile.employment_status if profile else '',
-                profile.income_range if profile else '',
+                calculate_age(profile_data.get('date_of_birth', '')) if profile_data.get('date_of_birth') else '',
+                profile_data.get('gender', ''),
+                profile_data.get('nationality', ''),
+                profile_data.get('emirate', ''),
+                profile_data.get('children', ''),
+                profile_data.get('employment_status', ''),
+                profile_data.get('income_range', ''),
             ]
             # Add company name if Companies Module is enabled
             if companies_module_enabled:
-                row_data.append(profile.company_name if profile and profile.company_name else '')
+                row_data.append(profile_data.get('company_name', ''))
             row_data.extend([
                 round(r.total_score, 2) if r.total_score else 0,
                 r.status_band if r.status_band else '',
@@ -928,6 +949,7 @@ async def export_simple_admin_csv(
                 retirement_planning_score,
                 financial_protection_score,
                 financial_knowledge_score,
+                'Y' if r.leads_requested else 'N',  # Leads Requested column
                 insights[0] if len(insights) > 0 else '',
                 insights[1] if len(insights) > 1 else '',
                 insights[2] if len(insights) > 2 else '',
@@ -1054,6 +1076,26 @@ async def export_simple_admin_excel(
         for r in responses:
             profile = db.query(FinancialClinicProfile).filter(FinancialClinicProfile.id == r.profile_id).first()
             
+            # Use profile_snapshot if available (for historical accuracy), fallback to profile table
+            if r.profile_snapshot:
+                profile_data = r.profile_snapshot
+            elif profile:
+                profile_data = {
+                    'name': profile.name,
+                    'email': profile.email,
+                    'mobile_number': profile.mobile_number,
+                    'date_of_birth': profile.date_of_birth,
+                    'gender': profile.gender,
+                    'nationality': profile.nationality,
+                    'emirate': profile.emirate,
+                    'children': profile.children,
+                    'employment_status': profile.employment_status,
+                    'income_range': profile.income_range,
+                    'company_name': profile.company_name if hasattr(profile, 'company_name') else '',
+                }
+            else:
+                profile_data = {}
+            
             # Extract category scores from JSON (using actual category enum values with spaces)
             income_stream_score = get_category_score(r.category_scores, 'Income Stream')
             savings_habit_score = get_category_score(r.category_scores, 'Savings Habit')
@@ -1070,24 +1112,25 @@ async def export_simple_admin_excel(
                         # Extract text from each insight dictionary
                         insight_texts = []
                         for insight in r.insights[:5]:
-                            if isinstance(insight, dict) and 'text' in insight:
-                                insight_texts.append(insight['text'])
+                            if isinstance(insight, dict):
+                                # Try multiple possible keys
+                                text = insight.get('text', '') or insight.get('title', '') or insight.get('message', '') or insight.get('description', '')
+                                if text:
+                                    insight_texts.append(text)
                             elif isinstance(insight, str):
                                 insight_texts.append(insight)
-                            else:
-                                insight_texts.append(str(insight))
                         insights = insight_texts + [''] * (5 - len(insight_texts))
                     elif isinstance(r.insights, str):
                         insights = [r.insights] + [''] * 4
                     else:
                         insights = [str(r.insights)] + [''] * 4
-                except:
+                except Exception as e:
+                    logger.warning(f"Error extracting insights for response {r.id}: {e}")
                     insights = ['', '', '', '', '']
             
             # Format mobile number with country code
-            mobile_number = ''
-            if profile and profile.mobile_number:
-                mobile_number = profile.mobile_number
+            mobile_number = profile_data.get('mobile_number', '')
+            if mobile_number:
                 # Add country code if not already present
                 if not mobile_number.startswith('+'):
                     # Default to UAE country code if not specified
@@ -1095,17 +1138,17 @@ async def export_simple_admin_excel(
             
             rows.append({
                 'id': r.id,
-                'name': profile.name if profile else '',
-                'email': profile.email if profile else '',
+                'name': profile_data.get('name', ''),
+                'email': profile_data.get('email', ''),
                 'mobile_number': mobile_number,
-                'age': calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
-                'gender': profile.gender if profile else '',
-                'nationality': profile.nationality if profile else '',
-                'emirate': profile.emirate if profile else '',
-                'children': profile.children if profile else '',
-                'employment_status': profile.employment_status if profile else '',
-                'income_range': profile.income_range if profile else '',
-                'company': profile.company_name if profile and profile.company_name else '',
+                'age': calculate_age(profile_data.get('date_of_birth', '')) if profile_data.get('date_of_birth') else '',
+                'gender': profile_data.get('gender', ''),
+                'nationality': profile_data.get('nationality', ''),
+                'emirate': profile_data.get('emirate', ''),
+                'children': profile_data.get('children', ''),
+                'employment_status': profile_data.get('employment_status', ''),
+                'income_range': profile_data.get('income_range', ''),
+                'company': profile_data.get('company_name', ''),
                 'total_score': round(r.total_score, 2) if r.total_score else 0,
                 'status_band': r.status_band if r.status_band else '',
                 'questions_answered': r.questions_answered if r.questions_answered else 0,
@@ -1115,6 +1158,7 @@ async def export_simple_admin_excel(
                 'retirement_planning_score': retirement_planning_score,
                 'financial_protection_score': financial_protection_score,
                 'financial_knowledge_score': financial_knowledge_score,
+                'leads_requested': 'Y' if r.leads_requested else 'N',
                 'action_plan_1': insights[0] if len(insights) > 0 else '',
                 'action_plan_2': insights[1] if len(insights) > 1 else '',
                 'action_plan_3': insights[2] if len(insights) > 2 else '',
@@ -1144,7 +1188,7 @@ async def export_simple_admin_excel(
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
             'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
-            'Financial Knowledge Score', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
+            'Financial Knowledge Score', 'Leads Requested', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
             'Action Plan 4', 'Action Plan 5', 'Submission Date'
         ])
         ws.append(headers)
@@ -1176,6 +1220,7 @@ async def export_simple_admin_excel(
                 row['retirement_planning_score'],
                 row['financial_protection_score'],
                 row['financial_knowledge_score'],
+                row['leads_requested'],
                 row['action_plan_1'],
                 row['action_plan_2'],
                 row['action_plan_3'],
@@ -2577,23 +2622,41 @@ async def get_submissions(
         # Format submissions
         submissions = []
         for response, profile in results:
-            # Get company name from profile (from Customer Profile form)
-            company_name = profile.company_name if profile.company_name else None
-            print(f"🔧 [DEBUG] Processing submission {response.id}: company_name = {company_name}")
-            print(f"🔧 [DEBUG] Profile data: company_name field = {getattr(profile, 'company_name', 'FIELD_NOT_FOUND')}")
+            # Use profile_snapshot if available (for historical accuracy), fallback to profile table
+            if response.profile_snapshot:
+                profile_data = response.profile_snapshot
+                logger.info(f"✅ Using profile_snapshot for submission {response.id}")
+            else:
+                profile_data = {
+                    'name': profile.name,
+                    'email': profile.email,
+                    'mobile_number': profile.mobile_number,
+                    'date_of_birth': profile.date_of_birth,
+                    'gender': profile.gender,
+                    'nationality': profile.nationality,
+                    'emirate': profile.emirate,
+                    'children': profile.children,
+                    'employment_status': profile.employment_status,
+                    'income_range': profile.income_range,
+                    'company_name': profile.company_name if profile.company_name else None,
+                }
+                logger.info(f"⚠️ Using profile table for submission {response.id} (no snapshot)")
+            
+            # Get company name from profile_data
+            company_name = profile_data.get('company_name') if profile_data.get('company_name') else None
             
             submissions.append({
                 'id': response.id,
                 'profile_id': profile.id,
-                'profile_name': profile.name,
-                'profile_email': profile.email,
-                'profile_mobile': profile.mobile_number,
-                'gender': profile.gender,
-                'nationality': profile.nationality,
-                'emirate': profile.emirate,
-                'age': calculate_age(profile.date_of_birth) if profile.date_of_birth else None,
-                'employment_status': profile.employment_status,
-                'income_range': profile.income_range,
+                'profile_name': profile_data.get('name', ''),
+                'profile_email': profile_data.get('email', ''),
+                'profile_mobile': profile_data.get('mobile_number', ''),
+                'gender': profile_data.get('gender', ''),
+                'nationality': profile_data.get('nationality', ''),
+                'emirate': profile_data.get('emirate', ''),
+                'age': calculate_age(profile_data.get('date_of_birth', '')) if profile_data.get('date_of_birth') else None,
+                'employment_status': profile_data.get('employment_status', ''),
+                'income_range': profile_data.get('income_range', ''),
                 'company_name': company_name,
                 'total_score': round(response.total_score, 2),
                 'status_band': response.status_band,
@@ -2601,6 +2664,7 @@ async def get_submissions(
                 'total_questions': response.total_questions,
                 'category_scores': response.category_scores,
                 'insights': response.insights,
+                'leads_requested': response.leads_requested,
                 'created_at': response.created_at.isoformat(),
                 'completed_at': response.completed_at.isoformat() if response.completed_at else None,
             })

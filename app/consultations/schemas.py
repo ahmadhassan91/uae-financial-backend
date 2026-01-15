@@ -13,6 +13,7 @@ class ConsultationRequestCreate(BaseModel):
     preferred_contact_method: Optional[str] = "phone"  # phone, email, whatsapp
     preferred_time: Optional[str] = None  # morning, afternoon, evening
     source: Optional[str] = "financial_clinic"  # financial_clinic, website, etc.
+    survey_response_id: Optional[int] = None  # Link to FinancialClinicResponse if from survey
 
 
 class ConsultationRequestUpdate(BaseModel):

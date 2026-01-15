@@ -34,6 +34,7 @@ async def create_consultation_request(
     """Create a new consultation request (public endpoint)."""
     try:
         logger.info(f"📞 New consultation request from: {request_data.email}")
+        logger.info(f"🔍 survey_response_id received: {request_data.survey_response_id}")
         
         # Check for duplicate requests within 24 hours
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
@@ -59,12 +60,24 @@ async def create_consultation_request(
             message=request_data.message,
             preferred_contact_method=request_data.preferred_contact_method,
             preferred_time=request_data.preferred_time,
-            source=request_data.source
+            source=request_data.source,
+            survey_response_id=request_data.survey_response_id
         )
         
         db.add(consultation_request)
         db.commit()
         db.refresh(consultation_request)
+        
+        # If linked to a survey response, update the leads_requested flag
+        if request_data.survey_response_id:
+            from app.models import FinancialClinicResponse
+            survey_response = db.query(FinancialClinicResponse).filter(
+                FinancialClinicResponse.id == request_data.survey_response_id
+            ).first()
+            if survey_response:
+                survey_response.leads_requested = True
+                db.commit()
+                logger.info(f"✅ Updated survey response {request_data.survey_response_id} - leads_requested = True")
         
         # Log the request creation
         audit_log = AuditLog(
@@ -75,7 +88,8 @@ async def create_consultation_request(
                 "email": request_data.email,
                 "name": request_data.name,
                 "source": request_data.source,
-                "preferred_contact": request_data.preferred_contact_method
+                "preferred_contact": request_data.preferred_contact_method,
+                "survey_response_id": request_data.survey_response_id
             }
         )
         db.add(audit_log)
@@ -484,7 +498,7 @@ async def export_consultation_requests_csv(
             # Profile Information (matches Financial Clinic export)
             'Profile ID', 'Name', 'Email', 'Mobile Number', 'Date of Birth', 'Age',
             'Gender', 'Nationality', 'Emirate', 'Children',
-            'Employment Status', 'Income Range', 'Company',
+            'Employment Status', 'Income Range', 'Company', 'Unique URL',
             
             # Assessment Results
             'Response ID', 'Total Score', 'Status Band', 'Questions Answered', 'Total Questions',
@@ -492,6 +506,9 @@ async def export_consultation_requests_csv(
             # Category Scores
             'Income Stream Score', 'Savings Habit Score', 'Debt Management Score',
             'Retirement Planning Score', 'Financial Protection Score', 'Financial Knowledge Score',
+            
+            # Insights (Action Plan) - Top 5
+            'Insight 1', 'Insight 2', 'Insight 3', 'Insight 4', 'Insight 5',
             
             # Submission Date
             'Assessment Submission Date'
@@ -555,6 +572,64 @@ async def export_consultation_requests_csv(
             financial_protection_score = get_category_score(response.category_scores if response else None, 'Protecting Your Family')
             financial_knowledge_score = get_category_score(response.category_scores if response else None, 'Emergency Savings')
             
+            # Get company tracker information
+            company_name = ''
+            unique_url = ''
+            if response and response.company_tracker_id:
+                from app.models import CompanyTracker
+                company_tracker = db.query(CompanyTracker).filter(
+                    CompanyTracker.id == response.company_tracker_id
+                ).first()
+                if company_tracker:
+                    company_name = company_tracker.company_name
+                    unique_url = company_tracker.unique_url
+            # Fallback to profile company_name if available
+            elif profile and hasattr(profile, 'company_name') and profile.company_name:
+                company_name = profile.company_name
+            
+            # Extract top 5 insights from response
+            insights = []
+            if response and response.insights:
+                logger.info(f"🔍 Debug insights - Response ID: {response.id}, insights type: {type(response.insights)}")
+                if isinstance(response.insights, list):
+                    logger.info(f"🔍 Debug insights - List length: {len(response.insights)}")
+                    # Take first 5 insights
+                    for i, insight in enumerate(response.insights[:5]):
+                        logger.info(f"🔍 Debug insight {i} - type: {type(insight)}, content: {insight}")
+                        if isinstance(insight, dict):
+                            # Try multiple keys that might contain the insight text
+                            text = insight.get('text', '') or insight.get('title', '') or insight.get('message', '') or insight.get('description', '')
+                            if text:
+                                insights.append(text)
+                        elif isinstance(insight, str):
+                            insights.append(insight)
+                else:
+                    logger.info(f"🔍 Debug insights - Not a list: {response.insights}")
+            # Pad with empty strings to ensure we have 5 columns
+            while len(insights) < 5:
+                insights.append('')
+            
+            # Use profile_snapshot if available (for historical accuracy), fallback to profile table
+            profile_data = {}
+            if response and response.profile_snapshot:
+                profile_data = response.profile_snapshot
+                logger.info(f"✅ Using profile_snapshot for response {response.id}")
+            elif profile:
+                profile_data = {
+                    'id': profile.id,
+                    'name': profile.name,
+                    'email': profile.email,
+                    'mobile_number': profile.mobile_number,
+                    'date_of_birth': profile.date_of_birth,
+                    'gender': profile.gender,
+                    'nationality': profile.nationality,
+                    'emirate': profile.emirate,
+                    'children': profile.children,
+                    'employment_status': profile.employment_status,
+                    'income_range': profile.income_range,
+                }
+                logger.info(f"⚠️ Using profile table for response {response.id if response else 'N/A'}")
+            
             writer.writerow([
                 # Consultation Request Data
                 request.id,
@@ -568,20 +643,21 @@ async def export_consultation_requests_csv(
                 request.scheduled_at.strftime('%Y-%m-%d %H:%M:%S') if request.scheduled_at else '',
                 request.notes or '',
                 
-                # Profile Data
-                profile.id if profile else '',
-                profile.name if profile else request.name,
-                profile.email if profile else request.email,
-                profile.mobile_number if profile else request.phone_number,
-                profile.date_of_birth if profile else '',
-                calculate_age(profile.date_of_birth) if profile and profile.date_of_birth else '',
-                profile.gender if profile else '',
-                profile.nationality if profile else '',
-                profile.emirate if profile else '',
-                profile.children if profile else '',
-                profile.employment_status if profile else '',
-                profile.income_range if profile else '',
-                '',  # Company (from company_tracker_id if available)
+                # Profile Data - Use profile_snapshot first, fallback to profile table
+                profile_data.get('id', profile.id if profile else ''),
+                profile_data.get('name', request.name),
+                profile_data.get('email', request.email),
+                profile_data.get('mobile_number', request.phone_number),
+                profile_data.get('date_of_birth', ''),
+                calculate_age(profile_data.get('date_of_birth', '')) if profile_data.get('date_of_birth') else '',
+                profile_data.get('gender', ''),
+                profile_data.get('nationality', ''),
+                profile_data.get('emirate', ''),
+                profile_data.get('children', ''),
+                profile_data.get('employment_status', ''),
+                profile_data.get('income_range', ''),
+                company_name,  # Company name from tracker or profile
+                unique_url,  # Unique URL from company tracker
                 
                 # Assessment Results
                 response.id if response else '',
@@ -597,6 +673,9 @@ async def export_consultation_requests_csv(
                 retirement_planning_score,
                 financial_protection_score,
                 financial_knowledge_score,
+                
+                # Insights (Top 5)
+                insights[0], insights[1], insights[2], insights[3], insights[4],
                 
                 # Submission Date
                 response.created_at.strftime('%Y-%m-%d %H:%M:%S') if response and response.created_at else ''
