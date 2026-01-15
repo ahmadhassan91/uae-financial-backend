@@ -130,7 +130,7 @@ async def create_company(
     phone_number: Optional[str] = Form(None),
     additional_details: Optional[str] = Form(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
     """Create a single company directly without CSV."""
     
@@ -206,7 +206,7 @@ async def create_company(
 async def upload_companies_csv(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
     """Upload a CSV file containing company details."""
     
@@ -295,7 +295,7 @@ async def get_uploaded_companies(
     limit: int = Query(50, ge=1, le=500),
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
     """Get list of uploaded companies with optional search and pagination."""
     
@@ -458,7 +458,7 @@ async def delete_company_details(
 async def get_company_details(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
     """Get specific company details by ID."""
     
@@ -473,7 +473,7 @@ async def get_company_details(
 async def toggle_company_status(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_admin_or_ops_user)
 ):
     """Enable or disable a company."""
     company = db.query(CompanyDetails).filter(CompanyDetails.id == company_id).first()

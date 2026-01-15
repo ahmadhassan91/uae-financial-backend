@@ -46,6 +46,13 @@ DEFAULT_ADMIN_USERS = [
         "password": "viewonly123",
         "admin_role": "view_only",
         "description": "View-Only Admin (can only view data, no modifications)"
+    },
+    {
+        "email": "ops@nationalbonds.ae",
+        "username": "ops",
+        "password": "ops123",
+        "admin_role": "ops",
+        "description": "Operations Admin (can manage companies and view analytics)"
     }
 ]
 
@@ -223,6 +230,9 @@ Examples:
   # Create a view-only admin
   python scripts/admin/create_admin_user.py --email viewer@example.com --password SecurePass123 --role view_only
   
+  # Create an ops admin (company management access)
+  python scripts/admin/create_admin_user.py --email ops@example.com --password SecurePass123 --role ops
+  
   # List all admin users
   python scripts/admin/create_admin_user.py --list
   
@@ -237,12 +247,16 @@ Default Admin Users:
   2. View-Only Admin
      Email: viewonly@nationalbonds.ae
      Password: viewonly123
+     
+  3. Operations Admin
+     Email: ops@nationalbonds.ae
+     Password: ops123
         """
     )
     parser.add_argument('--email', help='Admin email address')
     parser.add_argument('--username', help='Admin username')
     parser.add_argument('--password', help='Admin password')
-    parser.add_argument('--role', choices=['full', 'view_only'], default='full',
+    parser.add_argument('--role', choices=['full', 'view_only', 'ops'], default='full',
                         help='Admin role (default: full)')
     parser.add_argument('--list', action='store_true', help='List all admin users')
     parser.add_argument('--reset-password', metavar='EMAIL', help='Reset password for admin user')
@@ -327,6 +341,11 @@ Default Admin Users:
    View-Only Admin (read-only access):
    • Email: viewonly@nationalbonds.ae
    • Password: viewonly123
+   • Date of Birth: 01/01/1990
+
+   Operations Admin (company management access):
+   • Email: ops@nationalbonds.ae
+   • Password: ops123
    • Date of Birth: 01/01/1990
 
 ⚠️  WARNING: Change these passwords in production!

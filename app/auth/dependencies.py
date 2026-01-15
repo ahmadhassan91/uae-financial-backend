@@ -81,10 +81,13 @@ async def get_current_full_admin_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
-    if hasattr(current_user, 'admin_role') and current_user.admin_role == "view_only":
+    
+    # Strict check: Only "full" admins allowed
+    # Block "view_only" AND "ops" roles from full admin endpoints
+    if hasattr(current_user, 'admin_role') and current_user.admin_role != "full":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="View-only access: This action requires full admin privileges"
+            detail="Restricted access: This action requires full admin privileges"
         )
     return current_user
 

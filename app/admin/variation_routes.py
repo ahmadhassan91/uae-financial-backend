@@ -7,7 +7,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 from app.database import get_db
-from app.auth.dependencies import get_current_admin_user
+from app.auth.dependencies import get_current_full_admin_user
 from app.models import User, CompanyTracker, VariationSet, QuestionVariation
 
 router = APIRouter(prefix="/admin/variations", tags=["admin-variations"])
@@ -30,7 +30,7 @@ class ToggleVariationsRequest(BaseModel):
 async def get_variation_status(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_full_admin_user)
 ):
     """Get variation status for a specific company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
@@ -63,7 +63,7 @@ async def toggle_variations(
     company_id: int,
     request: ToggleVariationsRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_full_admin_user)
 ):
     """Enable or disable variations for a company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
@@ -103,7 +103,7 @@ async def toggle_variations(
 @router.get("/sets", response_model=List[dict])
 async def get_variation_sets(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_full_admin_user)
 ):
     """Get all available variation sets."""
     sets = db.query(VariationSet).filter(VariationSet.is_active == True).all()
@@ -123,7 +123,7 @@ async def assign_variation_set(
     company_id: int,
     variation_set_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_full_admin_user)
 ):
     """Assign a variation set to a company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
@@ -149,7 +149,7 @@ async def assign_variation_set(
 async def unassign_variation_set(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user)
+    current_user: User = Depends(get_current_full_admin_user)
 ):
     """Unassign variation set from a company."""
     company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
