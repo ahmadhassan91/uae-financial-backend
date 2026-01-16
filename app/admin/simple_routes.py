@@ -2688,6 +2688,8 @@ async def get_submissions_stats(
     company_name: Optional[str] = Query(None),
     income_range: Optional[str] = Query(None),
     age_group: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -2735,6 +2737,23 @@ async def get_submissions_stats(
         
         if income_range:
             query = query.filter(FinancialClinicProfile.income_range == income_range)
+        
+        # Apply date filtering
+        if date_from:
+            try:
+                date_from_dt = datetime.fromisoformat(date_from)
+                query = query.filter(FinancialClinicResponse.created_at >= date_from_dt)
+            except ValueError:
+                pass
+        
+        if date_to:
+            try:
+                date_to_dt = datetime.fromisoformat(date_to)
+                if 'T' not in date_to:
+                     date_to_dt = date_to_dt + timedelta(days=1)
+                query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
+            except ValueError:
+                pass
         
         # For age_group filtering, we need to filter in Python since DOB is a string
         if age_group:
