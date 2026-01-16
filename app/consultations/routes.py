@@ -121,6 +121,8 @@ async def list_consultation_requests(
     nationality: Optional[str] = Query(None),
     age_group: Optional[str] = Query(None),
     company_id: Optional[int] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> Any:
@@ -154,6 +156,24 @@ async def list_consultation_requests(
                 )
             )
         
+        # Apply date filtering
+        if date_from:
+            try:
+                date_from_dt = datetime.fromisoformat(date_from)
+                query = query.filter(ConsultationRequest.created_at >= date_from_dt)
+            except ValueError:
+                pass  # Ignore invalid date formats
+        
+        if date_to:
+            try:
+                date_to_dt = datetime.fromisoformat(date_to)
+                # Add one day to include the end date fully if no time specified
+                if 'T' not in date_to:
+                     date_to_dt = date_to_dt + timedelta(days=1)
+                query = query.filter(ConsultationRequest.created_at <= date_to_dt)
+            except ValueError:
+                pass
+
         # Apply demographic filters (from profile) - only filter at DB level for non-age filters
         if income_range:
             query = query.filter(FinancialClinicProfile.income_range == income_range)
@@ -498,7 +518,7 @@ async def export_consultation_requests_csv(
             # Profile Information (matches Financial Clinic export)
             'Profile ID', 'Name', 'Email', 'Mobile Number', 'Date of Birth', 'Age',
             'Gender', 'Nationality', 'Emirate', 'Children',
-            'Employment Status', 'Income Range', 'Company', 'Unique URL',
+            'Employment Status', 'Income Range', 'Company/Employer Name', 'Unique URL Name',
             
             # Assessment Results
             'Response ID', 'Total Score', 'Status Band', 'Questions Answered', 'Total Questions',
