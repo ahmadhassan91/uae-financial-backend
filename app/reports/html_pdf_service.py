@@ -32,12 +32,14 @@ class HTMLPDFService:
             'Income Stream': {'en': 'Income Stream', 'ar': 'تدفق الدخل'},
             'Monthly Expenses Management': {'en': 'Monthly Expenses Management', 'ar': 'إدارة النفقات الشهرية'},
             'Savings Habit': {'en': 'Saving Habits', 'ar': 'عادات الادخار'},
+            'Saving Habits': {'en': 'Saving Habits', 'ar': 'عادات الادخار'},
             'Emergency Savings': {'en': 'Emergency Savings', 'ar': 'مدخرات الطوارئ'},
             'Debt Management': {'en': 'Debt Management', 'ar': 'إدارة الديون'},
             'Retirement Planning': {'en': 'Retirement Planning', 'ar': 'التخطيط للتقاعد'},
             'Protecting Your Assets | Loved Ones': {'en': 'Protecting Your Assets | Loved Ones', 'ar': 'حماية أصولك | أحبائك'},
             'Planning for Your Future | Siblings': {'en': 'Planning for Your Future | Siblings', 'ar': 'التخطيط لمستقبلك | الأشقاء'},
-            'Protecting Your Family': {'en': 'Protecting Your Family', 'ar': 'حماية عائلتك'}
+            'Protecting Your Family': {'en': 'Protecting Your Family', 'ar': 'حماية عائلتك'},
+            'Planning to retire': {'en': 'Retirement Planning', 'ar': 'التخطيط للتقاعد'}
         }
         
         category_data = category_map.get(category, {'en': category, 'ar': category})
@@ -78,46 +80,71 @@ class HTMLPDFService:
         """Get category description."""
         descriptions = {
             'Income Stream': {
-                'en': 'Do you have multiple sources of income?',
-                'ar': 'هل لديك مصادر دخل متعددة؟'
+                'en': 'Stability and diversity of income sources',
+                'ar': 'استقرار وتنوّع في مصادر الدخل'
             },
             'Monthly Expenses Management': {
-                'en': 'How well do you manage your monthly expenses?',
-                'ar': 'ما مدى جودة إدارتك لنفقاتك الشهرية؟'
+                'en': 'Budgeting and expense control',
+                'ar': 'إدارة الميزانية والتحكم في النفقات'
             },
             'Savings Habit': {
-                'en': 'Do you save regularly?',
-                'ar': 'هل تدخر بانتظام؟'
+                'en': 'Saving behavior and emergency preparedness',
+                'ar': 'عادات الادخار والاستعداد لحالات الطوارئ'
+            },
+            'Saving Habits': {
+                'en': 'Saving behavior and emergency preparedness',
+                'ar': 'عادات الادخار والاستعداد لحالات الطوارئ'
             },
             'Emergency Savings': {
-                'en': 'Can you handle unexpected expenses?',
-                'ar': 'هل يمكنك التعامل مع النفقات غير المتوقعة؟'
+                'en': 'Emergency fund readiness',
+                'ar': 'الاستعداد للادخار في حالات الطوارئ'
             },
             'Debt Management': {
-                'en': 'How well do you manage your debts?',
-                'ar': 'ما مدى جودة إدارتك لديونك؟'
+                'en': 'Debt control and debit health',
+                'ar': 'التحكّم في الديون والصحّة الائتمانية'
             },
             'Retirement Planning': {
-                'en': 'Are you prepared for retirement?',
-                'ar': 'هل أنت مستعد للتقاعد؟'
+                'en': 'Long-term financial security',
+                'ar': 'الأمان المالي الطويل الأمد'
+            },
+            'Planning to retire': {
+                'en': 'Long-term financial security',
+                'ar': 'الأمان المالي الطويل الأمد'
             },
             'Protecting Your Assets | Loved Ones': {
-                'en': 'Is your family financially protected?',
-                'ar': 'هل عائلتك محمية مالياً؟'
+                'en': 'Insurance and risk management',
+                'ar': 'التأمين وإدارة المخاطر'
             },
             'Planning for Your Future | Siblings': {
-                'en': 'Are you planning for your siblings\' future?',
-                'ar': 'هل تخطط لمستقبل أشقائك؟'
+                'en': 'Financial planning and family preparation',
+                'ar': 'التخطيط المالي والاستعداد للعائلة'
             },
             'Protecting Your Family': {
-                'en': 'Is your family financially protected?',
-                'ar': 'هل عائلتك محمية مالياً؟'
+                'en': 'Ensuring financial wellbeing for your loved ones',
+                'ar': 'ضمان الرفاهية المالية لأحبائك'
             }
         }
         
         desc = descriptions.get(category, {'en': '', 'ar': ''})
         return desc['ar'] if language == 'ar' else desc['en']
     
+    def _format_insight_text(self, text: str) -> str:
+        """Bold product names in text."""
+        if not text:
+            return ""
+            
+        products = [
+            "My Million", "myPlan", "Second Salary Plan", 
+            "Saving Bonds", "Ahed", "Tejouri"
+        ]
+        
+        formatted_text = text
+        for product in products:
+            if product in formatted_text:
+                formatted_text = formatted_text.replace(product, f"<b>{product}</b>")
+                
+        return formatted_text
+
     async def generate_financial_clinic_pdf(
         self,
         result_data: Dict[str, Any],
@@ -238,9 +265,10 @@ class HTMLPDFService:
             # Prepare insights with translated categories
             insights = []
             for insight in result_data.get('insights', []):
+                text = insight.get('text_ar' if language == 'ar' else 'text', insight.get('text', ''))
                 insights.append({
                     'category_translated': self._translate_category(insight.get('category', ''), language),
-                    'text': insight.get('text_ar' if language == 'ar' else 'text', insight.get('text', ''))
+                    'text': self._format_insight_text(text)
                 })
             
             # Calculate status color and label based on score
