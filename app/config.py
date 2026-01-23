@@ -179,7 +179,8 @@ class Settings(BaseSettings):
         return ""
     
     class Config:
-        env_file = ".env"
+        # Use absolute path to .env file to ensure it's found regardless of CWD
+        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
         case_sensitive = True
 # Create global settings instance
 settings = Settings()

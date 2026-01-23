@@ -1754,6 +1754,8 @@ async def get_category_performance(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -1780,6 +1782,10 @@ async def get_category_performance(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
@@ -1867,6 +1873,8 @@ async def get_nationality_breakdown(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -1893,6 +1901,10 @@ async def get_nationality_breakdown(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
@@ -2083,6 +2095,8 @@ async def get_time_series(
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
     group_by: str = "day",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -2109,6 +2123,10 @@ async def get_time_series(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
@@ -2295,6 +2313,8 @@ async def get_score_analytics_table(
     db: Session = Depends(get_db),
     admin_user: User = Depends(get_current_admin_user),
     date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -2326,6 +2346,10 @@ async def get_score_analytics_table(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
+        
+        # Apply date range filtering
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
         
         # Apply demographic filters
         query = apply_demographic_filters(query, filters, db)
