@@ -752,12 +752,21 @@ async def export_simple_admin_csv(
     date_range: str = "30d",
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
-    age_groups: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),  # Frontend sends date_from
+    date_to: Optional[str] = Query(None),    # Frontend sends date_to
+    search: Optional[str] = Query(None),
+    status_band: Optional[str] = Query(None),
+    nationality: Optional[str] = Query(None),     # Singular from filter
+    company_name: Optional[str] = Query(None),    # From company filter
+    company_id: Optional[int] = Query(None),      # From unique URL filter
+    income_range: Optional[str] = Query(None),    # Singular
+    age_group: Optional[str] = Query(None),       # Singular
+    age_groups: Optional[str] = Query(None),      # Comma-separated (legacy/dashboard)
     genders: Optional[str] = Query(None),
-    nationalities: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),   # Comma-separated
     emirates: Optional[str] = Query(None),
     employment_statuses: Optional[str] = Query(None),
-    income_ranges: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),   # Comma-separated
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
@@ -769,7 +778,16 @@ async def export_simple_admin_csv(
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile, AuditLog
 
-        # Parse filters
+        # Handle date parameter mapping (frontend submission table uses date_from/date_to)
+        if date_from and not start_date:
+            start_date = date_from
+        if date_to and not end_date:
+            end_date = date_to
+
+        # Handle singular parameters mapping to lists for common filter function
+        # Or apply them directly if they are singular
+        
+        # Parse comma-separated filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
@@ -781,19 +799,79 @@ async def export_simple_admin_csv(
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
 
-        # Apply date filters
-        if start_date:
-            start_dt = datetime.fromisoformat(start_date)
-            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
-        if end_date:
-            end_dt = datetime.fromisoformat(end_date)
-            query = query.filter(FinancialClinicResponse.created_at <= end_dt)
+        # Apply Search Filter (matches get_submissions logic)
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.name.ilike(search_term),
+                    FinancialClinicProfile.email.ilike(search_term),
+                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                )
+            )
 
-        # Apply other demographic filters
+        # Apply Status Band Filter
+        if status_band and status_band != 'all':
+            query = query.filter(FinancialClinicResponse.status_band == status_band)
+
+        # Apply Singular Demographic Filters (from Table Filters)
+        if nationality and nationality != 'all':
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+        
+        if income_range and income_range != 'all':
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+            
+        if age_group and age_group != 'all':
+             # Note: Age group filtering from pre-calculated age (frontend logic) 
+             # vs date of birth (backend logic) is tricky.
+             # The existing `age_groups` filter uses python-side filtering after fetching.
+             # Ideally we should reuse that or implement SQL-based age filtering.
+             # For properly filtering by singular age group, we can add it to the filters dict
+             # and let apply_demographic_filters handle it (or the python filtering).
+             # But apply_demographic_filters' age_groups currently does python filtering.
+             # So let's add it to the list.
+             if 'age_groups' not in filters:
+                 filters['age_groups'] = []
+             filters['age_groups'].append(age_group)
+
+        # Apply Company Filters
+        
+        # 1. Unique URL Filter (company_id)
+        if company_id:
+             query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # 2. Company Name Filter (from CompanyDetails)
+        if company_name and company_name != 'all':
+            if company_name == 'other':
+                query = query.filter(
+                    or_(
+                        FinancialClinicProfile.company_name.is_(None),
+                        FinancialClinicProfile.company_name == ''
+                    )
+                )
+            else:
+                query = query.filter(FinancialClinicProfile.company_name == company_name)
+
+
+        # Apply date range filtering (this handles date_range, start_date, end_date)
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
+        # Apply standard demographic filters (lists)
         query = apply_demographic_filters(query, filters, db)
 
-        # Optionally filter unique users
+        # Execute query
         responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
+        
+        # Apply age group filtering (Python-side) if needed
+        # apply_demographic_filters doesn't handle age_groups query-side, it expects
+        # caller to handle it or it does nothing (check implementation).
+        # Actually, looking at apply_demographic_filters:
+        # if filters.get('age_groups'): pass # Filtering will be done after query execution
+        # So we MUST do it here.
+        if filters.get('age_groups'):
+            responses = filter_by_age_groups(responses, filters['age_groups'])
+
+        # Optionally filter unique users
         if unique_users_only:
             responses = filter_unique_users(responses)
 
