@@ -279,36 +279,106 @@ async def list_consultation_requests(
 
 @router.get("/admin/stats", response_model=ConsultationRequestStats)
 async def get_consultation_stats(
+    status: Optional[str] = Query(None),
+    source: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    income_range: Optional[str] = Query(None),
+    nationality: Optional[str] = Query(None),
+    age_group: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> Any:
-    """Get consultation request statistics."""
+    """Get consultation request statistics with optional filtering."""
     try:
-        # Total requests
-        total = db.query(ConsultationRequest).count()
+        from app.models import FinancialClinicProfile, FinancialClinicResponse
         
-        # Requests by status
-        pending = db.query(ConsultationRequest).filter(
-            ConsultationRequest.status == "pending"
-        ).count()
+        # Base query
+        query = db.query(ConsultationRequest)
         
-        contacted = db.query(ConsultationRequest).filter(
-            ConsultationRequest.status == "contacted"
-        ).count()
+        # If we have demographic filters, we need to join with profile
+        has_demographic_filters = any([income_range, nationality, age_group, company_id])
         
-        scheduled = db.query(ConsultationRequest).filter(
-            ConsultationRequest.status == "scheduled"
-        ).count()
+        if has_demographic_filters:
+            query = query.outerjoin(
+                FinancialClinicProfile,
+                ConsultationRequest.email == FinancialClinicProfile.email
+            )
+            
+        # Apply filters
+        if source:
+            query = query.filter(ConsultationRequest.source == source)
         
-        completed = db.query(ConsultationRequest).filter(
-            ConsultationRequest.status == "completed"
-        ).count()
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    ConsultationRequest.name.ilike(search_term),
+                    ConsultationRequest.email.ilike(search_term),
+                    ConsultationRequest.phone_number.ilike(search_term)
+                )
+            )
+            
+        if date_from:
+            try:
+                date_from_dt = datetime.fromisoformat(date_from)
+                query = query.filter(ConsultationRequest.created_at >= date_from_dt)
+            except ValueError:
+                pass
+        
+        if date_to:
+            try:
+                date_to_dt = datetime.fromisoformat(date_to)
+                if 'T' not in date_to:
+                     date_to_dt = date_to_dt + timedelta(days=1)
+                query = query.filter(ConsultationRequest.created_at <= date_to_dt)
+            except ValueError:
+                pass
+
+        if income_range:
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+        
+        if nationality:
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+            
+        if company_id:
+            query = query.outerjoin(
+                FinancialClinicResponse,
+                FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+            ).filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # Total requests (matching current filters)
+        total = query.count()
+        
+        # If status filter is applied, total = that status count.
+        # But we still want breakdown if possible? 
+        # Actually standard behavior: if you filter by "Pending", the other buckets are 0 (non-matching).
+        # Except maybe if we want to show global stats? No, usually filtered stats.
+        
+        if status:
+            query = query.filter(ConsultationRequest.status == status)
+            # Re-calculate total with status filter
+            total = query.count()
+            
+            pending = query.filter(ConsultationRequest.status == "pending").count()
+            contacted = query.filter(ConsultationRequest.status == "contacted").count()
+            scheduled = query.filter(ConsultationRequest.status == "scheduled").count()
+            completed = query.filter(ConsultationRequest.status == "completed").count()
+        else:
+            pending = query.filter(ConsultationRequest.status == "pending").count()
+            contacted = query.filter(ConsultationRequest.status == "contacted").count()
+            scheduled = query.filter(ConsultationRequest.status == "scheduled").count()
+            completed = query.filter(ConsultationRequest.status == "completed").count()
         
         # This week's requests (last 7 days)
+        # We want to see how many of the FILTERED requests were created this week
         week_ago = datetime.utcnow() - timedelta(days=7)
-        this_week = db.query(ConsultationRequest).filter(
-            ConsultationRequest.created_at >= week_ago
-        ).count()
+        
+        # Use a fresh query for this week if we want it to be "within the filtered set"
+        # Note: 'query' object has filters applied.
+        this_week = query.filter(ConsultationRequest.created_at >= week_ago).count()
         
         # Conversion rate (scheduled + completed / total)
         conversion_count = scheduled + completed
