@@ -161,6 +161,11 @@ def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session)
             # If no companies found, return empty result
             return []
 
+    # Exclude Unique URLs filter
+    if filters.get('exclude_unique_urls'):
+        from app.models import FinancialClinicResponse
+        query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
+
     # Company filter (CompanyDetails - new system)
     if filters.get('activeCompanies'):
         from app.models import CompanyDetails, FinancialClinicProfile
@@ -369,7 +374,8 @@ async def get_employment_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get breakdown by employment status."""
     try:
@@ -380,6 +386,9 @@ async def get_employment_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         query = db.query(
             FinancialClinicProfile.employment_status,
@@ -430,7 +439,8 @@ async def get_emirate_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get breakdown by emirate."""
     try:
@@ -441,6 +451,9 @@ async def get_emirate_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         query = db.query(
             FinancialClinicProfile.emirate,
@@ -486,7 +499,8 @@ async def get_children_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get breakdown by number of children."""
     try:
@@ -497,6 +511,9 @@ async def get_children_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         query = db.query(
             FinancialClinicProfile.children,
@@ -583,7 +600,8 @@ async def get_income_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get breakdown by income range."""
     try:
@@ -594,6 +612,9 @@ async def get_income_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         query = db.query(
             FinancialClinicProfile.income_range,
@@ -670,7 +691,8 @@ async def get_gender_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get gender distribution breakdown."""
     try:
@@ -681,6 +703,9 @@ async def get_gender_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         query = db.query(
             FinancialClinicProfile.gender,
@@ -790,6 +815,7 @@ async def export_simple_admin_csv(
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> StreamingResponse:
@@ -811,6 +837,9 @@ async def export_simple_admin_csv(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
 
         # Build base query
         query = db.query(FinancialClinicResponse).join(
@@ -1105,6 +1134,7 @@ async def export_simple_admin_excel(
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
     unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ) -> StreamingResponse:
@@ -1123,6 +1153,9 @@ async def export_simple_admin_excel(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
 
         # Build base query using correct Financial Clinic models
         query = db.query(FinancialClinicResponse).join(
@@ -1749,7 +1782,8 @@ async def get_overview_metrics(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get overview metrics (KPIs) for the admin dashboard."""
     try:
@@ -1760,6 +1794,9 @@ async def get_overview_metrics(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -1796,7 +1833,9 @@ async def get_overview_metrics(
                 "all_submissions": all_responses_count,  # Raw count before unique filter
                 "cases_completed_percentage": 0.0,
                 "unique_completion_percentage": 0.0,
+                "unique_completion_percentage": 0.0,
                 "average_score": 0,
+                "average_score_band": "N/A",
                 "excellent_count": 0,
                 "good_count": 0,
                 "needs_improvement_count": 0,
@@ -1807,6 +1846,18 @@ async def get_overview_metrics(
         # Calculate metrics from filtered responses
         total_score = sum(r.total_score for r in responses)
         average_score = total_score / total_responses if total_responses > 0 else 0
+        
+        # Calculate average score band
+        average_score_band = "N/A"
+        if total_responses > 0:
+            if average_score >= 80:
+                average_score_band = "Excellent"
+            elif average_score >= 60:
+                average_score_band = "Good"
+            elif average_score >= 40:
+                average_score_band = "Needs Improvement"
+            else:
+                average_score_band = "At Risk"
         
         # Count by status band
         excellent_count = sum(1 for r in responses if r.status_band == "Excellent")
@@ -1830,6 +1881,7 @@ async def get_overview_metrics(
             "cases_completed_percentage": round(cases_completed_percentage, 2),
             "unique_completion_percentage": round(unique_completion_percentage, 2),
             "average_score": round(average_score, 2),
+            "average_score_band": average_score_band,
             "excellent_count": excellent_count,
             "good_count": good_count,
             "needs_improvement_count": needs_improvement_count,
@@ -1860,7 +1912,8 @@ async def get_score_distribution(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get score distribution by status bands."""
     try:
@@ -1871,6 +1924,9 @@ async def get_score_distribution(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -1927,7 +1983,8 @@ async def get_category_performance(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get category performance (6 categories)."""
     try:
@@ -1938,6 +1995,9 @@ async def get_category_performance(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2046,7 +2106,8 @@ async def get_nationality_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get nationality breakdown (Emirati vs Non-Emirati)."""
     try:
@@ -2057,6 +2118,9 @@ async def get_nationality_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2141,7 +2205,8 @@ async def get_age_breakdown(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get age breakdown."""
     try:
@@ -2152,6 +2217,9 @@ async def get_age_breakdown(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2268,7 +2336,8 @@ async def get_time_series(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get time series data (submissions over time)."""
     try:
@@ -2279,6 +2348,9 @@ async def get_time_series(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2355,7 +2427,8 @@ async def get_companies_analytics(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get companies analytics - for companies in CompanyDetails table."""
     try:
@@ -2376,6 +2449,9 @@ async def get_companies_analytics(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2486,7 +2562,8 @@ async def get_unique_url_analytics(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get unique URL analytics - for companies in CompanyTracker table (unique URLs)."""
     try:
@@ -2509,6 +2586,9 @@ async def get_unique_url_analytics(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2601,7 +2681,8 @@ async def get_score_analytics_table(
     children: Optional[str] = Query(None),
     companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
-    unique_users_only: Optional[bool] = Query(None)
+    unique_users_only: Optional[bool] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None)
 ):
     """Get score analytics table (question-level breakdown by nationality).
     
@@ -2617,6 +2698,9 @@ async def get_score_analytics_table(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
         )
+
+        if exclude_unique_urls:
+            filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
         query = db.query(FinancialClinicResponse).join(
@@ -2776,6 +2860,7 @@ async def get_submissions(
     age_group: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    exclude_unique_urls: Optional[bool] = None,
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -2814,6 +2899,14 @@ async def get_submissions(
         # Filter by unique URL (company_tracker_id)
         if company_id:
             query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # Filter by unique URL exclusion
+        if exclude_unique_urls:
+            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
+
+        # Filter by unique URL exclusion
+        if exclude_unique_urls:
+            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
         
         # Filter by company name from CompanyDetails
         if company_name and company_name != 'other':
@@ -2991,6 +3084,7 @@ async def get_submissions_stats(
     age_group: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -3025,6 +3119,9 @@ async def get_submissions_stats(
         
         if company_id:
             query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        if exclude_unique_urls:
+            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
         
         if company_name and company_name != 'other':
             query = query.filter(FinancialClinicProfile.company_name == company_name)
