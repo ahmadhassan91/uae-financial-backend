@@ -193,19 +193,38 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
     """
     from app.models import FinancialClinicResponse
     
-    # If custom date range is provided, use it
-    if start_date and end_date:
+    # Helper to parse various date formats (YYYY-MM-DD or ISO format with time)
+    def parse_date(date_str: str) -> Optional[datetime]:
+        if not date_str:
+            return None
+        # Try ISO format first (e.g., 2026-01-20T00:00:00.000Z from frontend)
         try:
-            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1)  # Include end date
-            query = query.filter(
-                FinancialClinicResponse.created_at >= start_dt,
-                FinancialClinicResponse.created_at < end_dt
-            )
-        except ValueError:
-            # Invalid date format, skip filtering
-            pass
-        return query
+            # Handle ISO format with Z timezone
+            if 'T' in date_str:
+                # Remove 'Z' suffix if present and parse
+                clean_date = date_str.replace('Z', '+00:00')
+                return datetime.fromisoformat(clean_date.replace('+00:00', ''))
+            else:
+                # Try YYYY-MM-DD format
+                return datetime.strptime(date_str, "%Y-%m-%d")
+        except (ValueError, TypeError):
+            return None
+    
+    # If custom date range is provided, use it
+    if start_date or end_date:
+        start_dt = parse_date(start_date) if start_date else None
+        end_dt = parse_date(end_date) if end_date else None
+        
+        if start_dt:
+            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
+        if end_dt:
+            # Add 1 day to include the end date fully
+            end_dt = end_dt + timedelta(days=1)
+            query = query.filter(FinancialClinicResponse.created_at < end_dt)
+        
+        # Return early if we applied custom date filters
+        if start_dt or end_dt:
+            return query
     
     # Apply predefined date range filters
     import pytz
@@ -749,7 +768,7 @@ async def get_simple_analytics(
 
 @simple_admin_router.get("/export-csv")
 async def export_simple_admin_csv(
-    date_range: str = "30d",
+    date_range: str = "all",  # Default to 'all' - use date_from/date_to for custom ranges
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),  # Frontend sends date_from
@@ -1064,9 +1083,18 @@ async def export_simple_admin_csv(
 
 @simple_admin_router.get("/export-excel")
 async def export_simple_admin_excel(
-    date_range: str = "30d",
+    date_range: str = "all",  # Default to 'all' - use date_from/date_to for custom ranges
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),  # Frontend sends date_from
+    date_to: Optional[str] = Query(None),    # Frontend sends date_to
+    search: Optional[str] = Query(None),
+    status_band: Optional[str] = Query(None),
+    nationality: Optional[str] = Query(None),     # Singular from filter
+    company_name: Optional[str] = Query(None),    # From company filter
+    company_id: Optional[int] = Query(None),      # From unique URL filter
+    income_range: Optional[str] = Query(None),    # Singular
+    age_group: Optional[str] = Query(None),       # Singular
     age_groups: Optional[str] = Query(None),
     genders: Optional[str] = Query(None),
     nationalities: Optional[str] = Query(None),
@@ -1084,6 +1112,13 @@ async def export_simple_admin_excel(
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile, AuditLog
 
+        # Handle date parameter mapping (frontend submission table uses date_from/date_to)
+        if date_from and not start_date:
+            start_date = date_from
+        if date_to and not end_date:
+            end_date = date_to
+
+        # Parse comma-separated filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
             employment_statuses, income_ranges, children, companies, activeCompanies
@@ -1095,16 +1130,65 @@ async def export_simple_admin_excel(
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
 
-        if start_date:
-            start_dt = datetime.fromisoformat(start_date)
-            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
-        if end_date:
-            end_dt = datetime.fromisoformat(end_date)
-            query = query.filter(FinancialClinicResponse.created_at <= end_dt)
+        # Apply Search Filter (matches get_submissions logic)
+        if search:
+            search_term = f"%{search}%"
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.name.ilike(search_term),
+                    FinancialClinicProfile.email.ilike(search_term),
+                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                )
+            )
 
+        # Apply Status Band Filter
+        if status_band and status_band != 'all':
+            query = query.filter(FinancialClinicResponse.status_band == status_band)
+
+        # Apply Singular Demographic Filters (from Table Filters)
+        if nationality and nationality != 'all':
+            query = query.filter(FinancialClinicProfile.nationality == nationality)
+        
+        if income_range and income_range != 'all':
+            query = query.filter(FinancialClinicProfile.income_range == income_range)
+            
+        if age_group and age_group != 'all':
+            if 'age_groups' not in filters:
+                filters['age_groups'] = []
+            filters['age_groups'].append(age_group)
+
+        # Apply Company Filters
+        
+        # 1. Unique URL Filter (company_id)
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # 2. Company Name Filter (from CompanyDetails)
+        if company_name and company_name != 'all':
+            if company_name == 'other':
+                query = query.filter(
+                    or_(
+                        FinancialClinicProfile.company_name.is_(None),
+                        FinancialClinicProfile.company_name == ''
+                    )
+                )
+            else:
+                query = query.filter(FinancialClinicProfile.company_name == company_name)
+
+        # Apply date range filtering (this handles date_range, start_date, end_date)
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+
+        # Apply standard demographic filters (lists)
         query = apply_demographic_filters(query, filters, db)
 
+        # Execute query
         responses = query.order_by(FinancialClinicResponse.created_at.desc()).all()
+        
+        # Apply age group filtering (Python-side) if needed
+        if filters.get('age_groups'):
+            responses = filter_by_age_groups(responses, filters['age_groups'])
+
+        # Optionally filter unique users
         if unique_users_only:
             responses = filter_unique_users(responses)
 
@@ -2385,6 +2469,121 @@ async def get_companies_analytics(
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+
+@simple_admin_router.get("/unique-url-analytics")
+async def get_unique_url_analytics(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user),
+    date_range: str = "30d",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
+    unique_users_only: Optional[bool] = Query(None)
+):
+    """Get unique URL analytics - for companies in CompanyTracker table (unique URLs)."""
+    try:
+        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
+        
+        # Get list of active company trackers (unique URLs)
+        active_trackers = db.query(CompanyTracker).filter(
+            CompanyTracker.is_active == True
+        ).all()
+        
+        # If no active trackers, return empty list
+        if not active_trackers:
+            return {"companies": []}
+        
+        # Create a mapping of tracker_id to tracker info
+        tracker_map = {tracker.id: tracker for tracker in active_trackers}
+        
+        # Parse filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, companies, activeCompanies
+        )
+        
+        # Get all responses with filters applied
+        query = db.query(FinancialClinicResponse).join(
+            FinancialClinicProfile,
+            FinancialClinicResponse.profile_id == FinancialClinicProfile.id
+        )
+        
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
+        
+        # Apply date range filter
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        
+        responses = query.all()
+        
+        # Apply unique user filter only if requested
+        if unique_users_only:
+            responses = filter_unique_users(responses)
+        
+        # Group by company tracker (unique URL)
+        company_data = {}
+        
+        for response in responses:
+            # Only include responses that have a company_tracker_id
+            if response.company_tracker_id and response.company_tracker_id in tracker_map:
+                tracker = tracker_map[response.company_tracker_id]
+                company_key = f"tracker_{tracker.id}"
+                
+                if company_key not in company_data:
+                    company_data[company_key] = {
+                        "company_name": tracker.company_name,
+                        "unique_url": tracker.unique_url,
+                        "tracker_id": tracker.id,
+                        "scores": [],
+                        "status_bands": []
+                    }
+                
+                company_data[company_key]["scores"].append(response.total_score)
+                company_data[company_key]["status_bands"].append(response.status_band)
+        
+        # Format response - same structure as companies-analytics for frontend compatibility
+        companies = []
+        for company_id, data in company_data.items():
+            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+            
+            # Count by status band
+            excellent_count = data["status_bands"].count("Excellent")
+            good_count = data["status_bands"].count("Good")
+            needs_improvement_count = data["status_bands"].count("Needs Improvement")
+            at_risk_count = data["status_bands"].count("At Risk")
+            
+            companies.append({
+                "company_name": data["company_name"],
+                "unique_url": data["unique_url"],
+                "tracker_id": data["tracker_id"],
+                "total_responses": len(data["scores"]),
+                "average_score": round(avg_score, 2),
+                "excellent_count": excellent_count,
+                "good_count": good_count,
+                "needs_improvement_count": needs_improvement_count,
+                "at_risk_count": at_risk_count
+            })
+        
+        # Sort by total_responses descending
+        companies.sort(key=lambda x: x["total_responses"], reverse=True)
+        
+        return {"companies": companies}
+        
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 
 @simple_admin_router.get("/score-analytics-table")
 async def get_score_analytics_table(
