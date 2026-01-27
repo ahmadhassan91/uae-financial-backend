@@ -2931,23 +2931,35 @@ async def get_submissions(
             date_to_dt = datetime.fromisoformat(date_to)
             query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
         
+        # Helper function to calculate age from DOB string (DD/MM/YYYY or ISO)
+        def calculate_age(dob_str):
+            if not dob_str or dob_str.strip() == '':
+                return None
+            try:
+                # Try DD/MM/YYYY format first
+                dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
+                today = datetime.today()
+                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                return age
+            except ValueError:
+                # Try YYYY-MM-DD format (ISO format)
+                try:
+                    dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
+                    today = datetime.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                    return age
+                except:
+                    return None
+            except:
+                return None
+
         # Get total count (before age filtering since age is calculated in Python)
         if age_group:
             # For age filtering, we need to get all results first then filter in Python
             # This is because date_of_birth is stored as string in DD/MM/YYYY format
             all_results = query.order_by(desc(FinancialClinicResponse.created_at)).all()
             
-            # Helper function to calculate age
-            def calculate_age(dob_str):
-                if not dob_str:
-                    return None
-                try:
-                    dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
-                    today = datetime.today()
-                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                    return age
-                except:
-                    return None
+
             
             # Filter by age group in Python
             filtered_results = []
@@ -2986,27 +2998,7 @@ async def get_submissions(
                 desc(FinancialClinicResponse.created_at)
             ).offset((page - 1) * page_size).limit(page_size).all()
         
-        # Helper function to calculate age from DOB string (DD/MM/YYYY)
-        def calculate_age(dob_str):
-            if not dob_str or dob_str.strip() == '':
-                return None
-            try:
-                # Try DD/MM/YYYY format first
-                dob = datetime.strptime(dob_str.strip(), '%d/%m/%Y')
-                today = datetime.today()
-                age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                return age
-            except ValueError:
-                # Try YYYY-MM-DD format (ISO format)
-                try:
-                    dob = datetime.strptime(dob_str.strip(), '%Y-%m-%d')
-                    today = datetime.today()
-                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                    return age
-                except:
-                    return None
-            except:
-                return None
+
         
         # Format submissions
         submissions = []
