@@ -1946,11 +1946,20 @@ async def get_score_distribution(
         if unique_users_only:
             responses = filter_unique_users(responses)
         
-        # Count by status band
-        distribution = {}
+        # Count by status band with fixed order (lowest to highest score)
+        # Order: At Risk, Needs Improvement, Good, Excellent
+        distribution = {
+            "At Risk": 0,
+            "Needs Improvement": 0,
+            "Good": 0,
+            "Excellent": 0
+        }
+        
         for response in responses:
             status = response.status_band
-            distribution[status] = distribution.get(status, 0) + 1
+            if status in distribution:
+                distribution[status] += 1
+            # Note: Unknown statuses are ignored to keep the chart clean
         
         return {
             "total": len(responses),
