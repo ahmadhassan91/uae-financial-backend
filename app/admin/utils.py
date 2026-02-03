@@ -225,7 +225,7 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
             )
         else:
             # Strip " (User Entry)" suffix if present
-            clean_name = company_name.replace(" (User Entry)", "")
+            clean_name = company_name.replace(" (User Entry)", "").strip()
             # Use trim/ilike to match "Microsoft" against "Microsoft "
             from sqlalchemy import func
             query = query.filter(func.trim(FinancialClinicProfile.company_name).ilike(f"%{clean_name}%"))
