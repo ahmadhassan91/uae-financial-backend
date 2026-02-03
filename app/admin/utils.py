@@ -168,15 +168,33 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
     if filters.get('exclude_unique_urls'):
         query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
 
-    # Company filter (CompanyDetails)
+    # Company filter (CompanyDetails and Free-text)
     if filters.get('activeCompanies'):
         active_comps = filters['activeCompanies']
         if isinstance(active_comps, str):
             active_comps = [ac.strip() for ac in active_comps.split(',')]
             
-        active_company_ids = [int(cid) for cid in active_comps if cid.isdigit()]
+        active_company_ids = []
+        free_text_names = []
+        
+        for ac in active_comps:
+            if str(ac).isdigit():
+                active_company_ids.append(int(ac))
+            elif str(ac).startswith('free_text:'):
+                free_text_names.append(ac.replace('free_text:', '', 1))
+            elif ac == 'blank':
+                # Handled by separate logic if needed, but adding here for safety
+                pass
+        
+        from sqlalchemy import or_
+        conditions = []
         if active_company_ids:
-            query = query.filter(FinancialClinicProfile.company_details_id.in_(active_company_ids))
+            conditions.append(FinancialClinicProfile.company_details_id.in_(active_company_ids))
+        if free_text_names:
+            conditions.append(FinancialClinicProfile.company_name.in_(free_text_names))
+            
+        if conditions:
+            query = query.filter(or_(*conditions))
 
     # Search filter (name, email, phone, company name)
     if filters.get('search'):
