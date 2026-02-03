@@ -1605,14 +1605,20 @@ async def get_filter_options(
             FinancialClinicProfile.company_name != ''
         ).distinct().all()
         
-        company_names_with_submissions = {row[0] for row in companies_with_submissions if row[0]}
+        company_names_with_submissions = {row[0].lower().strip() for row in companies_with_submissions if row[0]}
         
-        # Get all active predefined company details
+        # Get all active predefined company details that have submissions
         predefined_companies = db.query(CompanyDetails).filter(
             CompanyDetails.is_active == True
         ).order_by(CompanyDetails.company_name).all()
         
-        predefined_names = {c.company_name.lower().strip() for c in predefined_companies if c.company_name}
+        # Filter to only include predefined companies that have submissions
+        predefined_with_submissions = [
+            c for c in predefined_companies 
+            if c.company_name and c.company_name.lower().strip() in company_names_with_submissions
+        ]
+        
+        predefined_names = {c.company_name.lower().strip() for c in predefined_with_submissions if c.company_name}
         
         # Get unique free-text company names (from submissions) that are NOT in the predefined list
         free_text_companies = db.query(
@@ -1641,14 +1647,14 @@ async def get_filter_options(
             }
         ]
         
-        # 1. Add predefined companies
+        # 1. Add only predefined companies that have submissions
         active_companies_list.extend([
             {
                 "id": c.id,
                 "name": c.company_name,
                 "unique_url": None
             }
-            for c in predefined_companies
+            for c in predefined_with_submissions
         ])
         
         # 2. Add free-text companies with a prefix to distinguish them in filters

@@ -210,6 +210,11 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
             )
         )
 
+    # Company name filter (from Submissions tab dropdown)
+    if filters.get('company_name'):
+        company_name = filters['company_name']
+        query = query.filter(FinancialClinicProfile.company_name.ilike(f"%{company_name}%"))
+
     # Status band filter
     if filters.get('status_band') and filters['status_band'] != 'all':
         query = query.filter(FinancialClinicResponse.status_band == filters['status_band'])
