@@ -186,12 +186,12 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
                 # Handled by separate logic if needed, but adding here for safety
                 pass
         
-        from sqlalchemy import or_
+        from sqlalchemy import or_, func
         conditions = []
         if active_company_ids:
             conditions.append(FinancialClinicProfile.company_details_id.in_(active_company_ids))
         if free_text_names:
-            conditions.append(FinancialClinicProfile.company_name.in_(free_text_names))
+            conditions.append(func.trim(FinancialClinicProfile.company_name).in_(free_text_names))
             
         if conditions:
             query = query.filter(or_(*conditions))
