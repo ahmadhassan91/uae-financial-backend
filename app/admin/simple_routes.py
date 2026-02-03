@@ -900,7 +900,7 @@ async def export_simple_admin_csv(
         filename = f"financial_clinic_responses_{timestamp}.csv"
 
         return StreamingResponse(
-            io.BytesIO(output.getvalue().encode('utf-8')),
+            io.BytesIO('\ufeff'.encode('utf8') + output.getvalue().encode('utf-8')),
             media_type='text/csv',
             headers={'Content-Disposition': f'attachment; filename={filename}'}
         )
@@ -968,7 +968,7 @@ async def export_consolidated_csv(
         filename = f"consolidated_export_{timestamp}.csv"
         
         return StreamingResponse(
-            io.BytesIO(output.getvalue().encode('utf-8')),
+            io.BytesIO('\ufeff'.encode('utf8') + output.getvalue().encode('utf-8')),
             media_type='text/csv',
             headers={'Content-Disposition': f'attachment; filename={filename}'}
         )

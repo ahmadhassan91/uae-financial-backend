@@ -1,0 +1,57 @@
+Epic,Module,Task,Description,Effort (Hours),Priority,Dependencies
+Phase 1: Database Schema,WhiteLabelTenant Model,Create WhiteLabelTenant model,"New SQLAlchemy model with slug, logo_url, subdomain, admin_user_ids, variation_set_id, is_active",4,High,None
+Phase 1: Database Schema,WhiteLabelTenant Model,Add tenant_id to User,FK relationship for company admin binding,2,High,WhiteLabelTenant model
+Phase 1: Database Schema,WhiteLabelTenant Model,Add tenant_id to FinancialClinicResponse,FK for row-level data isolation,2,High,WhiteLabelTenant model
+Phase 1: Database Schema,WhiteLabelTenant Model,Add tenant_id to FinancialClinicProfile,FK for profile isolation,2,High,WhiteLabelTenant model
+Phase 1: Database Schema,WhiteLabelTenant Model,Add tenant_id to IncompleteSurvey,FK for incomplete survey isolation,2,High,WhiteLabelTenant model
+Phase 1: Database Schema,Migration,Create Alembic migration,Generate and test migration script,3,High,All model changes
+Phase 1: Database Schema,Migration,Run migration on staging,Apply schema changes to staging DB,1,High,Migration script
+Phase 2: Backend API,White Label Routes,Create white_label_routes.py,New FastAPI router for CRUD operations,6,High,Database schema
+Phase 2: Backend API,White Label Routes,GET /admin/white-label,List all tenants (super admin only),2,High,Routes file
+Phase 2: Backend API,White Label Routes,POST /admin/white-label,Create new tenant with validation,3,High,Routes file
+Phase 2: Backend API,White Label Routes,PUT /admin/white-label/{id},Update tenant details,2,Medium,Routes file
+Phase 2: Backend API,White Label Routes,DELETE /admin/white-label/{id},Soft delete tenant,2,Medium,Routes file
+Phase 2: Backend API,Logo Upload,POST /admin/white-label/{id}/upload-logo,File upload endpoint with S3 or local storage,4,High,Routes file
+Phase 2: Backend API,Logo Upload,Configure file storage,S3 bucket setup or local uploads directory,3,Medium,Upload endpoint
+Phase 2: Backend API,Tenant Middleware,Create tenant_resolver.py,Middleware to extract tenant from URL/header,6,High,None
+Phase 2: Backend API,Tenant Middleware,Subdomain parsing logic,Extract tenant from subdomain if present,3,Medium,Middleware base
+Phase 2: Backend API,Tenant Middleware,Path segment parsing logic,Extract tenant from /companies/:slug path,2,High,Middleware base
+Phase 2: Backend API,API Modifications,Update simple_routes.py - Overview,Add tenant filter to overview stats,4,High,Middleware
+Phase 2: Backend API,API Modifications,Update simple_routes.py - Submissions,Add tenant filter to submissions list,4,High,Middleware
+Phase 2: Backend API,API Modifications,Update simple_routes.py - Stats,Add tenant filter to charts/analytics,4,High,Middleware
+Phase 2: Backend API,API Modifications,Update survey submission endpoint,Capture tenant_id on new submissions,3,High,Middleware
+Phase 2: Backend API,Authorization,Add company_admin role,Extend admin_role enum and checks,3,High,None
+Phase 2: Backend API,Authorization,Create tenant-scoped query helper,Reusable function for data isolation,4,High,company_admin role
+Phase 2: Backend API,Authorization,Update get_current_admin_user dependency,Handle company_admin restrictions,2,High,Query helper
+Phase 3: Frontend,Tenant Context,Create TenantContext.tsx,React context for tenant state,4,High,None
+Phase 3: Frontend,Tenant Context,Create useTenant hook,Custom hook for consuming context,2,High,TenantContext
+Phase 3: Frontend,Tenant Context,Create useTenantResolver hook,Resolve tenant from URL,3,High,TenantContext
+Phase 3: Frontend,Survey Branding,Update FinancialClinicSurvey.tsx,Display tenant logo in header,3,High,TenantContext
+Phase 3: Frontend,Survey Branding,Update FinancialClinicResults.tsx,Display tenant logo on results,2,Medium,TenantContext
+Phase 3: Frontend,Survey Branding,Logo placement styling,CSS for dual-logo layout,2,Medium,Logo display
+Phase 3: Frontend,Admin Dashboard,Create WhiteLabelManagement.tsx,New admin tab for tenant CRUD,8,High,API endpoints
+Phase 3: Frontend,Admin Dashboard,Tenant list table,Paginated table with search/filter,4,High,Management component
+Phase 3: Frontend,Admin Dashboard,Create/Edit tenant modal,Form for tenant configuration,4,High,Management component
+Phase 3: Frontend,Admin Dashboard,Logo upload UI,Drag-drop or file picker,3,Medium,Upload endpoint
+Phase 3: Frontend,Admin Dashboard,Generate admin credentials button,Create company admin user,3,Medium,Authorization
+Phase 3: Frontend,Admin Dashboard,Update FinancialClinicAdminDashboard.tsx,Hide tabs for company_admin role,4,High,company_admin role
+Phase 3: Frontend,Admin Dashboard,Update dashboard API calls,Add tenant filter for company admins,4,High,TenantContext
+Phase 3: Frontend,Admin Dashboard,Disable exports for view-only,Conditional rendering based on role,2,Medium,Role checks
+Phase 4: Routing,Dynamic Routes,Create /companies/[slug]/page.tsx,Next.js dynamic route for tenant surveys,4,High,TenantContext
+Phase 4: Routing,Dynamic Routes,Create /companies/[slug]/admin/page.tsx,Tenant-specific admin dashboard route,3,High,Admin dashboard
+Phase 4: Routing,Dynamic Routes,Implement tenant slug resolver,Parse slug from URL params,2,High,Dynamic routes
+Phase 4: Routing,Login Flow,Create tenant login redirect,Redirect company admins to their dashboard,3,Medium,Authorization
+Phase 4: Routing,Login Flow,Update AdminLoginForm.tsx,Handle company_admin login flow,2,Medium,Login redirect
+Phase 4: Routing,Subdomain Support,Configure wildcard DNS,DNS setup for *.financialclinic.ae,2,Low,Tenant middleware
+Phase 4: Routing,Subdomain Support,SSL certificate for wildcard,Let's Encrypt or cloud provider cert,2,Low,DNS config
+Phase 4: Routing,Subdomain Support,Update Next.js for subdomain routing,Middleware or custom server config,4,Low,SSL
+Phase 5: Security & QA,Unit Tests,Test tenant resolution middleware,Pytest tests for URL parsing,3,High,Middleware
+Phase 5: Security & QA,Unit Tests,Test tenant-scoped queries,Verify data isolation,4,High,Query helper
+Phase 5: Security & QA,Integration Tests,Test company admin API access,End-to-end tenant filtering,4,High,All API changes
+Phase 5: Security & QA,Integration Tests,Test cross-tenant data leakage,Security verification,3,High,All changes
+Phase 5: Security & QA,Manual Testing,Create test tenant via admin,Verify tenant creation flow,2,Medium,Admin UI
+Phase 5: Security & QA,Manual Testing,Submit survey via tenant URL,Verify submission attribution,2,Medium,Survey routing
+Phase 5: Security & QA,Manual Testing,Verify company admin dashboard,Check data scoping,2,Medium,Admin dashboard
+Phase 5: Security & QA,Documentation,Document admin user creation,Internal process documentation,2,Low,All changes
+Phase 5: Security & QA,Documentation,Update API documentation,OpenAPI/Swagger updates,2,Low,All API changes
+Phase 5: Security & QA,Documentation,Create client onboarding guide,How to set up new white-label tenant,3,Low,All changes
