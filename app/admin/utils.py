@@ -213,7 +213,21 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
     # Company name filter (from Submissions tab dropdown)
     if filters.get('company_name'):
         company_name = filters['company_name']
-        query = query.filter(FinancialClinicProfile.company_name.ilike(f"%{company_name}%"))
+        
+        # Handle "(Blank)" selection from frontend
+        if company_name == "(Blank)":
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.company_name.is_(None),
+                    FinancialClinicProfile.company_name == ''
+                )
+            )
+        else:
+            # Strip " (User Entry)" suffix if present
+            clean_name = company_name.replace(" (User Entry)", "")
+            # Use trim/ilike to match "Microsoft" against "Microsoft "
+            query = query.filter(func.trim(FinancialClinicProfile.company_name).ilike(f"%{clean_name}%"))
 
     # Status band filter
     if filters.get('status_band') and filters['status_band'] != 'all':
