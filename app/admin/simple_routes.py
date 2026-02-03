@@ -13,6 +13,13 @@ import io
 import os
 import traceback
 import logging
+from app.admin.utils import (
+    parse_date, 
+    apply_date_range_filter, 
+    apply_demographic_filters, 
+    parse_filter_params
+)
+from app.admin.services.consolidated_export import ConsolidatedExportService
 
 logger = logging.getLogger(__name__)
 
@@ -83,214 +90,6 @@ def filter_by_age_groups(responses: List, age_groups: List[str]) -> List:
                     break
     
     return filtered_responses
-
-def apply_demographic_filters(query, filters: Dict[str, List[str]], db: Session):
-    """
-    Apply demographic filters to a SQLAlchemy query.
-    
-    Args:
-        query: SQLAlchemy query object (already joined with FinancialClinicProfile)
-        filters: Dictionary of filter parameters
-        db: Database session
-        
-    Returns:
-        Filtered query
-    """
-    from app.models import FinancialClinicProfile, CompanyTracker
-    
-    # Age groups filter - Financial Clinic uses date_of_birth in DD/MM/YYYY format
-    if filters.get('age_groups'):
-        # For now, we'll filter in Python after getting the data
-        # This is less efficient but more reliable for DD/MM/YYYY format
-        pass  # Filtering will be done after query execution
-    
-    # Gender filter
-    if filters.get('genders'):
-        query = query.filter(FinancialClinicProfile.gender.in_(filters['genders']))
-    
-    # Nationality filter
-    if filters.get('nationalities'):
-        query = query.filter(FinancialClinicProfile.nationality.in_(filters['nationalities']))
-    
-    # Emirate filter
-    if filters.get('emirates'):
-        query = query.filter(FinancialClinicProfile.emirate.in_(filters['emirates']))
-    
-    # Employment status filter
-    if filters.get('employment_statuses'):
-        query = query.filter(FinancialClinicProfile.employment_status.in_(filters['employment_statuses']))
-    
-    # Income range filter
-    if filters.get('income_ranges'):
-        query = query.filter(FinancialClinicProfile.income_range.in_(filters['income_ranges']))
-    
-    # Children filter
-    if filters.get('children'):
-        children_conditions = []
-        for child_option in filters['children']:
-            if child_option == '0':
-                children_conditions.append(FinancialClinicProfile.children == 0)
-            elif child_option == '1':
-                children_conditions.append(FinancialClinicProfile.children == 1)
-            elif child_option == '2':
-                children_conditions.append(FinancialClinicProfile.children == 2)
-            elif child_option == '3':
-                children_conditions.append(FinancialClinicProfile.children == 3)
-            elif child_option == '4':
-                children_conditions.append(FinancialClinicProfile.children == 4)
-            elif child_option == '5+':
-                children_conditions.append(FinancialClinicProfile.children >= 5)
-        if children_conditions:
-            query = query.filter(or_(*children_conditions))
-    
-    # Unique URL filter (CompanyTracker - legacy system)
-    if filters.get('companies'):
-        # Get company IDs from company names or URLs
-        company_trackers = db.query(CompanyTracker).filter(
-            or_(
-                CompanyTracker.company_name.in_(filters['companies']),
-                CompanyTracker.unique_url.in_(filters['companies'])
-            )
-        ).all()
-        company_ids = [c.id for c in company_trackers]
-        
-        if company_ids:
-            from app.models import FinancialClinicResponse
-            query = query.filter(FinancialClinicResponse.company_tracker_id.in_(company_ids))
-        else:
-            # If no companies found, return empty result
-            return []
-
-    # Exclude Unique URLs filter
-    if filters.get('exclude_unique_urls'):
-        from app.models import FinancialClinicResponse
-        query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
-
-    # Company filter (CompanyDetails - new system)
-    if filters.get('activeCompanies'):
-        from app.models import CompanyDetails, FinancialClinicProfile
-        
-        # Get company IDs from active companies
-        active_company_ids = [int(company_id) for company_id in filters['activeCompanies']]
-        
-        # Find profiles linked to these companies
-        profile_ids_with_companies = db.query(FinancialClinicProfile.id).filter(
-            FinancialClinicProfile.company_details_id.in_(active_company_ids)
-        ).subquery()
-        
-        # Filter responses by profiles with these companies
-        query = query.filter(FinancialClinicProfile.id.in_(profile_ids_with_companies))
-    
-    return query
-
-def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = None, end_date: Optional[str] = None):
-    """
-    Apply date range filtering to a SQLAlchemy query.
-    
-    Args:
-        query: SQLAlchemy query object
-        date_range: Predefined date range ('7d', '30d', '90d', '1y', 'ytd', 'all')
-        start_date: Custom start date (YYYY-MM-DD format)
-        end_date: Custom end date (YYYY-MM-DD format)
-        
-    Returns:
-        Filtered query
-    """
-    from app.models import FinancialClinicResponse
-    
-    # Helper to parse various date formats (YYYY-MM-DD or ISO format with time)
-    def parse_date(date_str: str) -> Optional[datetime]:
-        if not date_str:
-            return None
-        # Try ISO format first (e.g., 2026-01-20T00:00:00.000Z from frontend)
-        try:
-            # Handle ISO format with Z timezone
-            if 'T' in date_str:
-                # Remove 'Z' suffix if present and parse
-                clean_date = date_str.replace('Z', '+00:00')
-                return datetime.fromisoformat(clean_date.replace('+00:00', ''))
-            else:
-                # Try YYYY-MM-DD format
-                return datetime.strptime(date_str, "%Y-%m-%d")
-        except (ValueError, TypeError):
-            return None
-    
-    # If custom date range is provided, use it
-    if start_date or end_date:
-        start_dt = parse_date(start_date) if start_date else None
-        end_dt = parse_date(end_date) if end_date else None
-        
-        if start_dt:
-            query = query.filter(FinancialClinicResponse.created_at >= start_dt)
-        if end_dt:
-            # Add 1 day to include the end date fully
-            end_dt = end_dt + timedelta(days=1)
-            query = query.filter(FinancialClinicResponse.created_at < end_dt)
-        
-        # Return early if we applied custom date filters
-        if start_dt or end_dt:
-            return query
-    
-    # Apply predefined date range filters
-    import pytz
-    now = datetime.now(pytz.UTC)
-    
-    if date_range == "7d":
-        start_date = now - timedelta(days=7)
-        query = query.filter(FinancialClinicResponse.created_at >= start_date)
-    elif date_range == "30d":
-        start_date = now - timedelta(days=30)
-        query = query.filter(FinancialClinicResponse.created_at >= start_date)
-    elif date_range == "90d":
-        start_date = now - timedelta(days=90)
-        query = query.filter(FinancialClinicResponse.created_at >= start_date)
-    elif date_range == "1y":
-        start_date = now - timedelta(days=365)
-        query = query.filter(FinancialClinicResponse.created_at >= start_date)
-    elif date_range == "ytd":
-        # Year to date - from January 1st of current year
-        start_date = datetime(now.year, 1, 1)
-        query = query.filter(FinancialClinicResponse.created_at >= start_date)
-    elif date_range == "all":
-        # No date filtering for "all time"
-        pass
-    
-    return query
-
-def parse_filter_params(
-    age_groups: Optional[str] = None,
-    genders: Optional[str] = None,
-    nationalities: Optional[str] = None,
-    emirates: Optional[str] = None,
-    employment_statuses: Optional[str] = None,
-    income_ranges: Optional[str] = None,
-    children: Optional[str] = None,
-    companies: Optional[str] = None,
-    activeCompanies: Optional[str] = None
-) -> Dict[str, List[str]]:
-    """Parse comma-separated filter parameters into lists."""
-    filters = {}
-    
-    if age_groups:
-        filters['age_groups'] = [ag.strip() for ag in age_groups.split(',')]
-    if genders:
-        filters['genders'] = [g.strip() for g in genders.split(',')]
-    if nationalities:
-        filters['nationalities'] = [n.strip() for n in nationalities.split(',')]
-    if emirates:
-        filters['emirates'] = [e.strip() for e in emirates.split(',')]
-    if employment_statuses:
-        filters['employment_statuses'] = [es.strip() for es in employment_statuses.split(',')]
-    if income_ranges:
-        filters['income_ranges'] = [ir.strip() for ir in income_ranges.split(',')]
-    if children:
-        filters['children'] = [c.strip() for c in children.split(',')]
-    if companies:
-        filters['companies'] = [c.strip() for c in companies.split(',')]
-    if activeCompanies:
-        filters['activeCompanies'] = [ac.strip() for ac in activeCompanies.split(',')]
-    
-    return filters
 
 @simple_admin_router.post("/change-password")
 async def change_admin_password(
@@ -854,7 +653,8 @@ async def export_simple_admin_csv(
                 or_(
                     FinancialClinicProfile.name.ilike(search_term),
                     FinancialClinicProfile.email.ilike(search_term),
-                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                    FinancialClinicProfile.mobile_number.ilike(search_term),
+                    FinancialClinicProfile.company_name.ilike(search_term)
                 )
             )
 
@@ -890,7 +690,7 @@ async def export_simple_admin_csv(
 
         # 2. Company Name Filter (from CompanyDetails)
         if company_name and company_name != 'all':
-            if company_name == 'other':
+            if company_name == 'blank' or company_name == 'other':
                 query = query.filter(
                     or_(
                         FinancialClinicProfile.company_name.is_(None),
@@ -1110,6 +910,73 @@ async def export_simple_admin_csv(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@simple_admin_router.get("/consolidated-export")
+async def export_consolidated_csv(
+    date_range: str = "all",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
+    company_id: Optional[int] = Query(None),
+    company_name: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
+    exclude_unique_urls: Optional[bool] = Query(None),
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(get_current_admin_user)
+) -> StreamingResponse:
+    """Export consolidated CSV with Submissions, Leads, and Incomplete surveys."""
+    try:
+        # Map date_from/date_to from frontend if start_date/end_date are missing
+        if date_from and not start_date:
+            start_date = date_from
+        if date_to and not end_date:
+            end_date = date_to
+
+        service = ConsolidatedExportService(db)
+        
+        # Prepare filter dict for service
+        filters = {
+            "date_range": date_range,
+            "start_date": start_date,
+            "end_date": end_date,
+            "age_groups": age_groups,
+            "genders": genders,
+            "nationalities": nationalities,
+            "emirates": emirates,
+            "employment_statuses": employment_statuses,
+            "income_ranges": income_ranges,
+            "children": children,
+            "companies": companies,
+            "activeCompanies": activeCompanies,
+            "exclude_unique_urls": exclude_unique_urls,
+            "company_id": company_id,
+            "company_name": company_name
+        }
+
+        output = service.generate_csv(filters=filters)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"consolidated_export_{timestamp}.csv"
+        
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            media_type='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+    except Exception as e:
+        logger.error(f"Error generating consolidated export: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @simple_admin_router.get("/export-excel")
 async def export_simple_admin_excel(
     date_range: str = "all",  # Default to 'all' - use date_from/date_to for custom ranges
@@ -1170,7 +1037,8 @@ async def export_simple_admin_excel(
                 or_(
                     FinancialClinicProfile.name.ilike(search_term),
                     FinancialClinicProfile.email.ilike(search_term),
-                    FinancialClinicProfile.mobile_number.ilike(search_term)
+                    FinancialClinicProfile.mobile_number.ilike(search_term),
+                    FinancialClinicProfile.company_name.ilike(search_term)
                 )
             )
 
@@ -1198,7 +1066,7 @@ async def export_simple_admin_excel(
 
         # 2. Company Name Filter (from CompanyDetails)
         if company_name and company_name != 'all':
-            if company_name == 'other':
+            if company_name == 'blank' or company_name == 'other':
                 query = query.filter(
                     or_(
                         FinancialClinicProfile.company_name.is_(None),
@@ -1725,19 +1593,43 @@ async def get_filter_options(
         ]
         
         # Get company details for company management analytics
-        from app.models import CompanyDetails
+        # Only include companies that have at least one submission
+        from app.models import CompanyDetails, FinancialClinicProfile
+        from sqlalchemy import func
+        
+        # Subquery to get company names with submissions
+        companies_with_submissions = db.query(
+            FinancialClinicProfile.company_name
+        ).filter(
+            FinancialClinicProfile.company_name.isnot(None),
+            FinancialClinicProfile.company_name != ''
+        ).distinct().all()
+        
+        company_names_with_submissions = {row[0] for row in companies_with_submissions if row[0]}
+        
+        # Get all active company details that have submissions
         company_details = db.query(CompanyDetails).filter(
-            CompanyDetails.is_active == True
+            CompanyDetails.is_active == True,
+            CompanyDetails.company_name.in_(company_names_with_submissions)
         ).order_by(CompanyDetails.company_name).all()
         
+        # Build list with "Blank" option at top for submissions without company
         active_companies_list = [
+            {
+                "id": None,
+                "name": "(Blank)",
+                "unique_url": None
+            }
+        ]
+        
+        active_companies_list.extend([
             {
                 "id": c.id,
                 "name": c.company_name,
                 "unique_url": None  # CompanyDetails don't have URLs
             }
             for c in company_details
-        ]
+        ])
         
         return {
             "age_groups": all_age_groups,
@@ -2864,12 +2756,23 @@ async def get_submissions(
     status_band: Optional[str] = None,
     nationality: Optional[str] = None,
     company_id: Optional[int] = None,
-    company_name: Optional[str] = None,  # Filter by company name from CompanyDetails
+    company_name: Optional[str] = None,
     income_range: Optional[str] = None,
     age_group: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
+    date_range: str = "all",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     exclude_unique_urls: Optional[bool] = None,
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -2878,6 +2781,38 @@ async def get_submissions(
     """
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
+        
+        # Map date_from/date_to to start_date/end_date if needed
+        if date_from and not start_date: start_date = date_from
+        if date_to and not end_date: end_date = date_to
+
+        # Start with global filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, None, activeCompanies
+        )
+
+        # Merge local (tab-specific) filters
+        if search: filters['search'] = search
+        if status_band: filters['status_band'] = status_band
+        if nationality:
+            if 'nationalities' in filters:
+                if nationality not in filters['nationalities']: filters['nationalities'].append(nationality)
+            else:
+                filters['nationalities'] = [nationality]
+        if company_id: filters['company_id'] = company_id
+        if exclude_unique_urls: filters['exclude_unique_urls'] = True
+        if company_name: filters['company_name'] = company_name
+        if income_range:
+            if 'income_ranges' in filters:
+                if income_range not in filters['income_ranges']: filters['income_ranges'].append(income_range)
+            else:
+                filters['income_ranges'] = [income_range]
+        if age_group:
+            if 'age_groups' in filters:
+                if age_group not in filters['age_groups']: filters['age_groups'].append(age_group)
+            else:
+                filters['age_groups'] = [age_group]
         
         # Build query with joins
         query = db.query(
@@ -2888,57 +2823,8 @@ async def get_submissions(
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
         
-        # Apply filters
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    FinancialClinicProfile.name.ilike(search_term),
-                    FinancialClinicProfile.email.ilike(search_term),
-                    FinancialClinicProfile.mobile_number.ilike(search_term)
-                )
-            )
-        
-        if status_band:
-            query = query.filter(FinancialClinicResponse.status_band == status_band)
-        
-        if nationality:
-            query = query.filter(FinancialClinicProfile.nationality == nationality)
-        
-        # Filter by unique URL (company_tracker_id)
-        if company_id:
-            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
-
-        # Filter by unique URL exclusion
-        if exclude_unique_urls:
-            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
-
-        # Filter by unique URL exclusion
-        if exclude_unique_urls:
-            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
-        
-        # Filter by company name from CompanyDetails
-        if company_name and company_name != 'other':
-            query = query.filter(FinancialClinicProfile.company_name == company_name)
-        elif company_name == 'other':
-            # Filter for submissions without a company or with null company_name
-            query = query.filter(
-                or_(
-                    FinancialClinicProfile.company_name.is_(None),
-                    FinancialClinicProfile.company_name == ''
-                )
-            )
-        
-        if income_range:
-            query = query.filter(FinancialClinicProfile.income_range == income_range)
-        
-        if date_from:
-            date_from_dt = datetime.fromisoformat(date_from)
-            query = query.filter(FinancialClinicResponse.created_at >= date_from_dt)
-        
-        if date_to:
-            date_to_dt = datetime.fromisoformat(date_to)
-            query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
         
         # Helper function to calculate age from DOB string (DD/MM/YYYY or ISO)
         def calculate_age(dob_str):
@@ -2962,9 +2848,8 @@ async def get_submissions(
             except:
                 return None
 
-        # Get total count (before age filtering since age is calculated in Python)
-        if age_group:
-            # For age filtering, we need to get all results first then filter in Python
+        # Get total        # For age filtering, we need to get all results first then filter in Python
+        if filters.get('age_groups'):
             # This is because date_of_birth is stored as string in DD/MM/YYYY format
             all_results = query.order_by(desc(FinancialClinicResponse.created_at)).all()
             
@@ -2977,17 +2862,16 @@ async def get_submissions(
                 if age is None:
                     continue
                     
-                if age_group == "< 18" and age < 18:
-                    filtered_results.append((response, profile))
-                elif age_group == "18-25" and 18 <= age <= 25:
-                    filtered_results.append((response, profile))
-                elif age_group == "26-35" and 26 <= age <= 35:
-                    filtered_results.append((response, profile))
-                elif age_group == "36-45" and 36 <= age <= 45:
-                    filtered_results.append((response, profile))
-                elif age_group == "46-60" and 46 <= age <= 60:
-                    filtered_results.append((response, profile))
-                elif age_group == "60+" and age > 60:
+                match = False
+                for ag in filters['age_groups']:
+                    if ag == "< 18" and age < 18: match = True
+                    elif ag == "18-25" and 18 <= age <= 25: match = True
+                    elif ag == "26-35" and 26 <= age <= 35: match = True
+                    elif ag == "36-45" and 36 <= age <= 45: match = True
+                    elif ag == "46-60" and 46 <= age <= 60: match = True
+                    elif ag == "60+" and age > 60: match = True
+                
+                if match:
                     filtered_results.append((response, profile))
             
             total_count = len(filtered_results)
@@ -3083,9 +2967,20 @@ async def get_submissions_stats(
     company_name: Optional[str] = Query(None),
     income_range: Optional[str] = Query(None),
     age_group: Optional[str] = Query(None),
+    date_range: str = "all",
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
     exclude_unique_urls: Optional[bool] = Query(None),
+    genders: Optional[str] = Query(None),
+    nationalities: Optional[str] = Query(None),
+    emirates: Optional[str] = Query(None),
+    employment_statuses: Optional[str] = Query(None),
+    income_ranges: Optional[str] = Query(None),
+    age_groups: Optional[str] = Query(None),
+    children: Optional[str] = Query(None),
+    activeCompanies: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
 ):
@@ -3095,67 +2990,49 @@ async def get_submissions_stats(
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
         
+        # Map date_from/date_to to start_date/end_date if needed
+        if date_from and not start_date: start_date = date_from
+        if date_to and not end_date: end_date = date_to
+
+        # Start with global filters
+        filters = parse_filter_params(
+            age_groups, genders, nationalities, emirates,
+            employment_statuses, income_ranges, children, None, activeCompanies
+        )
+
+        # Merge local (tab-specific) filters
+        if search: filters['search'] = search
+        if status_band: filters['status_band'] = status_band
+        if nationality:
+            if 'nationalities' in filters:
+                if nationality not in filters['nationalities']: filters['nationalities'].append(nationality)
+            else:
+                filters['nationalities'] = [nationality]
+        if company_id: filters['company_id'] = company_id
+        if exclude_unique_urls: filters['exclude_unique_urls'] = True
+        if company_name: filters['company_name'] = company_name
+        if income_range:
+            if 'income_ranges' in filters:
+                if income_range not in filters['income_ranges']: filters['income_ranges'].append(income_range)
+            else:
+                filters['income_ranges'] = [income_range]
+        if age_group:
+            if 'age_groups' in filters:
+                if age_group not in filters['age_groups']: filters['age_groups'].append(age_group)
+            else:
+                filters['age_groups'] = [age_group]
+        
         # Build base query
         query = db.query(FinancialClinicResponse).join(
             FinancialClinicProfile,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
         
-        # Apply filters
-        if search:
-            search_term = f"%{search}%"
-            query = query.filter(
-                or_(
-                    FinancialClinicProfile.name.ilike(search_term),
-                    FinancialClinicProfile.email.ilike(search_term),
-                    FinancialClinicProfile.mobile_number.ilike(search_term)
-                )
-            )
-        
-        if status_band:
-            query = query.filter(FinancialClinicResponse.status_band == status_band)
-        
-        if nationality:
-            query = query.filter(FinancialClinicProfile.nationality == nationality)
-        
-        if company_id:
-            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
-
-        if exclude_unique_urls:
-            query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
-        
-        if company_name and company_name != 'other':
-            query = query.filter(FinancialClinicProfile.company_name == company_name)
-        elif company_name == 'other':
-            query = query.filter(
-                or_(
-                    FinancialClinicProfile.company_name.is_(None),
-                    FinancialClinicProfile.company_name == ''
-                )
-            )
-        
-        if income_range:
-            query = query.filter(FinancialClinicProfile.income_range == income_range)
-        
-        # Apply date filtering
-        if date_from:
-            try:
-                date_from_dt = datetime.fromisoformat(date_from)
-                query = query.filter(FinancialClinicResponse.created_at >= date_from_dt)
-            except ValueError:
-                pass
-        
-        if date_to:
-            try:
-                date_to_dt = datetime.fromisoformat(date_to)
-                if 'T' not in date_to:
-                     date_to_dt = date_to_dt + timedelta(days=1)
-                query = query.filter(FinancialClinicResponse.created_at <= date_to_dt)
-            except ValueError:
-                pass
+        query = apply_date_range_filter(query, date_range, start_date, end_date)
+        query = apply_demographic_filters(query, filters, db)
         
         # For age_group filtering, we need to filter in Python since DOB is a string
-        if age_group:
+        if filters.get('age_groups'):
             def calculate_age(dob_str):
                 if not dob_str:
                     return None
@@ -3182,17 +3059,16 @@ async def get_submissions_stats(
                 if profile:
                     age = calculate_age(profile.date_of_birth)
                     if age is not None:
-                        if age_group == "< 18" and age < 18:
-                            filtered_ids.append(response.id)
-                        elif age_group == "18-25" and 18 <= age <= 25:
-                            filtered_ids.append(response.id)
-                        elif age_group == "26-35" and 26 <= age <= 35:
-                            filtered_ids.append(response.id)
-                        elif age_group == "36-45" and 36 <= age <= 45:
-                            filtered_ids.append(response.id)
-                        elif age_group == "46-60" and 46 <= age <= 60:
-                            filtered_ids.append(response.id)
-                        elif age_group == "60+" and age > 60:
+                        match = False
+                        for ag in filters['age_groups']:
+                            if ag == "< 18" and age < 18: match = True
+                            elif ag == "18-25" and 18 <= age <= 25: match = True
+                            elif ag == "26-35" and 26 <= age <= 35: match = True
+                            elif ag == "36-45" and 36 <= age <= 45: match = True
+                            elif ag == "46-60" and 46 <= age <= 60: match = True
+                            elif ag == "60+" and age > 60: match = True
+                        
+                        if match:
                             filtered_ids.append(response.id)
             
             # Re-query with filtered IDs
