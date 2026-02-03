@@ -2431,17 +2431,17 @@ async def get_companies_analytics(
             avg_score = stats["total_score_sum"] / stats["total_submissions"] if stats["total_submissions"] > 0 else 0
             
             final_companies.append({
-                "company": stats["company"],
-                "total_submissions": stats["total_submissions"],
+                "company_name": stats["company"],
+                "total_responses": stats["total_submissions"],
                 "average_score": round(avg_score, 2),
-                "excellent": stats["excellent"],
-                "good": stats["good"],
-                "needs_improvement": stats["needs_improvement"],
-                "at_risk": stats["at_risk"]
+                "excellent_count": stats["excellent"],
+                "good_count": stats["good"],
+                "needs_improvement_count": stats["needs_improvement"],
+                "at_risk_count": stats["at_risk"]
             })
             
         # Sort by total submissions descending
-        final_companies.sort(key=lambda x: x["total_submissions"], reverse=True)
+        final_companies.sort(key=lambda x: x["total_responses"], reverse=True)
             
         return {"companies": final_companies}
         
