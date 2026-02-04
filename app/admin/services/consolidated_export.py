@@ -73,6 +73,7 @@ class ConsolidatedExportService:
         ]
         if companies_module_enabled:
             base_headers.append('Company')
+            base_headers.append('Unique URL')
         base_headers.extend([
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
@@ -137,6 +138,16 @@ class ConsolidatedExportService:
 
             # Get consultation data
             consultation = consultation_map.get(response.id)
+            
+            # Helper to get unique URL
+            unique_url = ''
+            if response.company_tracker:
+                unique_url = response.company_tracker.unique_url
+            elif response.company_tracker_id:
+                 # Fallback if relationship not loaded but ID exists
+                 tracker = self.db.query(CompanyTracker).filter(CompanyTracker.id == response.company_tracker_id).first()
+                 if tracker:
+                     unique_url = tracker.unique_url
 
             # Build row
             row_data = [
@@ -154,6 +165,7 @@ class ConsolidatedExportService:
             ]
             if companies_module_enabled:
                 row_data.append(profile_data.get('company_name', ''))
+                row_data.append(unique_url)
             row_data.extend([
                 round(response.total_score, 2) if response.total_score else 0,
                 response.status_band if response.status_band else '',
@@ -219,6 +231,11 @@ class ConsolidatedExportService:
             ]
             if companies_module_enabled:
                 row_data.append(comp_name)
+                # Determine Unique URL: prefer explicit URL, fall back to company tracker's URL
+                inc_unique_url = survey.company_url
+                if not inc_unique_url and survey.company:
+                    inc_unique_url = survey.company.unique_url
+                row_data.append(inc_unique_url or '')
             row_data.extend([
                 '',  # Total Score
                 '',  # Status Band

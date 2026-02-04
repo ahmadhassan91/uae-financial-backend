@@ -776,6 +776,7 @@ async def export_simple_admin_csv(
         ]
         if companies_module_enabled:
             base_headers.append('Company')
+            base_headers.append('Unique URL')
         base_headers.extend([
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
@@ -865,6 +866,15 @@ async def export_simple_admin_csv(
             # Add company name if Companies Module is enabled
             if companies_module_enabled:
                 row_data.append(profile_data.get('company_name', ''))
+                
+                unique_url = ''
+                if r.company_tracker:
+                    unique_url = r.company_tracker.unique_url
+                elif r.company_tracker_id:
+                    ct = db.query(CompanyTracker).filter(CompanyTracker.id == r.company_tracker_id).first()
+                    if ct:
+                        unique_url = ct.unique_url
+                row_data.append(unique_url)
             row_data.extend([
                 round(r.total_score, 2) if r.total_score else 0,
                 r.status_band if r.status_band else '',
@@ -1198,6 +1208,14 @@ async def export_simple_admin_excel(
                 if not mobile_number.startswith('+'):
                     # Default to UAE country code if not specified
                     mobile_number = '+971 ' + mobile_number
+
+            unique_url = ''
+            if r.company_tracker:
+                unique_url = r.company_tracker.unique_url
+            elif r.company_tracker_id:
+                ct = db.query(CompanyTracker).filter(CompanyTracker.id == r.company_tracker_id).first()
+                if ct:
+                    unique_url = ct.unique_url
             
             rows.append({
                 'id': r.id,
@@ -1212,6 +1230,7 @@ async def export_simple_admin_excel(
                 'employment_status': profile_data.get('employment_status', ''),
                 'income_range': profile_data.get('income_range', ''),
                 'company': profile_data.get('company_name', ''),
+                'unique_url': unique_url,
                 'total_score': round(r.total_score, 2) if r.total_score else 0,
                 'status_band': r.status_band if r.status_band else '',
                 'questions_answered': r.questions_answered if r.questions_answered else 0,
@@ -1247,6 +1266,7 @@ async def export_simple_admin_excel(
         ]
         if companies_module_enabled:
             headers.append('Company')
+            headers.append('Unique URL')
         headers.extend([
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
@@ -1273,6 +1293,7 @@ async def export_simple_admin_excel(
             ]
             if companies_module_enabled:
                 row_data.append(row['company'])
+                row_data.append(row['unique_url'])
             row_data.extend([
                 row['total_score'],
                 row['status_band'],
