@@ -1,0 +1,18 @@
+Epic,Module,Task,Description,Effort (Hours),Priority,Dependencies
+CRM Integration,Analysis & Design,Finalize API Specification,Confirm JSON structure and field mapping with CRM team,2,High,None
+CRM Integration,Analysis & Design,Database Schema Design,Design API Key/Service Account model for authentication,2,High,None
+CRM Integration,Authentication,Create APIKey Model,SQLAlchemy model to store secure API keys with scopes,3,High,Database Schema Design
+CRM Integration,Authentication,Implement Auth Middleware,FastAPI dependency to validate Bearer tokens,4,High,Create APIKey Model
+CRM Integration,Authentication,API Key Management Script,CLI script to generate/revoke keys for CRM team,2,Medium,Create APIKey Model
+CRM Integration,Data Services,Refactor Consolidated Export,Decouple data fetching from CSV writing in ConsolidatedExportService,6,High,None
+CRM Integration,Data Services,Create Data Transfer Objects (DTOs),Define Pydantic models for JSON response (strict typing),4,High,Refactor Consolidated Export
+CRM Integration,Data Services,Implement JSON Serializer,Logic to convert DB objects to defined JSON structure,4,High,Create Data Transfer Objects (DTOs)
+CRM Integration,API Development,Create API Router,Setup /api/v1/crm routes and versioning,2,High,None
+CRM Integration,API Development,Implement GET /consolidated-data,Main endpoint logic with filtering (date_range),6,High,Implement Auth Middleware
+CRM Integration,API Development,Add Pagination Support,Implement limit/offset for large datasets,3,Medium,Implement GET /consolidated-data
+CRM Integration,Testing,Unit Tests - Auth,Verify API key validation and rejection,3,High,Implement Auth Middleware
+CRM Integration,Testing,Unit Tests - Data Accuracy,Compare JSON output against CSV export for consistency,4,High,Implement GET /consolidated-data
+CRM Integration,Testing,Integration Testing,End-to-end test with mock CRM client,3,High,Implement GET /consolidated-data
+CRM Integration,Documentation,API Reference,Swagger/OpenAPI documentation with examples,2,Medium,API Development
+CRM Integration,Deployment,Deploy to Staging,Deploy and verify in staging environment,1,High,Testing
+CRM Integration,Deployment,Production Release,Deploy to production and share credentials,1,High,Deploy to Staging

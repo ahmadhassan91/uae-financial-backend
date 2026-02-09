@@ -186,7 +186,7 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
                 # Handled by separate logic if needed, but adding here for safety
                 pass
         
-        from sqlalchemy import or_, func
+
         conditions = []
         if active_company_ids:
             conditions.append(FinancialClinicProfile.company_details_id.in_(active_company_ids))
@@ -198,7 +198,7 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
 
     # Search filter (name, email, phone, company name)
     if filters.get('search'):
-        from sqlalchemy import or_
+
         search = filters['search']
         search_term = f"%{search}%"
         query = query.filter(
@@ -216,7 +216,7 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
         
         # Handle "(Blank)" selection from frontend
         if company_name == "(Blank)":
-            from sqlalchemy import or_
+
             query = query.filter(
                 or_(
                     FinancialClinicProfile.company_name.is_(None),
@@ -227,7 +227,7 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
             # Strip " (User Entry)" suffix if present
             clean_name = company_name.replace(" (User Entry)", "").strip()
             # Use trim/ilike to match "Microsoft" against "Microsoft "
-            from sqlalchemy import func
+
             query = query.filter(func.trim(FinancialClinicProfile.company_name).ilike(f"%{clean_name}%"))
 
     # Status band filter
