@@ -2853,6 +2853,10 @@ async def get_submissions(
         )
         
         query = apply_date_range_filter(query, date_range, start_date, end_date)
+        # Apply company_id filter explicitly (apply_demographic_filters doesn't handle it)
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
         query = apply_demographic_filters(query, filters, db)
         
         # Helper function to calculate age from DOB string (DD/MM/YYYY or ISO)
@@ -3009,6 +3013,7 @@ async def get_submissions_stats(
     income_ranges: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
@@ -3026,7 +3031,7 @@ async def get_submissions_stats(
         # Start with global filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, None, activeCompanies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
 
         # Merge local (tab-specific) filters
@@ -3037,7 +3042,9 @@ async def get_submissions_stats(
                 if nationality not in filters['nationalities']: filters['nationalities'].append(nationality)
             else:
                 filters['nationalities'] = [nationality]
-        if company_id: filters['company_id'] = company_id
+        if company_id:
+             # Explicitly handle company_id (local unique URL filter)
+             filters['company_id'] = company_id
         if exclude_unique_urls: filters['exclude_unique_urls'] = True
         if company_name: filters['company_name'] = company_name
         if income_range:
@@ -3058,6 +3065,28 @@ async def get_submissions_stats(
         )
         
         query = apply_date_range_filter(query, date_range, start_date, end_date)
+        
+        # Apply company_id filter explicitly (apply_demographic_filters doesn't handle it)
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # Apply Company Name Filter logic (align with get_submissions)
+        # Note: apply_demographic_filters handles company_name but doesn't handle 'blank'/'other' logic correctly
+        # so we handle it here and remove from filters if needed, OR we trust apply_demographic_filters if we fix utils.py
+        # But for now, let's look at utils.py again. It handles (Blank) but not 'blank'/'other' from local filter values.
+        # Let's handle it explicitly here to be safe and consistent with get_submissions.
+        if company_name and company_name != 'all':
+            if company_name == 'blank' or company_name == 'other':
+                query = query.filter(
+                    or_(
+                        FinancialClinicProfile.company_name.is_(None),
+                        FinancialClinicProfile.company_name == ''
+                    )
+                )
+                # Remove from filters so apply_demographic_filters doesn't try to apply it again
+                if 'company_name' in filters:
+                    del filters['company_name']
+            
         query = apply_demographic_filters(query, filters, db)
         
         # For age_group filtering, we need to filter in Python since DOB is a string
@@ -3100,6 +3129,21 @@ async def get_submissions_stats(
                         if match:
                             filtered_ids.append(response.id)
             
+            # Re-query with filtered IDs
+            if filtered_ids:
+                query = db.query(FinancialClinicResponse).filter(
+                    FinancialClinicResponse.id.in_(filtered_ids)
+                )
+            else:
+                # No results match the age filter
+                return {
+                    'total': 0,
+                    'today': 0,
+                    'this_week': 0,
+                    'this_month': 0,
+                    'average_score': 0.0
+                }
+        
             # Re-query with filtered IDs
             if filtered_ids:
                 query = db.query(FinancialClinicResponse).filter(
