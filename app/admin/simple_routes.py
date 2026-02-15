@@ -1615,18 +1615,44 @@ async def get_filter_options(
         
         # Get company details for company management analytics
         # Only include companies that have at least one submission
-        from app.models import CompanyDetails, FinancialClinicProfile
+        from app.models import CompanyDetails, FinancialClinicProfile, FinancialClinicResponse
         from sqlalchemy import func
         
-        # Subquery to get company names with submissions
-        companies_with_submissions = db.query(
+        # Subquery to get company names with submissions from BOTH sources:
+        # 1. FinancialClinicProfile.company_name (profile-level)
+        # 2. FinancialClinicResponse.profile_snapshot (response-level, for reused profiles)
+        companies_from_profiles = db.query(
             FinancialClinicProfile.company_name
         ).filter(
             FinancialClinicProfile.company_name.isnot(None),
             FinancialClinicProfile.company_name != ''
         ).distinct().all()
         
-        company_names_with_submissions = {row[0].lower().strip() for row in companies_with_submissions if row[0]}
+        # Also get company names from profile_snapshot (JSON field)
+        # This catches cases where existing profiles were reused with different company names
+        snapshot_responses = db.query(
+            FinancialClinicResponse.profile_snapshot
+        ).filter(
+            FinancialClinicResponse.profile_snapshot.isnot(None)
+        ).all()
+        
+        snapshot_company_names = set()
+        for row in snapshot_responses:
+            if row[0] and isinstance(row[0], dict):
+                cn = row[0].get('company_name')
+                if cn and cn.strip():
+                    snapshot_company_names.add(cn.strip())
+        
+        # Merge both sources
+        company_names_with_submissions = {row[0].lower().strip() for row in companies_from_profiles if row[0]}
+        company_names_with_submissions.update({name.lower().strip() for name in snapshot_company_names})
+        
+        # Also collect the original-case names from snapshots for free-text display
+        all_company_names_original = {row[0].strip(): row[0].strip() for row in companies_from_profiles if row[0]}
+        for name in snapshot_company_names:
+            key = name.lower().strip()
+            if key not in {k.lower() for k in all_company_names_original}:
+                all_company_names_original[name] = name
         
         # Get all active predefined company details that have submissions
         predefined_companies = db.query(CompanyDetails).filter(
@@ -1641,8 +1667,9 @@ async def get_filter_options(
         
         predefined_names = {c.company_name.lower().strip() for c in predefined_with_submissions if c.company_name}
         
-        # Get unique free-text company names (from submissions) that are NOT in the predefined list
-        free_text_companies = db.query(
+        # Get unique free-text company names (from BOTH profiles AND snapshots) not in predefined list
+        # From profiles
+        free_text_from_profiles = db.query(
             FinancialClinicProfile.company_name
         ).filter(
             FinancialClinicProfile.company_name.isnot(None),
@@ -1650,14 +1677,19 @@ async def get_filter_options(
             FinancialClinicProfile.company_details_id.is_(None)
         ).distinct().all()
         
-        # Filter out anything that matches a predefined company (case-insensitive) just in case
-        unique_free_text = []
-        for row in free_text_companies:
+        # Merge free-text from profiles and snapshots
+        free_text_names = set()
+        for row in free_text_from_profiles:
             name = row[0]
             if name and name.lower().strip() not in predefined_names:
-                unique_free_text.append(name)
+                free_text_names.add(name)
         
-        unique_free_text.sort()
+        # Add snapshot company names that are not in predefined list
+        for name in snapshot_company_names:
+            if name.lower().strip() not in predefined_names:
+                free_text_names.add(name)
+        
+        unique_free_text = sorted(list(free_text_names))
         
         # Build active_companies_list with "Blank" at top
         active_companies_list = [
