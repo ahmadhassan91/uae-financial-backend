@@ -48,18 +48,18 @@ An automated system to send re-engagement emails to users (employees/leads) who 
 
 | Module | Task | Est. Effort |
 |--------|------|-------------|
-| Database | Schema migration (`SystemSettings`, `EmailLog`) | 2 Hours |
-| Backend | Scheduled Job logic & Email Service integration | 3 Hours |
+| Database | Schema migration (`SystemSettings`, `EmailLog`) | 5 Hours |
+| Backend | Scheduled Job logic & Email Service integration | 6 Hours |
 | Frontend | Admin interface for settings | 2 Hours |
 | Q/A | Testing & Verification | 1 Hour |
-| **Total** | | **8 Hours** |
+| **Total** | | **14 Hours** |
 
 ---
 
 ## 4. Cost Estimate
 
-**Fixed Price:** **$450 - $500**  
-*(Separate from CRM Integration)*
+**Fixed Price:** ** USD 450 - USD 500 **  
+
 
 ---
 

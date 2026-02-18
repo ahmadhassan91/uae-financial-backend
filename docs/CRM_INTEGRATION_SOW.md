@@ -120,22 +120,4 @@ The JSON response will follow a strict schema defined using Pydantic models to e
 
 ---
 
-## 6. Effort Estimates
 
-| Phase | Task Group | Est. Effort |
-|-------|------------|-------------|
-| 1 | Analysis & Design | 4 Hours |
-| 2 | Authentication System | 9 Hours |
-| 3 | Data Service Refactoring | 10 Hours |
-| 4 | API Implementation | 8 Hours |
-| 5 | Testing & Deployment | 5 Hours |
-| | **Total** | **~36 Hours** |
-
----
-
-## 7. Approval
-
-| Role | Name | Date | Signature |
-|------|------|------|-----------|
-| Project Manager | | | |
-| Client Technical Lead | | | |
