@@ -1,21 +1,37 @@
 """Email service for delivering financial health reports."""
 import os
 import smtplib
+import time
 import json
 import logging
 import unicodedata
 import hashlib
+import ssl
+import certifi
+import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+from email.utils import formataddr
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.models import SurveyResponse, CustomerProfile, ReportDelivery
 from app.config import settings
 from app.utils.asset_helper import replace_s3_urls_with_local
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+def create_ssl_context():
+    """Create a robust SSL context using certifi."""
+    try:
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception as e:
+        logger.warning(f"⚠️ Failed to create SSL context with certifi: {e}. Falling back to default.")
+        return ssl.create_default_context()
 
 
 class EmailReportService:
@@ -33,7 +49,10 @@ class EmailReportService:
         # Set up Jinja2 environment for email templates
         template_dir = os.path.join(os.path.dirname(__file__), 'templates')
         if os.path.exists(template_dir):
-            self.jinja_env = Environment(loader=FileSystemLoader(template_dir))
+            self.jinja_env = Environment(
+                loader=FileSystemLoader(template_dir),
+                autoescape=select_autoescape(['html', 'xml'])
+            )
         else:
             self.jinja_env = None
     
@@ -53,7 +72,7 @@ class EmailReportService:
             msg = MIMEMultipart('alternative')
             
             # Set email headers
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['From'] = formataddr((self.from_name, self.from_email))
             msg['To'] = recipient_email
             
             # Set subject based on language
@@ -98,8 +117,6 @@ class EmailReportService:
     
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
         """Send email using SMTP - supports both authenticated and relay servers."""
-        import logging
-        import time
         logger = logging.getLogger(__name__)
         
         # Retry configuration
@@ -137,9 +154,10 @@ class EmailReportService:
                 # Only use TLS and authentication if password is configured
                 if requires_auth:
                     if server.has_extn('STARTTLS'):
-                        server.starttls()
+                        context = create_ssl_context()
+                        server.starttls(context=context)
                         server.ehlo()  # re-identify after TLS
-                        logger.debug("📧 TLS started")
+                        logger.debug("📧 TLS started using certifi context")
                     
                     server.login(smtp_username, smtp_password)
                     logger.debug("📧 SMTP login successful")
@@ -174,7 +192,13 @@ class EmailReportService:
                         pass
                 
                 if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
+                    # Exponential backoff with jitter
+                    # attempt 0 -> wait 2-3s
+                    # attempt 1 -> wait 4-6s
+                    # attempt 2 -> wait 8-12s
+                    sleep_time = (retry_delay * (2 ** attempt)) + random.uniform(0, 1)
+                    logger.info(f"⏳ Waiting {sleep_time:.2f}s before retry...")
+                    time.sleep(sleep_time)
                 else:
                     logger.error(f"❌ SMTP final error: {str(e)}")
                     return {
@@ -496,7 +520,7 @@ National Bonds Team
         """Send a reminder email for incomplete assessments."""
         try:
             msg = MIMEMultipart()
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['From'] = formataddr((self.from_name, self.from_email))
             msg['To'] = recipient_email
             
             # Get frontend URL for links and backend URL for assets
@@ -518,24 +542,21 @@ National Bonds Team
                 if resume_link:
                     content = content.replace('{resume_link}', resume_link)
                 content = content.replace('{base_url}', frontend_url)
-                # Ensure basic HTML structure if missing? 
-                # For now assume user provides HTML snippet or full HTML. 
-                # Getting user to provide full HTML is risky/complex, maybe we wrap it?
-                # Let's assume for now the user provides the "content" part and we might wrap it 
-                # OR we just use it as is if it contains <html> tag.
-                if '<html' not in content.lower():
-                     # Wrap in basic layout
-                     content = self._wrap_in_layout(content, language, frontend_url, assets_url)
-            elif language == "ar":
-                content = self._get_reminder_content_ar(customer_name, assets_url, resume_link)
             else:
-                content = self._get_reminder_content_en(customer_name, assets_url, resume_link)
+                content = self._get_default_reminder_content(language, customer_name, resume_link)
             
-            # Replace template placeholders with actual URLs
-            content = content.replace('{base_url}', frontend_url)
-            content = content.replace('{assets_url}', assets_url)
+            # --- NEW TEMPLATE LOGIC ---
+            template_name = 'reminder_ar.html' if language == 'ar' else 'reminder_en.html'
+            template = self.jinja_env.get_template(template_name)
+
+            final_html = template.render(
+                customer_name=customer_name, # Passed but also inside content sometimes, redundancy is fine or content doesn't use it if from template
+                content=content,
+                base_url=frontend_url,
+                assets_url=assets_url
+            )
             
-            msg.attach(MIMEText(content, 'html', 'utf-8'))
+            msg.attach(MIMEText(final_html, 'html', 'utf-8'))
             
             delivery_result = self._send_email(msg)
             
@@ -547,12 +568,84 @@ National Bonds Team
             }
             
         except Exception as e:
+            logger.error(f"❌ Failed to send reminder to {recipient_email}: {e}")
             return {
                 'success': False,
                 'message': f"Failed to send reminder: {str(e)}",
                 'recipient': recipient_email,
                 'error': str(e)
             }
+
+    def _get_default_reminder_content(self, language: str, customer_name: str, resume_link: Optional[str] = None) -> str:
+        """Get default reminder content (inner HTML)."""
+        # Build the continue button HTML
+        continue_button = ""
+        if resume_link:
+            if language == "ar":
+                continue_button = f"""
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{resume_link}" 
+                       class="cta-button">
+                        استمر في التقييم
+                    </a>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: #666;">
+                    أو انسخ هذا الرابط: <a href="{resume_link}">{resume_link}</a>
+                </p>
+                """
+            else:
+                continue_button = f"""
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{resume_link}" 
+                       class="cta-button">
+                        Continue Your Assessment
+                    </a>
+                </div>
+                <p style="text-align: center; font-size: 12px; color: #666;">
+                    Or copy this link: <a href="{resume_link}">{resume_link}</a>
+                </p>
+                """
+
+        if language == "ar":
+            return f"""
+            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
+            
+            <p>نلاحظ أنك بدأت تقييم الصحة المالية ولكنك لم تكمله بعد.</p>
+            
+            <p>صحتك المالية مهمة لنا. يستغرق التقييم 5-10 دقائق فقط ويقدم رؤى قيمة حول صحتك المالية.</p>
+            
+            <p><strong style="color: #437749;">فوائد إكمال التقييم:</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ درجة الصحة المالية الشخصية</li>
+                <li>✓ تحليل مفصل لوضعك المالي</li>
+                <li>✓ توصيات مخصصة للتحسين</li>
+                <li>✓ خطة عمل لمدة 90 يوماً</li>
+            </ul>
+            
+            {continue_button}
+            
+            <p>هل أنت مستعد للسيطرة على مستقبلك المالي؟</p>
+            """
+        else:
+            return f"""
+            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
+            
+            <p>We noticed you started the Financial Health Assessment but haven't completed it yet.</p>
+            
+            <p>Your financial wellness is important to us. The assessment takes just 5-10 minutes and provides valuable insights into your financial health.</p>
+            
+            <p><strong style="color: #437749;">Benefits of completing the assessment:</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ Personalized financial health score</li>
+                <li>✓ Detailed analysis of your financial situation</li>
+                <li>✓ Customized recommendations for improvement</li>
+                <li>✓ 90-day action plan</li>
+            </ul>
+            
+            {continue_button}
+            
+            <p>Ready to take control of your financial future?</p>
+            """
 
     async def send_checkup_reminder(
         self,
@@ -569,7 +662,7 @@ National Bonds Team
         
         try:
             msg = MIMEMultipart()
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['From'] = formataddr((self.from_name, self.from_email))
             msg['To'] = recipient_email
             
             # Subject
@@ -585,18 +678,27 @@ National Bonds Team
                  # Custom template substitution
                 content = body_template.replace('{customer_name}', customer_name)
                 content = content.replace('{base_url}', frontend_url)
-                
-            if '<html' not in content.lower():
-                     # Wrap in basic layout
-                     content = self._wrap_in_layout(content, language, frontend_url, assets_url)
-            elif language == "ar":
-                content = self._get_checkup_content_ar(customer_name, base_url=frontend_url, assets_url=assets_url)
             else:
-                content = self._get_checkup_content_en(customer_name, base_url=frontend_url, assets_url=assets_url)
+                 # Default content if no template provided
+                 content = self._get_default_checkup_content(language, customer_name, frontend_url)
+
+            # --- NEW TEMPLATE LOGIC ---
+            # Instead of wrapping manually, we use the specific jinja template
+            template_name = 'checkup_reminder_ar.html' if language == 'ar' else 'checkup_reminder_en.html'
+            template = self.jinja_env.get_template(template_name)
+
+            # Render final email with the content injected
+            final_html = template.render(
+                customer_name=customer_name,
+                content=content,
+                base_url=frontend_url, # Templates use base_url for consistency
+                assets_url=assets_url
+            )
             
             # Content is now fully interpolated
+
             
-            msg.attach(MIMEText(content, 'html', 'utf-8'))
+            msg.attach(MIMEText(final_html, 'html', 'utf-8'))
             
             delivery_result = self._send_email(msg)
             
@@ -608,6 +710,7 @@ National Bonds Team
             }
             
         except Exception as e:
+            logger.error(f"❌ Failed to send checkup reminder to {recipient_email}: {e}")
             return {
                 'success': False,
                 'message': f"Failed to send checkup reminder: {str(e)}",
@@ -615,81 +718,10 @@ National Bonds Team
                 'error': str(e)
             }
 
-    def _get_checkup_content_en(self, customer_name: str, base_url: str, assets_url: str) -> str:
-        """Get English checkup reminder email content."""
-        return f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Financial Health Checkup</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{assets_url}/static/icons/financial.png" 
-                 alt="Financial Clinic" 
-                 style="height: 30px; max-width: 200px;">
-        </div>
-        
-        <div style="padding: 30px 20px;">
-            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
-            
-            <p>It's been a while since your last Financial Health Assessment.</p>
-            
-            <p>Financial health is a journey, not a destination. Regular checkups help you track your progress and adjust your strategy as your life changes.</p>
-            
-            <p><strong>Why take a new assessment?</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ See how your score has improved</li>
-                <li>✓ Update your financial goals</li>
-                <li>✓ Get fresh recommendations</li>
-            </ul>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{base_url}/financial-clinic" 
-                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
-                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    Take New Assessment
-                </a>
-            </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">
-                Or visit: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
-            </p>
-        </div>
-        
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src="{assets_url}/static/icons/logo.png" 
-                 alt="National Bonds" 
-                 style="height: 40px;">
-             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} National Bonds. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-
-    def _get_checkup_content_ar(self, customer_name: str, base_url: str, assets_url: str) -> str:
-        """Get Arabic checkup reminder email content."""
-        return f"""
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <title>مراجعة الصحة المالية</title>
-</head>
-<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{assets_url}/static/icons/financial.png" 
-                 alt="Financial Clinic" 
-                 style="height: 30px; max-width: 200px;">
-        </div>
-        
-        <div style="padding: 30px 20px;">
+    def _get_default_checkup_content(self, language: str, customer_name: str, base_url: str) -> str:
+        """Get default checkup reminder content (inner HTML) based on language."""
+        if language == "ar":
+            return f"""
             <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
             
             <p>لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.</p>
@@ -713,195 +745,33 @@ National Bonds Team
             <p style="text-align: center; font-size: 12px; color: #666;">
                 أو قم بزيارة: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
             </p>
-        </div>
-        
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src="{assets_url}/static/icons/logo.png" 
-                 alt="National Bonds" 
-                 style="height: 40px;">
-             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-    
-    def _get_reminder_content_en(self, customer_name: str, assets_url: str, resume_link: Optional[str] = None) -> str:
-        """Get English reminder email content."""
-        # Build the continue button HTML
-        continue_button = ""
-        if resume_link:
-            continue_button = f"""
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{resume_link}" 
-                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
-                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    Continue Your Assessment
-                </a>
-            </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">
-                Or copy this link: <a href="{resume_link}">{resume_link}</a>
-            </p>
             """
-        
-        return f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Complete Your Assessment</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{assets_url}/static/icons/financial.png" 
-                 alt="Financial Clinic" 
-                 style="height: 30px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px;">
+        else:
+            return f"""
             <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
             
-            <p>We noticed you started the Financial Health Assessment but haven't completed it yet.</p>
+            <p>It's been a while since your last Financial Health Assessment.</p>
             
-            <p>Your financial wellness is important to us. The assessment takes just 5-10 minutes and provides valuable insights into your financial health.</p>
+            <p>Financial health is a journey, not a destination. Regular checkups help you track your progress and adjust your strategy as your life changes.</p>
             
-            <p><strong style="color: #437749;">Benefits of completing the assessment:</strong></p>
+            <p><strong>Why take a new assessment?</strong></p>
             <ul style="line-height: 1.8;">
-                <li>✓ Personalized financial health score</li>
-                <li>✓ Detailed analysis of your financial situation</li>
-                <li>✓ Customized recommendations for improvement</li>
-                <li>✓ 90-day action plan</li>
+                <li>✓ See how your score has improved</li>
+                <li>✓ Update your financial goals</li>
+                <li>✓ Get fresh recommendations</li>
             </ul>
             
-            {continue_button}
-            
-            <p>Ready to take control of your financial future?</p>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src="{assets_url}/static/icons/logo.png" 
-                 alt="National Bonds" 
-                 style="height: 40px;">
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} National Bonds. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-    
-    def _get_reminder_content_ar(self, customer_name: str, assets_url: str, resume_link: Optional[str] = None) -> str:
-        """Get Arabic reminder email content."""
-        # Build the continue button HTML
-        continue_button = ""
-        if resume_link:
-            continue_button = f"""
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{resume_link}" 
+                <a href="{base_url}/financial-clinic" 
                    style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    استمر في التقييم
+                    Take New Assessment
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
-                أو انسخ هذا الرابط: <a href="{resume_link}">{resume_link}</a>
+                Or visit: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
             </p>
             """
-        
-        return f"""
-<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <title>أكمل تقييمك</title>
-</head>
-<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <!-- Header with Logo -->
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{assets_url}/static/icons/financial.png" 
-                 alt="Financial Clinic" 
-                 style="height: 30px; max-width: 200px;">
-        </div>
-        
-        <!-- Main Content -->
-        <div style="padding: 30px 20px;">
-            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
-            
-            <p>لاحظنا أنك بدأت تقييم الصحة المالية ولكن لم تكمله بعد.</p>
-            
-            <p>صحتك المالية مهمة بالنسبة لنا. يستغرق التقييم 5-10 دقائق فقط ويوفر رؤى قيمة حول وضعك المالي.</p>
-            
-            <p><strong style="color: #437749;">فوائد إكمال التقييم:</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ نتيجة شخصية للصحة المالية</li>
-                <li>✓ تحليل مفصل لوضعك المالي</li>
-                <li>✓ توصيات مخصصة للتحسين</li>
-                <li>✓ خطة عمل لـ 90 يوماً</li>
-            </ul>
-            
-            {continue_button}
-            
-            <p>هل أنت مستعد للسيطرة على مستقبلك المالي؟</p>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src=" {base_url}/static/icons/logo.png" 
-                 alt="National Bonds" 
-            <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
-    
-    def _wrap_in_layout(self, content: str, language: str, base_url: str, assets_url: str) -> str:
-        """Wrap content in a basic HTML email layout."""
-        direction = "rtl" if language == "ar" else "ltr"
-        footer_text = "© {} National Bonds. All rights reserved.".format(datetime.now().year)
-        if language == "ar":
-            footer_text = "© {} السندات الوطنية. جميع الحقوق محفوظة.".format(datetime.now().year)
-
-        return f"""
-<!DOCTYPE html>
-<html dir="{direction}" lang="{language}">
-<head>
-    <meta charset="UTF-8">
-    <title>Financial Clinic</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; direction: {direction};">
-    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
-        <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{assets_url}/static/icons/financial.png" alt="Financial Clinic" style="height: 30px; max-width: 200px;">
-        </div>
-        
-        <div style="padding: 30px 20px;">
-            {content}
-        </div>
-        
-        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src="{assets_url}/static/icons/logo.png" alt="National Bonds" style="height: 40px;">
-            <p style="margin: 10px 0; font-size: 12px; color: #999;">
-                {footer_text}
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-"""
 
     async def send_financial_clinic_report(
         self,
@@ -944,7 +814,7 @@ National Bonds Team
             msg = MIMEMultipart('alternative')
             
             # Set email headers
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['From'] = formataddr((self.from_name, self.from_email))
             msg['To'] = recipient_email
             
             # Set subject based on language
