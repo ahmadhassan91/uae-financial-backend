@@ -499,8 +499,9 @@ National Bonds Team
             msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = recipient_email
             
-            # Get frontend URL for logos
+            # Get frontend URL for links and backend URL for assets
             frontend_url = settings.base_url
+            assets_url = settings.static_assets_url
             
             # Subject
             if subject_template:
@@ -524,14 +525,15 @@ National Bonds Team
                 # OR we just use it as is if it contains <html> tag.
                 if '<html' not in content.lower():
                      # Wrap in basic layout
-                     content = self._wrap_in_layout(content, language, frontend_url)
+                     content = self._wrap_in_layout(content, language, frontend_url, assets_url)
             elif language == "ar":
-                content = self._get_reminder_content_ar(customer_name, resume_link)
+                content = self._get_reminder_content_ar(customer_name, assets_url, resume_link)
             else:
-                content = self._get_reminder_content_en(customer_name, resume_link)
+                content = self._get_reminder_content_en(customer_name, assets_url, resume_link)
             
             # Replace template placeholders with actual URLs
-            content = content.replace('{}', frontend_url)
+            content = content.replace('{base_url}', frontend_url)
+            content = content.replace('{assets_url}', assets_url)
             
             msg.attach(MIMEText(content, 'html', 'utf-8'))
             
@@ -563,6 +565,7 @@ National Bonds Team
         """Send a 6-month checkup reminder email."""
         # Get frontend URL from settings, stripping trailing slash if present
         frontend_url = settings.base_url.rstrip('/')
+        assets_url = settings.static_assets_url.rstrip('/')
         
         try:
             msg = MIMEMultipart()
@@ -583,16 +586,15 @@ National Bonds Team
                 content = body_template.replace('{customer_name}', customer_name)
                 content = content.replace('{base_url}', frontend_url)
                 
-                if '<html' not in content.lower():
+            if '<html' not in content.lower():
                      # Wrap in basic layout
-                     content = self._wrap_in_layout(content, language, frontend_url)
+                     content = self._wrap_in_layout(content, language, frontend_url, assets_url)
             elif language == "ar":
-                content = self._get_checkup_content_ar(customer_name)
+                content = self._get_checkup_content_ar(customer_name, base_url=frontend_url, assets_url=assets_url)
             else:
-                content = self._get_checkup_content_en(customer_name)
+                content = self._get_checkup_content_en(customer_name, base_url=frontend_url, assets_url=assets_url)
             
-            # Replace template placeholders
-            content = content.replace('{}', frontend_url)
+            # Content is now fully interpolated
             
             msg.attach(MIMEText(content, 'html', 'utf-8'))
             
@@ -613,7 +615,7 @@ National Bonds Team
                 'error': str(e)
             }
 
-    def _get_checkup_content_en(self, customer_name: str) -> str:
+    def _get_checkup_content_en(self, customer_name: str, base_url: str, assets_url: str) -> str:
         """Get English checkup reminder email content."""
         return f"""
 <!DOCTYPE html>
@@ -625,7 +627,7 @@ National Bonds Team
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{{}}/static/icons/financial.png" 
+            <img src="{assets_url}/static/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -645,19 +647,19 @@ National Bonds Team
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{}}/financial-clinic" 
+                <a href="{base_url}/financial-clinic" 
                    style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
                     Take New Assessment
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
-                Or visit: <a href="{{}}/financial-clinic">{{}}/financial-clinic</a>
+                Or visit: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
             </p>
         </div>
         
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src=" {{}}/static/icons/logo.png" 
+             <img src="{assets_url}/static/icons/logo.png" 
                  alt="National Bonds" 
                  style="height: 40px;">
              <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
@@ -670,7 +672,7 @@ National Bonds Team
 </html>
 """
 
-    def _get_checkup_content_ar(self, customer_name: str) -> str:
+    def _get_checkup_content_ar(self, customer_name: str, base_url: str, assets_url: str) -> str:
         """Get Arabic checkup reminder email content."""
         return f"""
 <!DOCTYPE html>
@@ -682,7 +684,7 @@ National Bonds Team
 <body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{{}}/static/icons/financial.png" 
+            <img src="{assets_url}/static/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -702,19 +704,19 @@ National Bonds Team
             </ul>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{}}/financial-clinic" 
+                <a href="{base_url}/financial-clinic" 
                    style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
                     ابدأ تقييماً جديداً
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
-                أو قم بزيارة: <a href="{{}}/financial-clinic">{{}}/financial-clinic</a>
+                أو قم بزيارة: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
             </p>
         </div>
         
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src=" {{}}/static/icons/logo.png" 
+             <img src="{assets_url}/static/icons/logo.png" 
                  alt="National Bonds" 
                  style="height: 40px;">
              <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
@@ -727,7 +729,7 @@ National Bonds Team
 </html>
 """
     
-    def _get_reminder_content_en(self, customer_name: str, resume_link: Optional[str] = None) -> str:
+    def _get_reminder_content_en(self, customer_name: str, assets_url: str, resume_link: Optional[str] = None) -> str:
         """Get English reminder email content."""
         # Build the continue button HTML
         continue_button = ""
@@ -756,7 +758,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{base_url}/static/icons/financial.png" 
+            <img src="{assets_url}/static/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -784,8 +786,9 @@ National Bonds Team
         
         <!-- Footer -->
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-            <img src=" {base_url}/static/icons/logo.png" 
+            <img src="{assets_url}/static/icons/logo.png" 
                  alt="National Bonds" 
+                 style="height: 40px;">
             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
                 © {datetime.now().year} National Bonds. All rights reserved.
@@ -796,7 +799,7 @@ National Bonds Team
 </html>
 """
     
-    def _get_reminder_content_ar(self, customer_name: str, resume_link: Optional[str] = None) -> str:
+    def _get_reminder_content_ar(self, customer_name: str, assets_url: str, resume_link: Optional[str] = None) -> str:
         """Get Arabic reminder email content."""
         # Build the continue button HTML
         continue_button = ""
@@ -825,7 +828,7 @@ National Bonds Team
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <!-- Header with Logo -->
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{base_url}/static/icons/financial.png" 
+            <img src="{assets_url}/static/icons/financial.png" 
                  alt="Financial Clinic" 
                  style="height: 30px; max-width: 200px;">
         </div>
@@ -865,7 +868,7 @@ National Bonds Team
 </html>
 """
     
-    def _wrap_in_layout(self, content: str, language: str, base_url: str) -> str:
+    def _wrap_in_layout(self, content: str, language: str, base_url: str, assets_url: str) -> str:
         """Wrap content in a basic HTML email layout."""
         direction = "rtl" if language == "ar" else "ltr"
         footer_text = "© {} National Bonds. All rights reserved.".format(datetime.now().year)
@@ -877,11 +880,12 @@ National Bonds Team
 <html dir="{direction}" lang="{language}">
 <head>
     <meta charset="UTF-8">
+    <title>Financial Clinic</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; direction: {direction};">
     <div style="max-width: 600px; margin: 0 auto; background-color: white;">
         <div style="background-color: #437749; padding: 20px; text-align: center;">
-            <img src="{base_url}/static/icons/financial.png" alt="Financial Clinic" style="height: 30px; max-width: 200px;">
+            <img src="{assets_url}/static/icons/financial.png" alt="Financial Clinic" style="height: 30px; max-width: 200px;">
         </div>
         
         <div style="padding: 30px 20px;">
@@ -889,7 +893,7 @@ National Bonds Team
         </div>
         
         <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-             <img src="{base_url}/static/icons/logo.png" alt="National Bonds" style="height: 40px;">
+             <img src="{assets_url}/static/icons/logo.png" alt="National Bonds" style="height: 40px;">
             <p style="margin: 10px 0; font-size: 12px; color: #999;">
                 {footer_text}
             </p>
