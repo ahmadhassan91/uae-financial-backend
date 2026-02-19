@@ -13,9 +13,20 @@ router = APIRouter()
 class EmailConfigResponse(BaseModel):
     id: int
     incomplete_enabled: bool
-    incomplete_days: int
+    incomplete_days: float
     checkup_enabled: bool
-    checkup_days: int
+    checkup_days: float
+    
+    incomplete_subject_en: Optional[str] = None
+    incomplete_subject_ar: Optional[str] = None
+    incomplete_body_en: Optional[str] = None
+    incomplete_body_ar: Optional[str] = None
+    
+    checkup_subject_en: Optional[str] = None
+    checkup_subject_ar: Optional[str] = None
+    checkup_body_en: Optional[str] = None
+    checkup_body_ar: Optional[str] = None
+    
     updated_at: Optional[datetime]
 
     class Config:
@@ -23,9 +34,19 @@ class EmailConfigResponse(BaseModel):
 
 class EmailConfigUpdate(BaseModel):
     incomplete_enabled: bool
-    incomplete_days: int
+    incomplete_days: float
     checkup_enabled: bool
-    checkup_days: int
+    checkup_days: float
+    
+    incomplete_subject_en: Optional[str] = None
+    incomplete_subject_ar: Optional[str] = None
+    incomplete_body_en: Optional[str] = None
+    incomplete_body_ar: Optional[str] = None
+    
+    checkup_subject_en: Optional[str] = None
+    checkup_subject_ar: Optional[str] = None
+    checkup_body_en: Optional[str] = None
+    checkup_body_ar: Optional[str] = None
 
 # --- Endpoints ---
 
@@ -59,6 +80,16 @@ def update_email_config(config_in: EmailConfigUpdate, db: Session = Depends(get_
     config.incomplete_days = config_in.incomplete_days
     config.checkup_enabled = config_in.checkup_enabled
     config.checkup_days = config_in.checkup_days
+    
+    config.incomplete_subject_en = config_in.incomplete_subject_en
+    config.incomplete_subject_ar = config_in.incomplete_subject_ar
+    config.incomplete_body_en = config_in.incomplete_body_en
+    config.incomplete_body_ar = config_in.incomplete_body_ar
+    
+    config.checkup_subject_en = config_in.checkup_subject_en
+    config.checkup_subject_ar = config_in.checkup_subject_ar
+    config.checkup_body_en = config_in.checkup_body_en
+    config.checkup_body_ar = config_in.checkup_body_ar
     
     db.commit()
     db.refresh(config)

@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import time
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.email_automation_model import EmailAutomationConfig
@@ -45,6 +46,12 @@ async def check_and_send_reminders():
         logger.info("✅ Email reminder check completed.")
 
 
+def run_check_and_send_reminders():
+    """Synchronous wrapper for check_and_send_reminders for APScheduler."""
+    import asyncio
+    asyncio.run(check_and_send_reminders())
+
+
 async def _process_incomplete_reminders(db: Session, config: EmailAutomationConfig, email_service: EmailReportService):
     """Process reminders for incomplete surveys."""
     try:
@@ -54,18 +61,23 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
         # - Not yet sent follow-up (follow_up_sent = False)
         # - Has email address
         
-        cutoff_date = datetime.utcnow() - timedelta(days=config.incomplete_days)
+        # Use timezone-aware datetime for comparison with DB timestamp
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=float(config.incomplete_days))
         
         incomplete_surveys = db.query(IncompleteSurvey).filter(
-            IncompleteSurvey.is_abandoned == True,
+            # IncompleteSurvey.is_abandoned == True,  # REMOVED: Rely on incomplete_days config
             IncompleteSurvey.follow_up_sent == False,
             IncompleteSurvey.last_activity < cutoff_date,
             IncompleteSurvey.email.isnot(None)
-        ).all()
+        ).limit(settings.EMAIL_BATCH_SIZE).all()
         
-        logger.info(f"📋 Found {len(incomplete_surveys)} incomplete surveys to remind.")
+        logger.info(f"📋 Found {len(incomplete_surveys)} incomplete surveys to remind (Batch Size: {settings.EMAIL_BATCH_SIZE}).")
         
-        for survey in incomplete_surveys:
+        for i, survey in enumerate(incomplete_surveys):
+            # Throttle emails
+            if i > 0:
+                time.sleep(settings.EMAIL_THROTTLE_DELAY)
+                
             try:
                 # Generate resume link
                 frontend_url = settings.base_url.rstrip('/')
@@ -92,12 +104,20 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
                     recipient_email=survey.email,
                     customer_name=customer_name,
                     language=language,
-                    resume_link=resume_link
+                    resume_link=resume_link,
+                    subject_template=config.incomplete_subject_ar if language == 'ar' else config.incomplete_subject_en,
+                    body_template=config.incomplete_body_ar if language == 'ar' else config.incomplete_body_en
                 )
                 
                 if result.get('success'):
                     survey.follow_up_sent = True
                     survey.follow_up_count += 1
+                    
+                    # Mark as abandoned now that we've sent the reminder based on dynamic cutoff
+                    if not survey.is_abandoned:
+                        survey.is_abandoned = True
+                        survey.abandoned_at = datetime.now(timezone.utc)
+                        
                     logger.info(f"✅ Sent incomplete reminder to {survey.email}")
                 else:
                     logger.warning(f"⚠️ Failed to send incomplete reminder to {survey.email}: {result.get('message')}")
@@ -119,7 +139,8 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
         # - Has NOT received a reminder recently (last_reminder_at is null OR old)
         # - Has NOT completed another survey since then (no newer response)
         
-        cutoff_date = datetime.utcnow() - timedelta(days=config.checkup_days)
+        # Calculate cutoff using float days with timezone-aware datetime
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=float(config.checkup_days))
         
         # Subquery to find latest completion date per profile
         # This is complex, so we'll fetch candidate profiles first
@@ -132,12 +153,16 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
         candidates = db.query(FinancialClinicProfile).join(FinancialClinicResponse).filter(
             FinancialClinicResponse.completed_at < cutoff_date,
             (FinancialClinicProfile.last_reminder_at == None) | (FinancialClinicProfile.last_reminder_at < cutoff_date)
-        ).distinct().all()
+        ).distinct().limit(settings.EMAIL_BATCH_SIZE).all()
         
-        logger.info(f"📋 Found {len(candidates)} candidates for checkup reminder.")
+        logger.info(f"📋 Found {len(candidates)} candidates for checkup reminder (Batch Size: {settings.EMAIL_BATCH_SIZE}).")
         
         count = 0
-        for profile in candidates:
+        for i, profile in enumerate(candidates):
+            # Throttle emails
+            if i > 0:
+                time.sleep(settings.EMAIL_THROTTLE_DELAY)
+
             # Double check: does this user have a NEWER survey?
             latest_response = db.query(FinancialClinicResponse).filter(
                 FinancialClinicResponse.profile_id == profile.id
@@ -160,12 +185,14 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
                 result = await email_service.send_checkup_reminder(
                     recipient_email=profile.email,
                     customer_name=profile.name,
-                    language=language
+                    language=language,
+                    subject_template=config.checkup_subject_ar if language == 'ar' else config.checkup_subject_en,
+                    body_template=config.checkup_body_ar if language == 'ar' else config.checkup_body_en
                 )
                 
                 if result.get('success'):
                     profile.reminder_sent_count += 1
-                    profile.last_reminder_at = datetime.utcnow()
+                    profile.last_reminder_at = datetime.now(timezone.utc)
                     count += 1
                     logger.info(f"✅ Sent checkup reminder to {profile.email}")
                 else:

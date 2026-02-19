@@ -99,63 +99,88 @@ class EmailReportService:
     def _send_email(self, msg: MIMEMultipart) -> Dict[str, Any]:
         """Send email using SMTP - supports both authenticated and relay servers."""
         import logging
+        import time
         logger = logging.getLogger(__name__)
         
-        try:
-            # Extract recipient email address (remove any formatting)
-            to_email = msg['To']
-            if '<' in to_email and '>' in to_email:
-                # Extract email from "Name <email@domain.com>" format
-                to_email = to_email.split('<')[1].split('>')[0].strip()
-            
-            logger.info(f"📧 Attempting to send email to: {to_email}")
-            logger.info(f"📧 SMTP Host: {settings.SMTP_HOST}, Port: {settings.SMTP_PORT}")
-            
-            # Check if authentication is required (password is set)
-            smtp_password = getattr(settings, 'SMTP_PASSWORD', '') or ''
-            smtp_username = getattr(settings, 'SMTP_USERNAME', '') or ''
-            requires_auth = bool(smtp_password.strip())
-            
-            if requires_auth:
-                logger.info(f"📧 SMTP Username: {smtp_username[:5]}*** (authenticated mode)")
-            else:
-                logger.info("📧 SMTP relay mode (no authentication)")
-            
-            # Use settings from config
-            server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT)
-            logger.info("📧 SMTP connection established")
-            
-            # Only use TLS and authentication if password is configured
-            # Internal SMTP relays (like smtprelay.nationalbonds.ae:25) typically don't require auth
-            if requires_auth:
-                server.starttls()
-                logger.info("📧 TLS started")
+        # Retry configuration
+        max_retries = 3
+        retry_delay = 2  # seconds
+        
+        last_error = None
+        
+        for attempt in range(max_retries):
+            server = None
+            try:
+                # Extract recipient email address (remove any formatting)
+                to_email = msg['To']
+                if '<' in to_email and '>' in to_email:
+                    # Extract email from "Name <email@domain.com>" format
+                    to_email = to_email.split('<')[1].split('>')[0].strip()
                 
-                server.login(smtp_username, smtp_password)
-                logger.info("📧 SMTP login successful")
-            else:
-                # For internal relays, we may still need EHLO
+                if attempt == 0:
+                    logger.info(f"📧 Attempting to send email to: {to_email}")
+                else:
+                    logger.info(f"📧 Retry attempt {attempt + 1}/{max_retries} to: {to_email}")
+                
+                # Check if authentication is required (password is set)
+                smtp_password = getattr(settings, 'SMTP_PASSWORD', '') or ''
+                smtp_username = getattr(settings, 'SMTP_USERNAME', '') or ''
+                requires_auth = bool(smtp_password.strip())
+                
+                # Use settings from config
+                server = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=30)
+                # server.set_debuglevel(1)  # Uncomment for verbose debug output
+                
+                # Identify ourselves
                 server.ehlo()
-                logger.info("📧 EHLO sent (relay mode, no TLS/auth)")
-            
-            # Use as_string() exactly like the working test
-            msg_string = msg.as_string()
-            server.sendmail(settings.FROM_EMAIL, [to_email], msg_string)
-            logger.info(f"✅ Email sent successfully to {to_email}")
-            
-            server.quit()
-            
-            return {
-                'success': True,
-                'message': 'Email sent successfully'
-            }
-            
-        except Exception as e:
-            logger.error(f"❌ SMTP error: {str(e)}")
-            return {
-                'success': False,
-                'message': f"SMTP error: {str(e)}"
-            }
+                
+                # Only use TLS and authentication if password is configured
+                if requires_auth:
+                    if server.has_extn('STARTTLS'):
+                        server.starttls()
+                        server.ehlo()  # re-identify after TLS
+                        logger.debug("📧 TLS started")
+                    
+                    server.login(smtp_username, smtp_password)
+                    logger.debug("📧 SMTP login successful")
+                else:
+                    logger.debug("📧 SMTP relay mode (no authentication)")
+                
+                # Use as_string() exactly like the working test
+                msg_string = msg.as_string()
+                server.sendmail(settings.FROM_EMAIL, [to_email], msg_string)
+                logger.info(f"✅ Email sent successfully to {to_email}")
+                
+                # Close connection properly
+                try:
+                    server.quit()
+                except Exception:
+                    pass
+                
+                return {
+                    'success': True,
+                    'message': 'Email sent successfully'
+                }
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"⚠️ SMTP attempt {attempt + 1} failed: {str(e)}")
+                
+                # Close connection if it exists and failed
+                if server:
+                    try:
+                        server.close()
+                    except Exception:
+                        pass
+                
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                else:
+                    logger.error(f"❌ SMTP final error: {str(e)}")
+                    return {
+                        'success': False,
+                        'message': f"SMTP error after {max_retries} attempts: {str(e)}"
+                    }
     
     def _generate_email_html(
         self,
@@ -464,7 +489,9 @@ National Bonds Team
         recipient_email: str,
         customer_name: str,
         language: str = "en",
-        resume_link: Optional[str] = None
+        resume_link: Optional[str] = None,
+        subject_template: Optional[str] = None,
+        body_template: Optional[str] = None
     ) -> Dict[str, Any]:
         """Send a reminder email for incomplete assessments."""
         try:
@@ -475,11 +502,32 @@ National Bonds Team
             # Get frontend URL for logos
             frontend_url = settings.base_url
             
-            if language == "ar":
+            # Subject
+            if subject_template:
+                msg['Subject'] = subject_template
+            elif language == "ar":
                 msg['Subject'] = "تذكير: أكمل تقييم صحتك المالية"
-                content = self._get_reminder_content_ar(customer_name, resume_link)
             else:
                 msg['Subject'] = "Reminder: Complete Your Financial Health Assessment"
+            
+            # Body
+            if body_template:
+                # Custom template substitution
+                content = body_template.replace('{customer_name}', customer_name)
+                if resume_link:
+                    content = content.replace('{resume_link}', resume_link)
+                content = content.replace('{base_url}', frontend_url)
+                # Ensure basic HTML structure if missing? 
+                # For now assume user provides HTML snippet or full HTML. 
+                # Getting user to provide full HTML is risky/complex, maybe we wrap it?
+                # Let's assume for now the user provides the "content" part and we might wrap it 
+                # OR we just use it as is if it contains <html> tag.
+                if '<html' not in content.lower():
+                     # Wrap in basic layout
+                     content = self._wrap_in_layout(content, language, frontend_url)
+            elif language == "ar":
+                content = self._get_reminder_content_ar(customer_name, resume_link)
+            else:
                 content = self._get_reminder_content_en(customer_name, resume_link)
             
             # Replace template placeholders with actual URLs
@@ -508,7 +556,9 @@ National Bonds Team
         self,
         recipient_email: str,
         customer_name: str,
-        language: str = "en"
+        language: str = "en",
+        subject_template: Optional[str] = None,
+        body_template: Optional[str] = None
     ) -> Dict[str, Any]:
         """Send a 6-month checkup reminder email."""
         # Get frontend URL from settings, stripping trailing slash if present
@@ -519,11 +569,26 @@ National Bonds Team
             msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = recipient_email
             
-            if language == "ar":
+            # Subject
+            if subject_template:
+                msg['Subject'] = subject_template
+            elif language == "ar":
                 msg['Subject'] = "حان وقت مراجعة صحتك المالية"
-                content = self._get_checkup_content_ar(customer_name)
             else:
                 msg['Subject'] = "Time for Your Financial Health Checkup"
+            
+            # Body
+            if body_template:
+                 # Custom template substitution
+                content = body_template.replace('{customer_name}', customer_name)
+                content = content.replace('{base_url}', frontend_url)
+                
+                if '<html' not in content.lower():
+                     # Wrap in basic layout
+                     content = self._wrap_in_layout(content, language, frontend_url)
+            elif language == "ar":
+                content = self._get_checkup_content_ar(customer_name)
+            else:
                 content = self._get_checkup_content_en(customer_name)
             
             # Replace template placeholders
@@ -800,6 +865,40 @@ National Bonds Team
 </html>
 """
     
+    def _wrap_in_layout(self, content: str, language: str, base_url: str) -> str:
+        """Wrap content in a basic HTML email layout."""
+        direction = "rtl" if language == "ar" else "ltr"
+        footer_text = "© {} National Bonds. All rights reserved.".format(datetime.now().year)
+        if language == "ar":
+            footer_text = "© {} السندات الوطنية. جميع الحقوق محفوظة.".format(datetime.now().year)
+
+        return f"""
+<!DOCTYPE html>
+<html dir="{direction}" lang="{language}">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; direction: {direction};">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="{base_url}/static/icons/financial.png" alt="Financial Clinic" style="height: 30px; max-width: 200px;">
+        </div>
+        
+        <div style="padding: 30px 20px;">
+            {content}
+        </div>
+        
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+             <img src="{base_url}/static/icons/logo.png" alt="National Bonds" style="height: 40px;">
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                {footer_text}
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
     async def send_financial_clinic_report(
         self,
         recipient_email: str,

@@ -113,6 +113,10 @@ class Settings(BaseSettings):
     FROM_EMAIL: str = ""
     FROM_NAME: str = "Financial Clinic"
     
+    # Email Rate Limiting
+    EMAIL_BATCH_SIZE: int = 50  # Max emails to process per run
+    EMAIL_THROTTLE_DELAY: float = 2.0  # Seconds to wait between emails
+    
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
     
