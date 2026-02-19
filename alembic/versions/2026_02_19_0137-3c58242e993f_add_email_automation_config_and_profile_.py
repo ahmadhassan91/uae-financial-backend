@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.drop_table('apscheduler_jobs')
     op.create_index('idx_consultation_survey_response', 'consultation_requests', ['survey_response_id'], unique=False)
     op.create_index(op.f('ix_consultation_requests_survey_response_id'), 'consultation_requests', ['survey_response_id'], unique=False)
-    op.add_column('financial_clinic_profiles', sa.Column('reminder_sent_count', sa.Integer(), nullable=False))
+    op.add_column('financial_clinic_profiles', sa.Column('reminder_sent_count', sa.Integer(), nullable=False, server_default=sa.text('0')))
     op.add_column('financial_clinic_profiles', sa.Column('last_reminder_at', sa.DateTime(timezone=True), nullable=True))
     # ### end Alembic commands ###
 
