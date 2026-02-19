@@ -63,6 +63,20 @@ def init_scheduler():
             job_defaults=job_defaults,
             timezone='UTC'
         )
+
+        try:
+            # Register email reminder job
+            from app.services.email_scheduler import check_and_send_reminders
+            scheduler.add_job(
+                check_and_send_reminders,
+                'interval',
+                hours=1,
+                id='email_reminders',
+                replace_existing=True
+            )
+            logger.info("✅ Email reminder job registered (every 1 hour)")
+        except Exception as e:
+            logger.error(f"❌ Failed to register email reminder job: {e}")
         
         # Start the scheduler
         scheduler.start()

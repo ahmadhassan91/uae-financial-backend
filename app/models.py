@@ -14,6 +14,9 @@ from app.models_consent import (
     DataSubjectRequest
 )
 
+# Import Email Automation Config
+from app.email_automation_model import EmailAutomationConfig
+
 
 class User(Base):
     """User model for authentication and basic user information."""
@@ -654,6 +657,10 @@ class FinancialClinicProfile(Base):
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Email Automation Tracking
+    reminder_sent_count = Column(Integer, default=0, nullable=False)
+    last_reminder_at = Column(DateTime(timezone=True), nullable=True)
     
     # Relationships
     survey_responses = relationship("FinancialClinicResponse", back_populates="profile")

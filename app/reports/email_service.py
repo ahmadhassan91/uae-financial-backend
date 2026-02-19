@@ -503,6 +503,164 @@ National Bonds Team
                 'recipient': recipient_email,
                 'error': str(e)
             }
+
+    async def send_checkup_reminder(
+        self,
+        recipient_email: str,
+        customer_name: str,
+        language: str = "en"
+    ) -> Dict[str, Any]:
+        """Send a 6-month checkup reminder email."""
+        # Get frontend URL from settings, stripping trailing slash if present
+        frontend_url = settings.base_url.rstrip('/')
+        
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['To'] = recipient_email
+            
+            if language == "ar":
+                msg['Subject'] = "حان وقت مراجعة صحتك المالية"
+                content = self._get_checkup_content_ar(customer_name)
+            else:
+                msg['Subject'] = "Time for Your Financial Health Checkup"
+                content = self._get_checkup_content_en(customer_name)
+            
+            # Replace template placeholders
+            content = content.replace('{}', frontend_url)
+            
+            msg.attach(MIMEText(content, 'html', 'utf-8'))
+            
+            delivery_result = self._send_email(msg)
+            
+            return {
+                'success': delivery_result['success'],
+                'message': delivery_result['message'],
+                'recipient': recipient_email,
+                'type': 'checkup_reminder'
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f"Failed to send checkup reminder: {str(e)}",
+                'recipient': recipient_email,
+                'error': str(e)
+            }
+
+    def _get_checkup_content_en(self, customer_name: str) -> str:
+        """Get English checkup reminder email content."""
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Financial Health Checkup</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="{{}}/static/icons/financial.png" 
+                 alt="Financial Clinic" 
+                 style="height: 30px; max-width: 200px;">
+        </div>
+        
+        <div style="padding: 30px 20px;">
+            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
+            
+            <p>It's been a while since your last Financial Health Assessment.</p>
+            
+            <p>Financial health is a journey, not a destination. Regular checkups help you track your progress and adjust your strategy as your life changes.</p>
+            
+            <p><strong>Why take a new assessment?</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ See how your score has improved</li>
+                <li>✓ Update your financial goals</li>
+                <li>✓ Get fresh recommendations</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{}}/financial-clinic" 
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+                    Take New Assessment
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                Or visit: <a href="{{}}/financial-clinic">{{}}/financial-clinic</a>
+            </p>
+        </div>
+        
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+             <img src=" {{}}/static/icons/logo.png" 
+                 alt="National Bonds" 
+                 style="height: 40px;">
+             <p style="margin: 5px 0; font-size: 14px; color: #666;">Best regards,<br>National Bonds Team</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} National Bonds. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+    def _get_checkup_content_ar(self, customer_name: str) -> str:
+        """Get Arabic checkup reminder email content."""
+        return f"""
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>مراجعة الصحة المالية</title>
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.6; color: #333; direction: rtl; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: white;">
+        <div style="background-color: #437749; padding: 20px; text-align: center;">
+            <img src="{{}}/static/icons/financial.png" 
+                 alt="Financial Clinic" 
+                 style="height: 30px; max-width: 200px;">
+        </div>
+        
+        <div style="padding: 30px 20px;">
+            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
+            
+            <p>لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.</p>
+            
+            <p>الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.</p>
+            
+            <p><strong>لماذا تجري تقييماً جديداً؟</strong></p>
+            <ul style="line-height: 1.8;">
+                <li>✓ شاهد كيف تحسنت نتيجتك</li>
+                <li>✓ قم بتحديث أهدافك المالية</li>
+                <li>✓ احصل على توصيات جديدة</li>
+            </ul>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{}}/financial-clinic" 
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                          text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+                    ابدأ تقييماً جديداً
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                أو قم بزيارة: <a href="{{}}/financial-clinic">{{}}/financial-clinic</a>
+            </p>
+        </div>
+        
+        <div style="background-color: #f8f8f8; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
+             <img src=" {{}}/static/icons/logo.png" 
+                 alt="National Bonds" 
+                 style="height: 40px;">
+             <p style="margin: 5px 0; font-size: 14px; color: #666;">مع أطيب التحيات،<br>فريق السندات الوطنية</p>
+            <p style="margin: 10px 0; font-size: 12px; color: #999;">
+                © {datetime.now().year} السندات الوطنية. جميع الحقوق محفوظة.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
+"""
     
     def _get_reminder_content_en(self, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get English reminder email content."""
