@@ -173,7 +173,8 @@ class Settings(BaseSettings):
             return self.NFS_PUBLIC_URL_BASE
         else:
             # For cloud deployment (Heroku) or development
-            return self.api_base_url
+            # Static files are served at the root, not under /api/v1
+            return self.api_base_url.rstrip('/').removesuffix('/api/v1')
     
     @property
     def s3_pdf_base_url(self) -> str:
