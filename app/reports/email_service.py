@@ -550,10 +550,11 @@ National Bonds Team
             template = self.jinja_env.get_template(template_name)
 
             final_html = template.render(
-                customer_name=customer_name, # Passed but also inside content sometimes, redundancy is fine or content doesn't use it if from template
+                customer_name=customer_name,
                 content=content,
                 base_url=frontend_url,
-                assets_url=assets_url
+                assets_url=assets_url,
+                recipient_email=recipient_email
             )
             
             msg.attach(MIMEText(final_html, 'html', 'utf-8'))
@@ -691,8 +692,9 @@ National Bonds Team
             final_html = template.render(
                 customer_name=customer_name,
                 content=content,
-                base_url=frontend_url, # Templates use base_url for consistency
-                assets_url=assets_url
+                base_url=frontend_url,
+                assets_url=assets_url,
+                recipient_email=recipient_email
             )
             
             # Content is now fully interpolated

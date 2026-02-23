@@ -3,17 +3,20 @@ from datetime import datetime, timedelta, timezone
 import time
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
-from app.email_automation_model import EmailAutomationConfig
+from app.email_automation_model import EmailAutomationConfig, UnsubscribedUser
 from app.models import IncompleteSurvey, FinancialClinicResponse, FinancialClinicProfile, CompanyTracker
 from app.reports.email_service import EmailReportService
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+MAX_REMINDERS = 2  # Maximum automated reminder emails per user per campaign
+
+
 async def check_and_send_reminders():
     """
     Check for users who need reminders and send them emails.
-    This function is scheduled to run periodically (e.g., daily).
+    This function is scheduled to run periodically.
     """
     logger.info("🔄 Starting email reminder check...")
     
@@ -25,17 +28,28 @@ async def check_and_send_reminders():
             logger.info("ℹ️ No email automation config found. Skipping.")
             return
 
+        # Build unsubscribed set once for efficiency
+        unsubscribed_emails = {
+            row.email.lower()
+            for row in db.query(UnsubscribedUser.email).all()
+        }
+
+        # Build allowed (whitelist) set; empty means "send to all"
+        allowed_emails = None
+        if config.allowed_emails:
+            allowed_emails = {e.strip().lower() for e in config.allowed_emails if e.strip()}
+
         email_service = EmailReportService()
         
         # --- 1. Incomplete Survey Reminders ---
         if config.incomplete_enabled:
-            await _process_incomplete_reminders(db, config, email_service)
+            await _process_incomplete_reminders(db, config, email_service, unsubscribed_emails, allowed_emails)
         else:
             logger.info("ℹ️ Incomplete survey reminders are disabled.")
             
         # --- 2. 6-Month Checkup Reminders ---
         if config.checkup_enabled:
-            await _process_checkup_reminders(db, config, email_service)
+            await _process_checkup_reminders(db, config, email_service, unsubscribed_emails, allowed_emails)
         else:
             logger.info("ℹ️ Checkup reminders are disabled.")
             
@@ -52,21 +66,32 @@ def run_check_and_send_reminders():
     asyncio.run(check_and_send_reminders())
 
 
-async def _process_incomplete_reminders(db: Session, config: EmailAutomationConfig, email_service: EmailReportService):
+def _is_email_allowed(email: str, unsubscribed: set, whitelist) -> bool:
+    """Check if an email should receive automated emails."""
+    email_lower = email.lower()
+    if email_lower in unsubscribed:
+        logger.info(f"⏭️ Skipping {email} — unsubscribed.")
+        return False
+    if whitelist is not None and email_lower not in whitelist:
+        logger.info(f"⏭️ Skipping {email} — not in allowed list.")
+        return False
+    return True
+
+
+async def _process_incomplete_reminders(
+    db: Session,
+    config: EmailAutomationConfig,
+    email_service: EmailReportService,
+    unsubscribed_emails: set,
+    allowed_emails
+):
     """Process reminders for incomplete surveys."""
     try:
-        # Rules:
-        # - Abandoned (is_abandoned = True)
-        # - Updated more than X days ago (last_activity < now - incomplete_days)
-        # - Not yet sent follow-up (follow_up_sent = False)
-        # - Has email address
-        
-        # Use timezone-aware datetime for comparison with DB timestamp
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=float(config.incomplete_days))
         
+        # Only target surveys that still have reminders left (< MAX_REMINDERS)
         incomplete_surveys = db.query(IncompleteSurvey).filter(
-            # IncompleteSurvey.is_abandoned == True,  # REMOVED: Rely on incomplete_days config
-            IncompleteSurvey.follow_up_sent == False,
+            IncompleteSurvey.follow_up_count < MAX_REMINDERS,
             IncompleteSurvey.last_activity < cutoff_date,
             IncompleteSurvey.email.isnot(None)
         ).limit(settings.EMAIL_BATCH_SIZE).all()
@@ -74,6 +99,9 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
         logger.info(f"📋 Found {len(incomplete_surveys)} incomplete surveys to remind (Batch Size: {settings.EMAIL_BATCH_SIZE}).")
         
         for i, survey in enumerate(incomplete_surveys):
+            if not _is_email_allowed(survey.email, unsubscribed_emails, allowed_emails):
+                continue
+            
             # Throttle emails
             if i > 0:
                 time.sleep(settings.EMAIL_THROTTLE_DELAY)
@@ -85,21 +113,18 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
                 if survey.company_url:
                     resume_link = f"{frontend_url}/company/{survey.company_url}/financial-clinic?session={survey.session_id}"
                 
-                # Extract customer name details
+                # Extract customer name + language from saved responses
                 customer_name = "Valued Customer"
                 language = "en"
                 
-                # Try to get details from responses
                 if survey.responses and isinstance(survey.responses, dict):
                     if 'name' in survey.responses:
                         customer_name = survey.responses['name']
                     elif survey.email:
-                         customer_name = survey.email.split('@')[0]
-                         
+                        customer_name = survey.email.split('@')[0]
                     if 'language' in survey.responses:
                         language = survey.responses['language']
                 
-                # Send email
                 result = await email_service.send_reminder_email(
                     recipient_email=survey.email,
                     customer_name=customer_name,
@@ -111,14 +136,13 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
                 
                 if result.get('success'):
                     survey.follow_up_sent = True
-                    survey.follow_up_count += 1
+                    survey.follow_up_count = (survey.follow_up_count or 0) + 1
                     
-                    # Mark as abandoned now that we've sent the reminder based on dynamic cutoff
                     if not survey.is_abandoned:
                         survey.is_abandoned = True
                         survey.abandoned_at = datetime.now(timezone.utc)
                         
-                    logger.info(f"✅ Sent incomplete reminder to {survey.email}")
+                    logger.info(f"✅ Sent incomplete reminder #{survey.follow_up_count} to {survey.email}")
                 else:
                     logger.warning(f"⚠️ Failed to send incomplete reminder to {survey.email}: {result.get('message')}")
                     
@@ -131,27 +155,23 @@ async def _process_incomplete_reminders(db: Session, config: EmailAutomationConf
         logger.error(f"❌ Error in _process_incomplete_reminders: {e}")
 
 
-async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig, email_service: EmailReportService):
+async def _process_checkup_reminders(
+    db: Session,
+    config: EmailAutomationConfig,
+    email_service: EmailReportService,
+    unsubscribed_emails: set,
+    allowed_emails
+):
     """Process 6-month checkup reminders."""
     try:
-        # Rules:
-        # - Has a completed survey older than X days (completed_at < now - checkup_days)
-        # - Has NOT received a reminder recently (last_reminder_at is null OR old)
-        # - Has NOT completed another survey since then (no newer response)
-        
-        # Calculate cutoff using float days with timezone-aware datetime
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=float(config.checkup_days))
         
-        # Subquery to find latest completion date per profile
-        # This is complex, so we'll fetch candidate profiles first
-        
         # Find profiles with a response older than cutoff
-        # AND (last_reminder_at IS NULL OR last_reminder_at < cutoff - 30 days buffer?) 
-        # Actually, let's just say we remind once per cycle. 
-        # Let's say we remind if last_reminder_at is NULL or < cutoff_date (meaning previous cycle).
-        
+        # AND still have reminders left (< MAX_REMINDERS)
+        # AND (last_reminder_at IS NULL OR last_reminder_at < cutoff_date)
         candidates = db.query(FinancialClinicProfile).join(FinancialClinicResponse).filter(
             FinancialClinicResponse.completed_at < cutoff_date,
+            FinancialClinicProfile.reminder_sent_count < MAX_REMINDERS,
             (FinancialClinicProfile.last_reminder_at == None) | (FinancialClinicProfile.last_reminder_at < cutoff_date)
         ).distinct().limit(settings.EMAIL_BATCH_SIZE).all()
         
@@ -159,6 +179,9 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
         
         count = 0
         for i, profile in enumerate(candidates):
+            if not _is_email_allowed(profile.email, unsubscribed_emails, allowed_emails):
+                continue
+
             # Throttle emails
             if i > 0:
                 time.sleep(settings.EMAIL_THROTTLE_DELAY)
@@ -173,14 +196,10 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
                 continue
                 
             try:
-                # Send reminder
-                # Determine language from latest response or profile default
-                language = "en" 
-                # Ideally language should be stored on profile or response. 
-                # Assuming 'en' default for now as profile doesn't strictly have language preference column yet, 
-                # but we can check if we can derive it.
-                # Let's check latest response insights or something? 
-                # For now default to 'en'.
+                # --- Language detection from latest response ---
+                language = "en"
+                if latest_response and latest_response.answers and isinstance(latest_response.answers, dict):
+                    language = latest_response.answers.get('language', 'en')
                 
                 result = await email_service.send_checkup_reminder(
                     recipient_email=profile.email,
@@ -191,10 +210,10 @@ async def _process_checkup_reminders(db: Session, config: EmailAutomationConfig,
                 )
                 
                 if result.get('success'):
-                    profile.reminder_sent_count += 1
+                    profile.reminder_sent_count = (profile.reminder_sent_count or 0) + 1
                     profile.last_reminder_at = datetime.now(timezone.utc)
                     count += 1
-                    logger.info(f"✅ Sent checkup reminder to {profile.email}")
+                    logger.info(f"✅ Sent checkup reminder #{profile.reminder_sent_count} to {profile.email}")
                 else:
                     logger.warning(f"⚠️ Failed to send checkup reminder to {profile.email}: {result.get('message')}")
             

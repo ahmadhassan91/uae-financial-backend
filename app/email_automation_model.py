@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean, DateTime, Float, String, Text
+from sqlalchemy import Column, Integer, Boolean, DateTime, Float, String, Text, JSON
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -29,4 +29,19 @@ class EmailAutomationConfig(Base):
     checkup_body_en = Column(Text, nullable=True)
     checkup_body_ar = Column(Text, nullable=True)
     
+    # Whitelist: if set, only these emails will receive automated reminders
+    allowed_emails = Column(JSON, nullable=True)  # e.g. ["a@b.com", "c@d.com"]
+    
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class UnsubscribedUser(Base):
+    """
+    Users who have opted out of automated email reminders.
+    """
+    __tablename__ = "unsubscribed_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    unsubscribed_at = Column(DateTime(timezone=True), server_default=func.now())
+    reason = Column(String(255), nullable=True)  # Optional reason
