@@ -216,7 +216,8 @@
 
                 <!-- CTA Button Image -->
                 <div style="text-align: center; margin: 10px 0 30px 0;">
-                    <a href="{{ cta_link | default('#') }}">
+                    <a
+                        href="{{ cta_link | default('https://financialclinic.ae/company/nationalbonds/financial-clinic') }}">
                         <img src="{{ assets_url }}/static/icons/reminder_banner_ar.jpg" alt="ابدؤوا فحصكم المالي الآن"
                             style="max-width: 340px; width: 80%; display: inline-block;" />
                     </a>
@@ -438,6 +439,25 @@
                         إذا كنت لا ترغب في تلقي هذه الرسائل،
                         <a href="{{ base_url }}/unsubscribe?email={{ recipient_email }}"
                             style="color: #9ca3af; text-decoration: underline;">إلغاء الاشتراك هنا</a>.
+                    </td>
+                </tr>
+            </table>
+            <!-- Terms & Conditions -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background: #2d2d2d; padding: 20px 24px;">
+                <tr>
+                    <td style="text-align: center; font-size: 11px; color: #aaaaaa; line-height: 1.6; direction: rtl;">
+                        <p style="margin: 0 0 8px 0;"><strong style="color: #cccccc;">تطبق الشروط والأحكام</strong></p>
+                        <p style="margin: 0 0 6px 0;">أمنك أولويتنا. لن تطلب منك الصكوك الوطنية في رسائلها الإلكترونية
+                            تقديم معلومات سرية
+                            أو تأكيد تفاصيل أمانك مثل معرّفات المستخدم أو كلمات المرور أو أرقام التعريف الشخصي.
+                            الروابط في رسائلنا الإلكترونية لن تأخذك إلا إلى صفحات آمنة.
+                            يرجى إعادة توجيه أي رسائل مشبوهة إلى helpdesk@nationalbonds.ae</p>
+                        <p style="margin: 0;">
+                            *إخلاء مسؤولية: توزع الجوائز وفق صلاحيات المضارب ومن أمواله الخاصة.
+                            لا يتحمل المضارب المسؤولية إلا في حالات الإهمال أو سوء السلوك.<br />
+                            - تُجرى السحوبات إلكترونياً وعشوائياً تحت إشراف دائرة التنمية الاقتصادية في دبي.
+                            مكافآت حصرية للمواطنين والمقيمين في الإمارات.
+                        </p>
                     </td>
                 </tr>
             </table>

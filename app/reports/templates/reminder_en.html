@@ -250,7 +250,8 @@
 
                 <!-- CTA Button Image -->
                 <div style="text-align: center; margin: 10px 0 30px 0;">
-                    <a href="{{ cta_link | default('#') }}">
+                    <a
+                        href="{{ cta_link | default('https://financialclinic.ae/company/nationalbonds/financial-clinic') }}">
                         <img src="{{ assets_url }}/static/icons/reminder_banner_en.jpg"
                             alt="Take your financial check-up now"
                             style="max-width: 340px; width: 80%; display: inline-block;" />
@@ -469,6 +470,28 @@
                         If you no longer wish to receive these emails,
                         <a href="{{ base_url }}/unsubscribe?email={{ recipient_email }}"
                             style="color: #9ca3af; text-decoration: underline;">unsubscribe here</a>.
+                    </td>
+                </tr>
+            </table>
+            <!-- Terms & Conditions -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="background: #2d2d2d; padding: 20px 24px;">
+                <tr>
+                    <td style="text-align: center; font-size: 11px; color: #aaaaaa; line-height: 1.6;">
+                        <p style="margin: 0 0 8px 0;"><strong style="color: #cccccc;">Terms and conditions
+                                apply</strong></p>
+                        <p style="margin: 0 0 6px 0;">Your security is our priority. In our emails, National Bonds will
+                            never ask you for confidential
+                            information or to confirm your security details such as user IDs, passwords or PINs.
+                            Links within our emails will only take you to secure pages.
+                            Please forward any suspicious emails to helpdesk@nationalbonds.ae</p>
+                        <p style="margin: 0;">
+                            *Disclaimer: prizes are distributed at the sole discretions of the mudareb &amp; from its
+                            own funds.
+                            Mudareb shall not be liable except in case of negligence or misconduct.<br />
+                            - Draws are conducted electronically &amp; randomly under the supervision of Dubai Economic
+                            Department.
+                            Exclusive rewards for UAE Nationals and Expats.
+                        </p>
                     </td>
                 </tr>
             </table>

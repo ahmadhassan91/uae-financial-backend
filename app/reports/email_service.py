@@ -580,46 +580,18 @@ National Bonds Team
 
     def _get_default_reminder_content(self, language: str, customer_name: str, resume_link: Optional[str] = None) -> str:
         """Get default reminder content (inner HTML) using client-approved copy."""
-        # Build the CTA button / link
-        continue_button = ""
-        link = resume_link or "https://financialclinic.ae/company/nationalbonds/financial-clinic"
         if language == "ar":
-            continue_button = f"""
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{link}" class="cta-button">
-                    أكملوا فحصكم المالي الآن
-                </a>
-            </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">
-                <a href="{link}">{link}</a>
-            </p>
+            return """
+            <p>\u0644\u0642\u062f \u0628\u062f\u0623\u062a\u0645 \u0628\u0627\u0644\u0641\u0639\u0644 \u0631\u062d\u0644\u062a\u0643\u0645 \u0646\u062d\u0648 \u0645\u0639\u0631\u0641\u0629 \u0648\u0636\u0639\u0643\u0645 \u0627\u0644\u0645\u0627\u0644\u064a.</p>
+
+            <p>\u0648\u0627\u0644\u062e\u0628\u0631 \u0627\u0644\u0633\u0627\u0631 \u0647\u0648! \u0623\u0646\u0643\u0645 \u0639\u0644\u0649 \u0628\u064f\u0639\u062f \u062e\u0637\u0648\u0627\u062a \u0642\u0644\u064a\u0644\u0629 \u0645\u0646 \u0627\u0644\u062a\u0639\u0631\u0641 \u0639\u0644\u0649 \u0635\u062d\u062a\u0643\u0645 \u0627\u0644\u0645\u0627\u0644\u064a\u0629.</p>
+
+            <p>\u0641\u064a \u062f\u0642\u0627\u0626\u0642 \u0645\u0639\u062f\u0648\u062f\u0629\u060c \u0633\u062a\u062d\u0635\u0644\u0648\u0646 \u0639\u0644\u0649 \u062a\u0642\u0631\u064a\u0631 \u0648\u0627\u0636\u062d \u0628\u0637\u0631\u064a\u0642\u0629 \u0628\u0633\u064a\u0637\u0629 \u0648\u0639\u0645\u0644\u064a\u0629 \u0648\u0633\u0647\u0644\u0629.</p>
+
+            <p>\u0644\u0627 \u062a\u062a\u0648\u0642\u0641\u0648\u0627 \u0641\u064a \u0645\u0646\u062a\u0635\u0641 \u0627\u0644\u0637\u0631\u064a\u0642\u060c \u0641\u0627\u0644\u0648\u0636\u0648\u062d \u0627\u0644\u0630\u064a \u062a\u0628\u062d\u062b\u0648\u0646 \u0639\u0646\u0647 \u0623\u0642\u0631\u0628 \u0645\u0645\u0627 \u062a\u062a\u0635\u0648\u0631\u0648\u0646.</p>
             """
         else:
-            continue_button = f"""
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{link}" class="cta-button">
-                    Complete your financial check-up now
-                </a>
-            </div>
-            <p style="text-align: center; font-size: 12px; color: #666;">
-                <a href="{link}">{link}</a>
-            </p>
-            """
-
-        if language == "ar":
-            return f"""
-            <p>لقد بدأتم بالفعل رحلتكم نحو معرفة وضعكم المالي.</p>
-
-            <p>والخبر السار هو! أنكم على بُعد خطوات قليلة من التعرف على صحتكم المالية.</p>
-
-            <p>في دقائق معدودة، ستحصلون على تقرير واضح بطريقة بسيطة وعملية وسهلة.</p>
-
-            <p>لا تتوقفوا في منتصف الطريق، فالوضوح الذي تبحثون عنه أقرب مما تتصورون.</p>
-
-            {continue_button}
-            """
-        else:
-            return f"""
+            return """
             <p>You've already started your journey toward financial clarity.</p>
 
             <p>The good news? You're just a few steps away from gaining complete financial clarity.</p>
@@ -627,8 +599,6 @@ National Bonds Team
             <p>Take this quick test to see exactly where you stand financially and learn about it in the most simple and practical way.</p>
 
             <p>Don't stop halfway. The clarity you're looking for is just moments away.</p>
-
-            {continue_button}
             """
 
     async def send_checkup_reminder(
