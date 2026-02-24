@@ -69,6 +69,50 @@ class UnsubscribedEmailResponse(BaseModel):
 
 # --- Admin Endpoints ---
 
+DEFAULT_INCOMPLETE_SUBJECT_EN = "You've opened the door. Now step inside."
+DEFAULT_INCOMPLETE_SUBJECT_AR = "لقد فتحتم الباب، وحان وقت الخطوة الأولى."
+DEFAULT_INCOMPLETE_BODY_EN = (
+    "Hi {customer_name},\n\n"
+    "You've already started your journey toward financial clarity.\n\n"
+    "The good news? You're just a few steps away from gaining complete financial clarity.\n\n"
+    "Take this quick test to see exactly where you stand financially and learn about it in the most simple and practical way.\n\n"
+    "Don't stop halfway. The clarity you're looking for is just moments away.\n\n"
+    "Complete your financial check-up now:\n{resume_link}"
+)
+DEFAULT_INCOMPLETE_BODY_AR = (
+    "مرحبًا {customer_name}،\n\n"
+    "لقد بدأتم بالفعل رحلتكم نحو معرفة وضعكم المالي.\n\n"
+    "والخبر السار هو! أنكم على بُعد خطوات قليلة من التعرف على صحتكم المالية.\n\n"
+    "في دقائق معدودة، ستحصلون على تقرير واضح بطريقة بسيطة وعملية وسهلة.\n\n"
+    "لا تتوقفوا في منتصف الطريق، فالوضوح الذي تبحثون عنه أقرب مما تتصورون.\n\n"
+    "أكملوا فحصكم المالي الآن:\n{resume_link}"
+)
+
+DEFAULT_CHECKUP_SUBJECT_EN = "Time for Your Financial Health Checkup"
+DEFAULT_CHECKUP_SUBJECT_AR = "حان وقت مراجعة صحتك المالية"
+DEFAULT_CHECKUP_BODY_EN = (
+    "It's been a while since your last Financial Health Assessment.\n\n"
+    "Financial health is a journey, not a destination. Regular checkups help you track your progress "
+    "and adjust your strategy as your life changes.\n\n"
+    "Why take a new assessment?\n"
+    "- See how your score has improved\n"
+    "- Update your financial goals\n"
+    "- Get fresh recommendations\n\n"
+    "Complete your financial check-up now:\n"
+    "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+)
+DEFAULT_CHECKUP_BODY_AR = (
+    "لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.\n\n"
+    "الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.\n\n"
+    "لماذا تجري تقييماً جديداً؟\n"
+    "- شاهد كيف تحسنت نتيجتك\n"
+    "- قم بتحديث أهدافك المالية\n"
+    "- احصل على توصيات جديدة\n\n"
+    "أكملوا فحصكم المالي الآن:\n"
+    "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+)
+
+
 @router.get("/email-config", response_model=EmailConfigResponse)
 def get_email_config(db: Session = Depends(get_db)):
     """Get the current email automation configuration. Creates a default if none exists."""
@@ -78,6 +122,29 @@ def get_email_config(db: Session = Depends(get_db)):
         db.add(config)
         db.commit()
         db.refresh(config)
+
+    # Apply defaults for any fields that are missing, blank, or too short to be real content
+    def _needs_default(val, min_len=20):
+        return not val or len(val.strip()) < min_len
+
+    if _needs_default(config.incomplete_subject_en, 10):
+        config.incomplete_subject_en = DEFAULT_INCOMPLETE_SUBJECT_EN
+    if _needs_default(config.incomplete_subject_ar, 10):
+        config.incomplete_subject_ar = DEFAULT_INCOMPLETE_SUBJECT_AR
+    if _needs_default(config.incomplete_body_en):
+        config.incomplete_body_en = DEFAULT_INCOMPLETE_BODY_EN
+    if _needs_default(config.incomplete_body_ar):
+        config.incomplete_body_ar = DEFAULT_INCOMPLETE_BODY_AR
+
+    if _needs_default(config.checkup_subject_en, 10):
+        config.checkup_subject_en = DEFAULT_CHECKUP_SUBJECT_EN
+    if _needs_default(config.checkup_subject_ar, 10):
+        config.checkup_subject_ar = DEFAULT_CHECKUP_SUBJECT_AR
+    if _needs_default(config.checkup_body_en):
+        config.checkup_body_en = DEFAULT_CHECKUP_BODY_EN
+    if _needs_default(config.checkup_body_ar):
+        config.checkup_body_ar = DEFAULT_CHECKUP_BODY_AR
+
     return config
 
 @router.put("/email-config", response_model=EmailConfigResponse)
@@ -161,3 +228,45 @@ def resubscribe_email(email: str, db: Session = Depends(get_db)):
     db.delete(entry)
     db.commit()
     return {"success": True, "message": f"{email} has been re-subscribed."}
+
+
+# --- Test / Debug Endpoints ---
+
+class TestEmailRequest(BaseModel):
+    email: str
+    name: str = "Test User"
+    language: str = "en"  # "en" or "ar"
+    resume_link: Optional[str] = "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+
+
+@router.post("/test-reminder-email")
+async def test_reminder_email(request: TestEmailRequest):
+    """
+    Manually trigger a test INCOMPLETE survey reminder email.
+    Useful for verifying the template looks correct before going live.
+    """
+    from app.reports.email_service import EmailReportService
+    service = EmailReportService()
+    result = await service.send_reminder_email(
+        recipient_email=request.email,
+        customer_name=request.name,
+        language=request.language,
+        resume_link=request.resume_link,
+    )
+    return result
+
+
+@router.post("/test-checkup-email")
+async def test_checkup_email(request: TestEmailRequest):
+    """
+    Manually trigger a test PERIODIC CHECKUP reminder email.
+    Useful for verifying the template looks correct before going live.
+    """
+    from app.reports.email_service import EmailReportService
+    service = EmailReportService()
+    result = await service.send_checkup_reminder(
+        recipient_email=request.email,
+        customer_name=request.name,
+        language=request.language,
+    )
+    return result

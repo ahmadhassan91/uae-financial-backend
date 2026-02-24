@@ -554,7 +554,8 @@ National Bonds Team
                 content=content,
                 base_url=frontend_url,
                 assets_url=assets_url,
-                recipient_email=recipient_email
+                recipient_email=recipient_email,
+                cta_link=resume_link or "https://financialclinic.ae/company/nationalbonds/financial-clinic"
             )
             
             msg.attach(MIMEText(final_html, 'html', 'utf-8'))
@@ -578,74 +579,56 @@ National Bonds Team
             }
 
     def _get_default_reminder_content(self, language: str, customer_name: str, resume_link: Optional[str] = None) -> str:
-        """Get default reminder content (inner HTML)."""
-        # Build the continue button HTML
+        """Get default reminder content (inner HTML) using client-approved copy."""
+        # Build the CTA button / link
         continue_button = ""
-        if resume_link:
-            if language == "ar":
-                continue_button = f"""
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{resume_link}" 
-                       class="cta-button">
-                        استمر في التقييم
-                    </a>
-                </div>
-                <p style="text-align: center; font-size: 12px; color: #666;">
-                    أو انسخ هذا الرابط: <a href="{resume_link}">{resume_link}</a>
-                </p>
-                """
-            else:
-                continue_button = f"""
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{resume_link}" 
-                       class="cta-button">
-                        Continue Your Assessment
-                    </a>
-                </div>
-                <p style="text-align: center; font-size: 12px; color: #666;">
-                    Or copy this link: <a href="{resume_link}">{resume_link}</a>
-                </p>
-                """
+        link = resume_link or "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+        if language == "ar":
+            continue_button = f"""
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{link}" class="cta-button">
+                    أكملوا فحصكم المالي الآن
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                <a href="{link}">{link}</a>
+            </p>
+            """
+        else:
+            continue_button = f"""
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{link}" class="cta-button">
+                    Complete your financial check-up now
+                </a>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                <a href="{link}">{link}</a>
+            </p>
+            """
 
         if language == "ar":
             return f"""
-            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
-            
-            <p>نلاحظ أنك بدأت تقييم الصحة المالية ولكنك لم تكمله بعد.</p>
-            
-            <p>صحتك المالية مهمة لنا. يستغرق التقييم 5-10 دقائق فقط ويقدم رؤى قيمة حول صحتك المالية.</p>
-            
-            <p><strong style="color: #437749;">فوائد إكمال التقييم:</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ درجة الصحة المالية الشخصية</li>
-                <li>✓ تحليل مفصل لوضعك المالي</li>
-                <li>✓ توصيات مخصصة للتحسين</li>
-                <li>✓ خطة عمل لمدة 90 يوماً</li>
-            </ul>
-            
+            <p>لقد بدأتم بالفعل رحلتكم نحو معرفة وضعكم المالي.</p>
+
+            <p>والخبر السار هو! أنكم على بُعد خطوات قليلة من التعرف على صحتكم المالية.</p>
+
+            <p>في دقائق معدودة، ستحصلون على تقرير واضح بطريقة بسيطة وعملية وسهلة.</p>
+
+            <p>لا تتوقفوا في منتصف الطريق، فالوضوح الذي تبحثون عنه أقرب مما تتصورون.</p>
+
             {continue_button}
-            
-            <p>هل أنت مستعد للسيطرة على مستقبلك المالي؟</p>
             """
         else:
             return f"""
-            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
-            
-            <p>We noticed you started the Financial Health Assessment but haven't completed it yet.</p>
-            
-            <p>Your financial wellness is important to us. The assessment takes just 5-10 minutes and provides valuable insights into your financial health.</p>
-            
-            <p><strong style="color: #437749;">Benefits of completing the assessment:</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ Personalized financial health score</li>
-                <li>✓ Detailed analysis of your financial situation</li>
-                <li>✓ Customized recommendations for improvement</li>
-                <li>✓ 90-day action plan</li>
-            </ul>
-            
+            <p>You've already started your journey toward financial clarity.</p>
+
+            <p>The good news? You're just a few steps away from gaining complete financial clarity.</p>
+
+            <p>Take this quick test to see exactly where you stand financially and learn about it in the most simple and practical way.</p>
+
+            <p>Don't stop halfway. The clarity you're looking for is just moments away.</p>
+
             {continue_button}
-            
-            <p>Ready to take control of your financial future?</p>
             """
 
     async def send_checkup_reminder(
@@ -722,56 +705,53 @@ National Bonds Team
 
     def _get_default_checkup_content(self, language: str, customer_name: str, base_url: str) -> str:
         """Get default checkup reminder content (inner HTML) based on language."""
+        client_link = "https://financialclinic.ae/company/nationalbonds/financial-clinic"
         if language == "ar":
             return f"""
-            <h2 style="color: #437749; margin-top: 0;">مرحباً {customer_name}،</h2>
-            
             <p>لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.</p>
-            
+
             <p>الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.</p>
-            
+
             <p><strong>لماذا تجري تقييماً جديداً؟</strong></p>
             <ul style="line-height: 1.8;">
                 <li>✓ شاهد كيف تحسنت نتيجتك</li>
                 <li>✓ قم بتحديث أهدافك المالية</li>
                 <li>✓ احصل على توصيات جديدة</li>
             </ul>
-            
+
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{base_url}/financial-clinic" 
-                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                <a href="{client_link}"
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px;
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
                     ابدأ تقييماً جديداً
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
-                أو قم بزيارة: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
+                أو قم بزيارة: <a href="{client_link}">{client_link}</a>
             </p>
             """
         else:
             return f"""
-            <h2 style="color: #437749; margin-top: 0;">Hello {customer_name},</h2>
-            
             <p>It's been a while since your last Financial Health Assessment.</p>
-            
+
             <p>Financial health is a journey, not a destination. Regular checkups help you track your progress and adjust your strategy as your life changes.</p>
-            
+
             <p><strong>Why take a new assessment?</strong></p>
             <ul style="line-height: 1.8;">
                 <li>✓ See how your score has improved</li>
                 <li>✓ Update your financial goals</li>
                 <li>✓ Get fresh recommendations</li>
             </ul>
-            
+
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{base_url}/financial-clinic" 
-                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px; 
+                <a href="{client_link}"
+                   style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px;
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    Take New Assessment
+                    Complete your financial check-up now
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
-                Or visit: <a href="{base_url}/financial-clinic">{base_url}/financial-clinic</a>
+                Or visit: <a href="{client_link}">{client_link}</a>
             </p>
             """
 
