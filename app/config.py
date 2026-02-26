@@ -1,6 +1,6 @@
 """Application configuration settings."""
 from pydantic_settings import BaseSettings
-from typing import List, Union
+from typing import List, Union, Optional
 import os
 import json
 
@@ -141,6 +141,13 @@ class Settings(BaseSettings):
     NFS_ICONS_SUBDIR: str = "icons"  # Subdirectory for static icons
     NFS_PUBLIC_URL_BASE: str = ""  # Base URL for accessing NFS files via web (e.g., https://financialclinic.nationalbonds.ae/storage)
     
+    # CRM Integration
+    CRM_API_KEY: Optional[str] = None
+    
+    # Email Rate Limiting
+    EMAIL_BATCH_SIZE: int = 50
+    EMAIL_THROTTLE_DELAY: float = 2.0
+    
     # Frontend URLs
     FRONTEND_BASE_URL: str = "http://localhost:3000"  # Development default
     PRODUCTION_BASE_URL: str = ""  # Will be loaded from .env
@@ -182,6 +189,7 @@ class Settings(BaseSettings):
         # Use absolute path to .env file to ensure it's found regardless of CWD
         env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
         case_sensitive = True
+        extra = "ignore"
 # Create global settings instance
 settings = Settings()
 # Ensure upload and download directories exist

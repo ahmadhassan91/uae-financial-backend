@@ -876,3 +876,16 @@ class CompanyCustomerProfile(Base):
     company = relationship("CompanyDetails", back_populates="customer_profiles")
     creator = relationship("User")
 
+
+class CRMAPIKey(Base):
+    """API Keys for external CRM integration."""
+    __tablename__ = "crm_api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    masked_key = Column(String(50), nullable=False)  # Example: fc_te...4f3a
+    hashed_key = Column(String(255), nullable=False, index=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
