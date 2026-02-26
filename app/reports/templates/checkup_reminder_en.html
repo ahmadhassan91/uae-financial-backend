@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financial Health Checkup - National Bonds</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+                "Helvetica", "Arial", sans-serif;
+            line-height: 1.6;
+            color: #505d68;
+            background-color: #f5f5f5;
+        }
+
+        .email-wrapper {
+            width: 100%;
+            background-color: #f5f5f5;
+            padding: 40px 0;
+        }
+
+        .email-container {
+            width: 75%;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 30px 40px 20px 40px;
+        }
+
+        .logo {
+            text-align: center;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text .highlight {
+            color: #437749;
+        }
+
+        .content {
+            padding: 40px;
+            width: 100%;
+        }
+
+        .greeting {
+            font-size: 16px;
+            color: #505d68;
+            margin-bottom: 20px;
+            font-weight: 400;
+        }
+
+        .message {
+            font-size: 15px;
+            color: #505d68;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        /* Allow simple HTML content from admin to render nicely */
+        .message p {
+            margin-bottom: 1em;
+        }
+
+        .message ul,
+        .message ol {
+            margin-bottom: 1em;
+            padding-left: 20px;
+        }
+
+        .message li {
+            margin-bottom: 5px;
+        }
+
+        .message strong {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .footer {
+            background-color: #ffffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 40px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .footer-logo {
+            flex: 0 0 auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .footer-brand-logo {
+            height: 40px;
+        }
+
+        .footer-tagline {
+            font-size: 12px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .social-links {
+            text-align: center;
+            flex: 0 0 auto;
+        }
+
+        .social-title {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .social-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #b8985f;
+            border-bottom-color: transparent;
+            border-bottom-width: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            background-color: transparent;
+            padding: 8px;
+        }
+
+        .social-icon img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .social-icon:hover {
+            transform: translateY(-2px);
+        }
+
+        .app-links {
+            text-align: center;
+            display: flex;
+            gap: 30px;
+            flex: 0 0 auto;
+        }
+
+        .app-link-title {
+            font-size: 11px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .branches-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .email-container {
+                width: 95% !important;
+            }
+
+            .footer-logo-img {
+                height: 120px !important;
+                width: 150px !important;
+            }
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                padding: 20px 0;
+            }
+
+            .email-container {
+                width: 100% !important;
+                border-radius: 0;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .greeting {
+                font-size: 14px;
+            }
+
+            .message {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .instruction {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+
+            .footer-table {
+                padding: 20px 10px !important;
+            }
+
+            .footer-table tr {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .footer-table td {
+                display: block !important;
+                width: 100% !important;
+                text-align: center !important;
+                padding: 10px 0 !important;
+            }
+
+            .footer-logo-img {
+                height: 60px !important;
+                width: auto !important;
+                max-width: 150px !important;
+                margin: 0 auto !important;
+            }
+
+            .footer-icons-cell table {
+                margin: 15px auto !important;
+            }
+
+            .footer-icons-cell table td {
+                display: inline-block !important;
+                width: auto !important;
+                padding: 0 4px !important;
+            }
+        }
+
+        @media only screen and (max-width: 360px) {
+            .content {
+                padding: 20px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <!-- Header -->
+            <div class="header" style="width: 100%; text-align: center">
+                <div class="logo" style="text-align: center">
+                    <img src="{{ assets_url }}/static/icons/financial.png" alt="Financial Clinic"
+                        style="height: 40px; display: inline-block; margin: 0 auto" />
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <div class="greeting">Hello {{ customer_name }},</div>
+
+                <div class="message">
+                    <!-- Inject Admin Content Here -->
+                    {{ content|safe }}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="
+            background: #fff;
+            padding: 32px 24px;
+            border-top: 1px solid #e5e7eb;
+          " class="footer-table">
+                <tr>
+                    <!-- Logo/Branding -->
+                    <td align="left" style="vertical-align: middle; padding-left: 20px" width="20%"
+                        class="footer-logo-cell">
+                        <img src="{{ assets_url }}/static/icons/logo.png" alt="National Bonds"
+                            style="height: 200px; width: 250px; display: block" class="footer-logo-img" />
+                    </td>
+                    <!-- All Icons in One Line -->
+                    <td align="center" style="vertical-align: middle" width="80%" class="footer-icons-cell">
+                        <table cellpadding="0" cellspacing="0" style="margin: 0 auto">
+                            <tr>
+                                <!-- Social Icon 1 -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://www.facebook.com/nationalbonds" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/grommet-icons.png" alt="Facebook"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Social Icon 2 -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://www.instagram.com/nationalbonds/" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/instagram.png" alt="Instagram"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Social Icon 3 -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://x.com/nationalbonds" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="https://res.cloudinary.com/dhujwbcor/image/upload/v1764576429/X_ayekkc.png"
+                                            alt="Twitter" style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Social Icon 4 -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://www.linkedin.com/company/national-bonds-corporation" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/linkedin.png" alt="LinkedIn"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Social Icon 5 -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://www.youtube.com/user/NationalBondsUAE" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/youtube.png" alt="YouTube"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Spacer -->
+                                <td style="padding: 0 15px"></td>
+                                <!-- Download App Icon -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <a href="https://apps.apple.com/ae/app/national-bonds/id1461657357" style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                        text-decoration: none;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/downlaod.png" alt="Download App"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </a>
+                                </td>
+                                <!-- Spacer -->
+                                <td style="padding: 0 15px"></td>
+                                <!-- Branches Icon -->
+                                <td style="
+                      padding: 0 6px;
+                      text-align: center;
+                      vertical-align: top;
+                    ">
+                                    <span style="
+                        display: inline-block;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 2px solid #b8985f;
+                        background: #fff;
+                        text-align: center;
+                      ">
+                                        <img src="{{ assets_url }}/static/icons/location.png" alt="Branches"
+                                            style="width: 20px; height: 20px; margin-top: 8px" />
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <!-- Stay Connected Label (centered below 5 social icons) -->
+                                <td colspan="5" style="padding-top: 8px; text-align: center">
+                                    <div style="
+                        font-size: 11px;
+                        color: #9ca3af;
+                        letter-spacing: 1px;
+                        white-space: nowrap;
+                      ">
+                                        STAY CONNECTED
+                                    </div>
+                                </td>
+                                <!-- Spacer -->
+                                <td style="padding: 0"></td>
+                                <!-- Download App Label -->
+                                <td style="padding-top: 8px; text-align: center">
+                                    <div style="
+                        font-size: 11px;
+                        color: #9ca3af;
+                        white-space: nowrap;
+                      ">
+                                        DOWNLOAD OUR APP
+                                    </div>
+                                </td>
+                                <!-- Spacer -->
+                                <td style="padding: 0"></td>
+                                <!-- Branches Label -->
+                                <td style="padding-top: 8px; text-align: center">
+                                    <div style="
+                        font-size: 11px;
+                        color: #9ca3af;
+                        white-space: nowrap;
+                      ">
+                                        OUR BRANCHES
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+            <!-- Unsubscribe link -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+                style="background: #fff; padding: 0 24px 20px 24px; text-align: center;">
+                <tr>
+                    <td style="font-size: 11px; color: #9ca3af;">
+                        If you no longer wish to receive these emails,
+                        <a href="{{ base_url }}/unsubscribe?email={{ recipient_email }}"
+                            style="color: #9ca3af; text-decoration: underline;">unsubscribe here</a>.
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</body>
+
+</html>

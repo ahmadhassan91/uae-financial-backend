@@ -113,6 +113,10 @@ class Settings(BaseSettings):
     FROM_EMAIL: str = ""
     FROM_NAME: str = "Financial Clinic"
     
+    # Email Rate Limiting
+    EMAIL_BATCH_SIZE: int = 50  # Max emails to process per run
+    EMAIL_THROTTLE_DELAY: float = 2.0  # Seconds to wait between emails
+    
     # Redis (for caching/sessions)
     REDIS_URL: str = "redis://localhost:6379/0"
     
@@ -176,7 +180,8 @@ class Settings(BaseSettings):
             return self.NFS_PUBLIC_URL_BASE
         else:
             # For cloud deployment (Heroku) or development
-            return self.api_base_url
+            # Static files are served at the root, not under /api/v1
+            return self.api_base_url.rstrip('/').removesuffix('/api/v1')
     
     @property
     def s3_pdf_base_url(self) -> str:

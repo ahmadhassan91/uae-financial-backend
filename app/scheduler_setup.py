@@ -63,6 +63,22 @@ def init_scheduler():
             job_defaults=job_defaults,
             timezone='UTC'
         )
+
+        try:
+            # Register email reminder job
+            # Use the synchronous wrapper function directly for picklability
+            from app.services.email_scheduler import run_check_and_send_reminders
+
+            scheduler.add_job(
+                run_check_and_send_reminders,
+                'interval',
+                minutes=1,
+                id='email_reminders',
+                replace_existing=True
+            )
+            logger.info("✅ Email reminder job registered (every 1 minute)")
+        except Exception as e:
+            logger.error(f"❌ Failed to register email reminder job: {e}")
         
         # Start the scheduler
         scheduler.start()
