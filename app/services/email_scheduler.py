@@ -101,6 +101,11 @@ async def _process_incomplete_reminders(
         for i, survey in enumerate(incomplete_surveys):
             if not _is_email_allowed(survey.email, unsubscribed_emails, allowed_emails):
                 continue
+
+            # Skip company-URL users if toggled
+            if getattr(config, 'incomplete_exclude_company_url', False) and survey.company_url:
+                logger.info(f"⏭️ Skipping {survey.email} — company URL user excluded.")
+                continue
             
             # Throttle emails
             if i > 0:
@@ -180,6 +185,11 @@ async def _process_checkup_reminders(
         count = 0
         for i, profile in enumerate(candidates):
             if not _is_email_allowed(profile.email, unsubscribed_emails, allowed_emails):
+                continue
+
+            # Skip company-linked profiles if toggled
+            if getattr(config, 'checkup_exclude_company_url', False) and profile.company_details_id:
+                logger.info(f"⏭️ Skipping {profile.email} — company URL user excluded.")
                 continue
 
             # Throttle emails

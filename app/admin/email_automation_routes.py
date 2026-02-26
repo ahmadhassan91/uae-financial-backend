@@ -28,6 +28,8 @@ class EmailConfigResponse(BaseModel):
     checkup_body_ar: Optional[str] = None
     
     allowed_emails: Optional[List[str]] = None
+    incomplete_exclude_company_url: bool = False
+    checkup_exclude_company_url: bool = False
     
     updated_at: Optional[datetime]
 
@@ -51,6 +53,8 @@ class EmailConfigUpdate(BaseModel):
     checkup_body_ar: Optional[str] = None
     
     allowed_emails: Optional[List[str]] = None  # Whitelist; empty/null = send to all
+    incomplete_exclude_company_url: bool = False
+    checkup_exclude_company_url: bool = False
 
 
 class UnsubscribeRequest(BaseModel):
@@ -176,6 +180,9 @@ def update_email_config(config_in: EmailConfigUpdate, db: Session = Depends(get_
         config.allowed_emails = cleaned if cleaned else None
     else:
         config.allowed_emails = None
+
+    config.incomplete_exclude_company_url = config_in.incomplete_exclude_company_url
+    config.checkup_exclude_company_url = config_in.checkup_exclude_company_url
     
     db.commit()
     db.refresh(config)

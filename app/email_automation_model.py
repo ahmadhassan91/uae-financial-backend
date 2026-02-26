@@ -31,7 +31,11 @@ class EmailAutomationConfig(Base):
     
     # Whitelist: if set, only these emails will receive automated reminders
     allowed_emails = Column(JSON, nullable=True)  # e.g. ["a@b.com", "c@d.com"]
-    
+
+    # Exclusion toggles: if True, skip users who arrived via a company-specific URL
+    incomplete_exclude_company_url = Column(Boolean, default=False, nullable=False)
+    checkup_exclude_company_url = Column(Boolean, default=False, nullable=False)
+
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
