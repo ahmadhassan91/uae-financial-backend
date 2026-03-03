@@ -76,44 +76,40 @@ class UnsubscribedEmailResponse(BaseModel):
 DEFAULT_INCOMPLETE_SUBJECT_EN = "You've opened the door. Now step inside."
 DEFAULT_INCOMPLETE_SUBJECT_AR = "لقد فتحتم الباب، وحان وقت الخطوة الأولى."
 DEFAULT_INCOMPLETE_BODY_EN = (
-    "Hi {customer_name},\n\n"
-    "You've already started your journey toward financial clarity.\n\n"
-    "The good news? You're just a few steps away from gaining complete financial clarity.\n\n"
-    "Take this quick test to see exactly where you stand financially and learn about it in the most simple and practical way.\n\n"
-    "Don't stop halfway. The clarity you're looking for is just moments away.\n\n"
-    "Complete your financial check-up now:\n{resume_link}"
+    "You've already started your journey toward financial clarity.<br><br>"
+    "The good news? You're just a few steps away from gaining complete financial clarity.<br><br>"
+    "Take this quick test to see exactly where you stand financially and learn about it in the most simple and practical way.<br><br>"
+    "Don't stop halfway. The clarity you're looking for is just moments away.<br><br>"
+    "Complete your financial check-up now:"
 )
 DEFAULT_INCOMPLETE_BODY_AR = (
-    "مرحبًا {customer_name}،\n\n"
-    "لقد بدأتم بالفعل رحلتكم نحو معرفة وضعكم المالي.\n\n"
-    "والخبر السار هو! أنكم على بُعد خطوات قليلة من التعرف على صحتكم المالية.\n\n"
-    "في دقائق معدودة، ستحصلون على تقرير واضح بطريقة بسيطة وعملية وسهلة.\n\n"
-    "لا تتوقفوا في منتصف الطريق، فالوضوح الذي تبحثون عنه أقرب مما تتصورون.\n\n"
-    "أكملوا فحصكم المالي الآن:\n{resume_link}"
+    "لقد بدأتم بالفعل رحلتكم نحو معرفة وضعكم المالي.<br><br>"
+    "والخبر السار هو! أنكم على بُعد خطوات قليلة من التعرف على صحتكم المالية.<br><br>"
+    "في دقائق معدودة، ستحصلون على تقرير واضح بطريقة بسيطة وعملية وسهلة.<br><br>"
+    "لا تتوقفوا في منتصف الطريق، فالوضوح الذي تبحثون عنه أقرب مما تتصورون.<br><br>"
+    "أكملوا فحصكم المالي الآن:"
 )
 
 DEFAULT_CHECKUP_SUBJECT_EN = "Time for Your Financial Health Checkup"
 DEFAULT_CHECKUP_SUBJECT_AR = "حان وقت مراجعة صحتك المالية"
 DEFAULT_CHECKUP_BODY_EN = (
-    "It's been a while since your last Financial Health Assessment.\n\n"
+    "It's been a while since your last Financial Health Assessment.<br><br>"
     "Financial health is a journey, not a destination. Regular checkups help you track your progress "
-    "and adjust your strategy as your life changes.\n\n"
-    "Why take a new assessment?\n"
-    "- See how your score has improved\n"
-    "- Update your financial goals\n"
-    "- Get fresh recommendations\n\n"
-    "Complete your financial check-up now:\n"
-    "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+    "and adjust your strategy as your life changes.<br><br>"
+    "Why take a new assessment?<br>"
+    "- See how your score has improved<br>"
+    "- Update your financial goals<br>"
+    "- Get fresh recommendations<br><br>"
+    "Complete your financial check-up now:"
 )
 DEFAULT_CHECKUP_BODY_AR = (
-    "لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.\n\n"
-    "الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.\n\n"
-    "لماذا تجري تقييماً جديداً؟\n"
-    "- شاهد كيف تحسنت نتيجتك\n"
-    "- قم بتحديث أهدافك المالية\n"
-    "- احصل على توصيات جديدة\n\n"
-    "أكملوا فحصكم المالي الآن:\n"
-    "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+    "لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.<br><br>"
+    "الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.<br><br>"
+    "لماذا تجري تقييمأ جديداً؟<br>"
+    "- شاهد كيف تحسنت نتيجتك<br>"
+    "- قم بتحديث أهدافك المالية<br>"
+    "- احصل على توصيات جديدة<br><br>"
+    "أكملوا فحصكم المالي الآن:"
 )
 
 
@@ -244,6 +240,8 @@ class TestEmailRequest(BaseModel):
     name: str = "Test User"
     language: str = "en"  # "en" or "ar"
     resume_link: Optional[str] = "https://financialclinic.ae/company/nationalbonds/financial-clinic"
+    subject: Optional[str] = None
+    body: Optional[str] = None
 
 
 @router.post("/test-reminder-email")
@@ -259,6 +257,8 @@ async def test_reminder_email(request: TestEmailRequest):
         customer_name=request.name,
         language=request.language,
         resume_link=request.resume_link,
+        subject_template=request.subject,
+        body_template=request.body
     )
     return result
 
@@ -275,5 +275,7 @@ async def test_checkup_email(request: TestEmailRequest):
         recipient_email=request.email,
         customer_name=request.name,
         language=request.language,
+        subject_template=request.subject,
+        body_template=request.body
     )
     return result

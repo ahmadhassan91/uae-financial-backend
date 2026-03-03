@@ -542,6 +542,10 @@ National Bonds Team
                 if resume_link:
                     content = content.replace('{resume_link}', resume_link)
                 content = content.replace('{base_url}', frontend_url)
+                
+                # Convert primitive newlines to HTML if it looks like plain text
+                if '\n' in content and '<p' not in content and '<div' not in content:
+                    content = content.replace('\n', '<br>')
             else:
                 content = self._get_default_reminder_content(language, customer_name, resume_link)
             
@@ -632,6 +636,10 @@ National Bonds Team
                  # Custom template substitution
                 content = body_template.replace('{customer_name}', customer_name)
                 content = content.replace('{base_url}', frontend_url)
+                
+                # Convert primitive newlines to HTML if it looks like plain text
+                if '\n' in content and '<p' not in content and '<div' not in content:
+                    content = content.replace('\n', '<br>')
             else:
                  # Default content if no template provided
                  content = self._get_default_checkup_content(language, customer_name, frontend_url)
