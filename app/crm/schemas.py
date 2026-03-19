@@ -31,7 +31,9 @@ class CRMConsultation(BaseModel):
     preferred_method: Optional[str] = None
     preferred_time: Optional[str] = None
     message: Optional[str] = None
+    notes: Optional[str] = None
     created_at: Optional[datetime] = None
+    contacted_at: Optional[datetime] = None
     scheduled_at: Optional[datetime] = None
 
 class CRMTimestamps(BaseModel):

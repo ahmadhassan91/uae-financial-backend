@@ -203,7 +203,9 @@ async def get_consolidated_crm_data(
                     preferred_method=consultation.preferred_contact_method,
                     preferred_time=consultation.preferred_time,
                     message=consultation.message,
+                    notes=consultation.notes,
                     created_at=consultation.created_at,
+                    contacted_at=consultation.contacted_at,
                     scheduled_at=consultation.scheduled_at
                 )
 

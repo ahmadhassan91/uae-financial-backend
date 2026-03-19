@@ -27,7 +27,9 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
     
     Args:
         query: SQLAlchemy query object
-        date_range: Predefined date range ('7d', '30d', '90d', '1y', 'ytd', 'all')
+        date_range: Predefined date range.
+            Dashboard values: '7d', '30d', '90d', '1y', 'ytd', 'all'
+            CRM API values:   'today', 'yesterday', 'last_7_days', 'all'
         start_date: Custom start date (YYYY-MM-DD format)
         end_date: Custom end date (YYYY-MM-DD format)
         model: The model containing 'created_at' field (defaults to FinancialClinicResponse)
@@ -58,7 +60,7 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
     # Apply predefined date range filters
     now = datetime.now(pytz.UTC)
     
-    if date_range == "7d":
+    if date_range in ("7d", "last_7_days"):
         start_date_dt = now - timedelta(days=7)
         query = query.filter(model.created_at >= start_date_dt)
     elif date_range == "30d":
@@ -74,6 +76,18 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
         # Year to date - from January 1st of current year
         start_date_dt = datetime(now.year, 1, 1).replace(tzinfo=pytz.UTC)
         query = query.filter(model.created_at >= start_date_dt)
+    elif date_range == "today":
+        # From midnight of the current day (UTC)
+        start_date_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(model.created_at >= start_date_dt)
+    elif date_range == "yesterday":
+        # Full previous calendar day (UTC)
+        yesterday_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        yesterday_end = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(
+            model.created_at >= yesterday_start,
+            model.created_at < yesterday_end
+        )
     elif date_range == "all":
         # No date filtering for "all time"
         pass

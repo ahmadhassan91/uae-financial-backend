@@ -75,15 +75,36 @@ curl -X GET "https://uae-financial-health-filters-68ab0c8434cb.herokuapp.com/api
       "age": 34,
       "gender": "Male",
       "nationality": "Emirati",
+      "emirate": "Dubai",
+      "children": "2",
+      "employment_status": "Employed",
+      "income_range": "10,000 to 20,000",
+      "company": "Example Corp",
+      "unique_url": "",
       "scores": {
         "total_score": 85.5,
-        "status_band": "Financially Healthy"
+        "status_band": "Good",
+        "income_stream": 20.0,
+        "savings_habit": 16.0,
+        "debt_management": 18.0,
+        "retirement_planning": 14.0,
+        "financial_protection": 10.0,
+        "financial_knowledge": 7.5
       },
       "engagement": {
         "questions_answered": 15,
+        "total_questions": 15,
         "completion_percentage": 100.0,
         "leads_requested": "N"
       },
+      "action_plans": {
+        "plan_1": "You have strong financial protection in place.",
+        "plan_2": "High debt levels may limit your future savings.",
+        "plan_3": "You have a stable, consistent income.",
+        "plan_4": "You save occasionally, but your savings rate could improve.",
+        "plan_5": "You're well-prepared for emergencies."
+      },
+      "consultation": null,
       "timestamps": {
         "submission_date": "2026-02-26T10:30:00Z"
       }
@@ -92,7 +113,24 @@ curl -X GET "https://uae-financial-health-filters-68ab0c8434cb.herokuapp.com/api
 }
 ```
 
+> [!NOTE]
+> The `consultation` field will be `null` for the vast majority of records. It is only populated when a user explicitly requested a consultation via the Financial Clinic form (i.e. `engagement.leads_requested = "Y"`) **and** a `ConsultationRequest` record was subsequently created by the backend.
+
+### `consultation` Object (when not null):
+
+| Field              | Type               | Description                                                                 |
+|--------------------|--------------------|-----------------------------------------------------------------------------|
+| `status`           | String             | `pending`, `contacted`, `scheduled`, `completed`, or `cancelled`            |
+| `source`           | String             | Origin of the request (e.g. `financial_clinic`)                             |
+| `preferred_method` | String             | `phone`, `email`, or `whatsapp`                                             |
+| `preferred_time`   | String             | `morning`, `afternoon`, or `evening`                                        |
+| `message`          | String / null      | Optional message from the user                                              |
+| `notes`            | String / null      | Admin internal notes                                                        |
+| `created_at`       | ISO 8601 datetime  | When the consultation request was submitted                                 |
+| `contacted_at`     | ISO 8601 datetime / null | When the user was first contacted                                     |
+| `scheduled_at`     | ISO 8601 datetime / null | When a consultation meeting has been scheduled                        |
+
 ---
 
 ## 6. Support Data (Incomplete Surveys)
-For surveys marked as `type: "Incomplete"`, the API provides demographic details captured up to the point of abandonment. The `scores` object will be `null` for these records, and `completion_percentage` will indicate how far the user progressed.
+For surveys marked as `type: "Incomplete"`, the API provides demographic details captured up to the point of abandonment. The `scores`, `action_plans`, and `consultation` fields will be `null` for these records, and `engagement.completion_percentage` will indicate how far the user progressed.
