@@ -241,10 +241,10 @@ async def get_emirate_breakdown(
     unique_users_only: Optional[bool] = Query(None),
     exclude_unique_urls: Optional[bool] = Query(None)
 ):
-    """Get breakdown by emirate."""
+    """Get breakdown by emirate with traffic light counts."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
-        from sqlalchemy import func
+        from sqlalchemy import func, case
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
@@ -256,7 +256,12 @@ async def get_emirate_breakdown(
         
         query = db.query(
             FinancialClinicProfile.emirate,
-            func.count(FinancialClinicResponse.id).label('count')
+            func.count(FinancialClinicResponse.id).label('count'),
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -268,11 +273,16 @@ async def get_emirate_breakdown(
         results = query.group_by(FinancialClinicProfile.emirate).all()
         
         breakdown = []
-        for emirate, count in results:
+        for emirate, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if emirate:
                 breakdown.append({
                     "emirate": emirate,
-                    "count": count
+                    "count": count,
+                    "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                 })
                 
         breakdown.sort(key=lambda x: x['count'], reverse=True)
@@ -342,11 +352,16 @@ async def get_children_breakdown(
                 # Optimized approach: Get sum of scores and count in the main query
                 pass
 
-        # Re-query to get avg scores
+        # Query with avg scores and traffic light counts
+        from sqlalchemy import case
         score_query = db.query(
             FinancialClinicProfile.children,
             func.count(FinancialClinicResponse.id).label('count'),
-            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -358,7 +373,7 @@ async def get_children_breakdown(
         results = score_query.group_by(FinancialClinicProfile.children).all()
         
         breakdown = []
-        for child_count, count, avg_score in results:
+        for child_count, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if child_count is not None:
                 label = str(child_count)
                 if child_count >= 5:
@@ -367,14 +382,14 @@ async def get_children_breakdown(
                     "count_label": label,
                     "count": count,
                     "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                     "sort_key": child_count
                 })
         
-        # Merge 5+ if needed (though simplified here)
-        # Sort by numeric value
         breakdown.sort(key=lambda x: x['sort_key'])
-        
-        # Remove sort key
         for item in breakdown:
             del item['sort_key']
             
@@ -426,11 +441,16 @@ async def get_income_breakdown(
         query = apply_date_range_filter(query, date_range, start_date, end_date)
         query = apply_demographic_filters(query, filters, db)
         
-        # Re-query to get avg scores
+        # Query with avg scores and traffic light counts
+        from sqlalchemy import case
         score_query = db.query(
             FinancialClinicProfile.income_range,
             func.count(FinancialClinicResponse.id).label('count'),
-            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -442,7 +462,6 @@ async def get_income_breakdown(
         results = score_query.group_by(FinancialClinicProfile.income_range).all()
         
         breakdown = []
-        # Define sort order for income ranges
         income_order = {
             "Below AED 5,000": 1,
             "AED 5,000 to AED 10,000": 2,
@@ -454,18 +473,20 @@ async def get_income_breakdown(
             "Above AED 100,000": 8
         }
         
-        for income_range, count, avg_score in results:
+        for income_range, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if income_range:
                 breakdown.append({
                     "range": income_range,
                     "count": count,
                     "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                     "sort_order": income_order.get(income_range, 99)
                 })
                 
         breakdown.sort(key=lambda x: x['sort_order'])
-        
-        # Remove sort order
         for item in breakdown:
             del item['sort_order']
             
