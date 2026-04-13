@@ -2297,13 +2297,26 @@ async def get_age_breakdown(
                         age_group = "60+"
                         
                     if age_group not in age_group_data:
-                        age_group_data[age_group] = {'count': 0, 'total_score': 0}
+                        age_group_data[age_group] = {
+                            'count': 0, 'total_score': 0,
+                            'excellent': 0, 'good': 0,
+                            'needs_improvement': 0, 'at_risk': 0
+                        }
                     age_group_data[age_group]['count'] += 1
-                    age_group_data[age_group]['total_score'] += response.total_score
-                    
+                    age_group_data[age_group]['total_score'] += (response.total_score or 0)
+                    band = response.status_band or ''
+                    if band == 'Excellent':
+                        age_group_data[age_group]['excellent'] += 1
+                    elif band == 'Good':
+                        age_group_data[age_group]['good'] += 1
+                    elif band == 'Needs Improvement':
+                        age_group_data[age_group]['needs_improvement'] += 1
+                    elif band == 'At Risk':
+                        age_group_data[age_group]['at_risk'] += 1
+
                 except Exception:
                     continue
-        
+
         # Format response
         age_groups = []
         for age_group, data in age_group_data.items():
@@ -2311,7 +2324,11 @@ async def get_age_breakdown(
             age_groups.append({
                 "age_group": age_group,
                 "count": data["count"],
-                "avg_score": avg_score
+                "avg_score": avg_score,
+                "excellent": data["excellent"],
+                "good": data["good"],
+                "needs_improvement": data["needs_improvement"],
+                "at_risk": data["at_risk"],
             })
         
         # Sort by age group
