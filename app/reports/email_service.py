@@ -686,22 +686,29 @@ National Bonds Team
         client_link = "https://financialclinic.ae/company/nationalbonds/financial-clinic"
         if language == "ar":
             return f"""
-            <p>لقد مر بعض الوقت منذ آخر تقييم لصحتك المالية.</p>
+            <p>مرّ بعض الوقت منذ آخر مرة فحصتم فيها صحتكم المالية.</p>
 
-            <p>الصحة المالية هي رحلة وليست وجهة. تساعدك المراجعات المنتظمة على تتبع تقدمك وتعديل استراتيجيتك مع تغير حياتك.</p>
+            <p>وقد حان وقت فحصكم الدوري لصحتكم المالية، تمامًا مثل صحتكم الجسدية، يمكن لوضعكم المالي أن يتغير مع مرور الوقت.
+            فما كان مناسبًا قبل ستة أشهر، قد يبدو مختلفًا اليوم.</p>
 
-            <p><strong>لماذا تجري تقييماً جديداً؟</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ شاهد كيف تحسنت نتيجتك</li>
-                <li>✓ قم بتحديث أهدافك المالية</li>
-                <li>✓ احصل على توصيات جديدة</li>
+            <p>لهذا، حان الوقت للعودة إلى تقييم العيادة المالية لصحتكم المالية الآن.</p>
+
+            <p><strong>في بضع دقائق فقط، يمكنكم:</strong></p>
+            <ul style="line-height: 2;">
+                <li>• تحديث رؤيتكم لوضعكم المالي الحالي</li>
+                <li>• اكتشاف فرص جديدة</li>
+                <li>• الحصول على إرشادات محدثة تدعم خطواتكم القادمة</li>
             </ul>
+
+            <p><strong>التقييم لا يزال مجانيًا، سريعًا، ولا يترتب عليه أي التزامات.</strong></p>
+
+            <p>لأن البقاء على المسار الصحيح يبدأ بالاطلاع المستمر.</p>
 
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{client_link}"
                    style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px;
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    ابدأ تقييماً جديداً
+                    ابدؤوا فحصكم المالي مرة أخرى الآن
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
@@ -710,22 +717,29 @@ National Bonds Team
             """
         else:
             return f"""
-            <p>It's been a while since your last Financial Health Assessment.</p>
+            <p>It's been a while since you last checked your financial health.</p>
 
-            <p>Financial health is a journey, not a destination. Regular checkups help you track your progress and adjust your strategy as your life changes.</p>
+            <p>Just like your physical wellbeing, your financial situation can change over time.
+            What was right six months ago may look different today.</p>
 
-            <p><strong>Why take a new assessment?</strong></p>
-            <ul style="line-height: 1.8;">
-                <li>✓ See how your score has improved</li>
-                <li>✓ Update your financial goals</li>
-                <li>✓ Get fresh recommendations</li>
+            <p><strong>That's why it's a good time to revisit your Financial Clinic assessment.</strong></p>
+
+            <p><strong>In just a few minutes, you can:</strong></p>
+            <ul style="line-height: 2;">
+                <li>&bull; Refresh your view of your current financial position</li>
+                <li>&bull; Identify new opportunities</li>
+                <li>&bull; Get updated guidance to support your next steps</li>
             </ul>
+
+            <p><strong>The assessment is still free, quick, and comes with no obligations.</strong></p>
+
+            <p>Because staying on track starts with staying informed.</p>
 
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{client_link}"
                    style="display: inline-block; background-color: #3fab4c; color: white; padding: 15px 40px;
                           text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
-                    Complete your financial check-up now
+                    Take your financial check-up again
                 </a>
             </div>
             <p style="text-align: center; font-size: 12px; color: #666;">
