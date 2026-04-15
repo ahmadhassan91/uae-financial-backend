@@ -62,8 +62,8 @@ INSIGHTS_MATRIX = {
                 "ar": "لديكم دخل ثابت ومستمر. ركزوا الآن على النمو طويل الأجل وتراكم الثروة من خلال خطة My Million."
             },
             "default": {
-                "en": "You have a stable, consistent income. Focus on long-term growth and wealth-building opportunities. You can utilize our Booster offerings to achieve long-term savings growth.",
-                "ar": "لديكم دخل ثابت ومستقر. ركّزوا على فرص النمو طويل الأجل وبناء الثروة. يمكنكم الاستفادة من عروض Booster لدينا لتحقيق نمو مستدام لمدخراتكم على المدى الطويل."
+                "en": "You have a stable, consistent income. Now focus on long-term growth and wealth-building opportunities.",
+                "ar": "لديكم دخل ثابت ومستمر. ركزوا الآن على النمو طويل الأجل وفرص بناء الثروة."
             }
         }
     },
@@ -108,18 +108,18 @@ INSIGHTS_MATRIX = {
                 "ar": "لقد بنيتم شبكة أمان جزئية. استمروا في تنميتها لتغطية 6 أشهر من نفقات المعيشة، وعززوا مدخرات الطوارئ مع خطة عهد."
             },
             "else": {
-                "en": "You've built a partial safety net. Keep growing it to cover 6 months of living expenses. Enhance your emergency savings with our myPlan monthly savings plan.",
-                "ar": "لقد بنيتم شبكة أمان جزئية. واصلوا في تنميتها لتغطية 6 أشهر من نفقات المعيشة. عزّزوا مدخرات الطوارئ لديكم مع خطة الادخار الشهرية myPlan."
+                "en": "Enhance your emergency savings with our myPlan monthly savings plan.",
+                "ar": "عززوا مدخرات الطوارئ لديكم مع خطة الادخار الشهرية myPlan."
             },
             "default": {
-                "en": "You've built a partial safety net. Keep growing it to cover 6 months of living expenses. Enhance your emergency savings with our myPlan monthly savings plan.",
-                "ar": "لقد بنيتم شبكة أمان جزئية. واصلوا في تنميتها لتغطية 6 أشهر من نفقات المعيشة. عزّزوا مدخرات الطوارئ لديكم مع خطة الادخار الشهرية myPlan."
+                "en": "You've built a partial safety net. Keep growing it to cover 6 months of living expenses.",
+                "ar": "لقد بنيتم شبكة أمان جزئية. استمروا في تنميتها لتغطية 6 أشهر من نفقات المعيشة."
             }
         },
         "excellent": {
             "default": {
-                "en": "You're well-prepared for emergencies. Consider investing your surplus for long-term sustainable growth. Our Term Sukuk offering provides flexible duration with monthly and quarterly profit payout option.",
-                "ar": "أنتم على استعداد جيد لمواجهة الطوارئ. فكّروا في استثمار الفائض لديكم لتحقيق نمو مستدام على المدى الطويل. يمنحكم Term Sukuk مددًا مرنة مع خيار توزيع العوائد شهريًا أو ربع سنويًا."
+                "en": "You're well-prepared for emergencies. Consider investing your surplus for long-term sustainable growth.",
+                "ar": "أنتم مستعدون جيدًا للطوارئ. فكروا في استثمار الفائض لتحقيق نمو مستدام على المدى الطويل."
             }
         }
     },
@@ -171,17 +171,17 @@ INSIGHTS_MATRIX = {
             }
         },
         "good": {
-            "children_above_zero": {
-                "en": "You have some coverage, but it may not be sufficient. Review your plans and consider saving for your child's education with My Education Plan.",
-                "ar": "لديكم بعض المدخرات، لكنها قد لا تكون كافية. راجعوا خططكم وفكّروا في الادخار لتعليم طفلكم مع خطة تعليمي."
-            },
             "children_zero": {
-                "en": "You have basic financial protection in place, but coverage may be limited. Our Second Salary monthly plan offers flexible and defined duration to achieve your secondary income goals.",
-                "ar": "لديكم حماية مالية أساسية، لكنها قد تكون محدودة. يقدّم برنامج الراتب الإضافي مدة محددة ومرنة لمساعدتكم على تحقيق دخل إضافي في المستقبل."
+                "en": "You have basic financial protection in place, but coverage may be limited.",
+                "ar": "تتوفر لديكم حماية مالية مبدئية، لكنها قد تكون محدودة."
+            },
+            "children_above_zero": {
+                "en": "You have some coverage, but it may not be sufficient. Review your plans and consider saving for your child's education.",
+                "ar": "لديكم بعض التغطية، لكنها قد لا تكون كافية. راجعوا خططكم وفكروا في الادخار لتعليم أبنائكم."
             },
             "default": {
-                "en": "You have basic financial protection in place, but coverage may be limited. Our Second Salary monthly plan offers flexible and defined duration to achieve your secondary income goals.",
-                "ar": "لديكم حماية مالية أساسية، لكنها قد تكون محدودة. يقدّم برنامج الراتب الإضافي مدة محددة ومرنة لمساعدتكم على تحقيق دخل إضافي في المستقبل."
+                "en": "You have basic financial protection in place, but coverage may be limited.",
+                "ar": "تتوفر لديكم حماية مالية مبدئية، لكنها قد تكون محدودة."
             }
         },
         "excellent": {
