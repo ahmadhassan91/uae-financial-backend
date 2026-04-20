@@ -16,10 +16,10 @@ class ConsolidatedExportService:
     def __init__(self, db: Session):
         self.db = db
 
-    def generate_csv(self, filters: Dict[str, Any] = None) -> io.StringIO:
+    def get_consolidated_data(self, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """
-        Generates a consolidated CSV containing Submissions, Leads, and Incomplete surveys.
-        Uses the SAME format as existing export-csv endpoint.
+        Fetches consolidated data for Submissions, Leads, and Incomplete surveys.
+        Returns a list of dictionaries.
         """
         if filters is None:
             filters = {}
@@ -59,31 +59,7 @@ class ConsolidatedExportService:
         responses = responses_query.order_by(FinancialClinicResponse.created_at.desc()).all()
         incomplete_surveys = incomplete_query.order_by(IncompleteSurvey.created_at.desc()).all()
 
-        # Prepare CSV using SAME format as export-csv
-        output = io.StringIO()
-        writer = csv.writer(output)
-
-        # Check if Companies Module is enabled
-        companies_module_enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
-
-        # Header - SAME as export-csv but with Status and Consultation columns
-        base_headers = [
-            'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
-            'Employment Status', 'Income Range'
-        ]
-        if companies_module_enabled:
-            base_headers.append('Company')
-        base_headers.extend([
-            'Total Score', 'Status Band',
-            'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
-            'Debt Management Score', 'Retirement Planning Score', 'Financial Protection Score',
-            'Financial Knowledge Score', 'Leads Requested', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
-            'Action Plan 4', 'Action Plan 5', 'Submission Date',
-            'Consultation Status', 'Consultation Source', 'Preferred Contact Method',
-            'Preferred Time', 'Message', 'Consultation Created At', 'Contacted At', 'Scheduled At', 'Notes',
-            'Current Step', 'Total Steps', 'Completion %', 'Status'
-        ])
-        writer.writerow(base_headers)
+        results = []
 
         # Fetch all consultation requests for the responses
         response_ids = [r[0].id for r in responses]
@@ -97,8 +73,6 @@ class ConsolidatedExportService:
 
         # Process Responses (Submissions & Leads)
         for response, profile in responses:
-            status = "Lead" if response.leads_requested else "Submitted"
-
             # Use profile_snapshot if available
             if response.profile_snapshot:
                 profile_data = response.profile_snapshot
@@ -117,125 +91,196 @@ class ConsolidatedExportService:
                     'company_name': profile.company_name if hasattr(profile, 'company_name') else '',
                 }
 
-            age = self._calculate_age(profile_data.get('date_of_birth', ''))
-            
-            # Extract category scores
-            income_stream_score = self._get_category_score(response.category_scores, 'Income Stream')
-            savings_habit_score = self._get_category_score(response.category_scores, 'Savings Habit')
-            debt_management_score = self._get_category_score(response.category_scores, 'Debt Management')
-            retirement_planning_score = self._get_category_score(response.category_scores, 'Retirement Planning')
-            financial_protection_score = self._get_category_score(response.category_scores, 'Protecting Your Family')
-            financial_knowledge_score = self._get_category_score(response.category_scores, 'Emergency Savings')
-
-            # Extract insights
-            insights = self._extract_insights(response.insights)
-
-            # Format mobile number
-            mobile_number = profile_data.get('mobile_number', '')
-            if mobile_number and not mobile_number.startswith('+'):
-                mobile_number = '+971 ' + mobile_number
-
             # Get consultation data
             consultation = consultation_map.get(response.id)
+            
+            # Helper to get unique URL
+            unique_url = ''
+            if response.company_tracker:
+                unique_url = response.company_tracker.unique_url
+            elif response.company_tracker_id:
+                 tracker = self.db.query(CompanyTracker).filter(CompanyTracker.id == response.company_tracker_id).first()
+                 if tracker:
+                     unique_url = tracker.unique_url
 
-            # Build row
-            row_data = [
-                response.id,
-                profile_data.get('name', ''),
-                profile_data.get('email', ''),
-                mobile_number,
-                age,
-                profile_data.get('gender', ''),
-                profile_data.get('nationality', ''),
-                profile_data.get('emirate', ''),
-                profile_data.get('children', ''),
-                profile_data.get('employment_status', ''),
-                profile_data.get('income_range', ''),
-            ]
-            if companies_module_enabled:
-                row_data.append(profile_data.get('company_name', ''))
-            row_data.extend([
-                round(response.total_score, 2) if response.total_score else 0,
-                response.status_band if response.status_band else '',
-                response.questions_answered if response.questions_answered else 0,
-                income_stream_score,
-                savings_habit_score,
-                debt_management_score,
-                retirement_planning_score,
-                financial_protection_score,
-                financial_knowledge_score,
-                'Y' if response.leads_requested else 'N',
-                insights[0], insights[1], insights[2], insights[3], insights[4],
-                response.created_at.strftime('%Y-%m-%d %H:%M:%S') if response.created_at else '',
-                consultation.status if consultation else '',
-                consultation.source if consultation else '',
-                consultation.preferred_contact_method if consultation else '',
-                consultation.preferred_time if consultation else '',
-                consultation.message if consultation else '',
-                consultation.created_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.created_at else '',
-                consultation.contacted_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.contacted_at else '',
-                consultation.scheduled_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.scheduled_at else '',
-                consultation.notes if consultation else '',
-                0,  # Current Step
-                response.total_questions if response.total_questions else 15,
-                100,  # Completion %
-                status
-            ])
-            writer.writerow(row_data)
+            results.append({
+                'id': response.id,
+                'type': "Lead" if response.leads_requested else "Submitted",
+                'profile_data': profile_data,
+                'response_data': response,
+                'consultation_data': consultation,
+                'unique_url': unique_url,
+                'created_at': response.created_at
+            })
 
-        # Process Incomplete Surveys
+        # Process Incomplete Surveys (Invert the logic for filtering here to match old behavior)
         for survey in incomplete_surveys:
-            # Check demographic filters for incomplete surveys (Python-side)
             if not self._matches_filters(survey, filters):
                 continue
-
-            survey_responses = survey.responses or {}
             
-            email = survey.email or survey_responses.get('email', '')
-            phone = survey.phone_number or survey_responses.get('mobile_number', '')
-            if phone and not phone.startswith('+'):
-                phone = '+971 ' + phone
+            results.append({
+                'id': f"INC-{survey.id}",
+                'type': 'Incomplete',
+                'survey_record': survey,
+                'created_at': survey.created_at
+            })
 
-            comp_name = ''
-            if survey.company:
-                comp_name = survey.company.company_name
+        # Sort combined results by created_at desc
+        results.sort(key=lambda x: x['created_at'] if x['created_at'] else datetime.min, reverse=True)
+        return results
 
-            completion_pct = 0
-            if survey.total_steps > 0:
-                completion_pct = round((survey.current_step / survey.total_steps) * 100, 1)
+    def generate_csv(self, filters: Dict[str, Any] = None) -> io.StringIO:
+        """Generates a consolidated CSV using SAME format as existing export-csv."""
+        data_records = self.get_consolidated_data(filters)
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
 
-            row_data = [
-                f"INC-{survey.id}",
-                survey_responses.get('name', ''),
-                email,
-                phone,
-                survey_responses.get('age', ''),
-                survey_responses.get('gender', ''),
-                survey_responses.get('nationality', ''),
-                survey_responses.get('emirate', ''),
-                survey_responses.get('children', ''),
-                survey_responses.get('employment_status', ''),
-                survey_responses.get('income_range', ''),
-            ]
-            if companies_module_enabled:
-                row_data.append(comp_name)
-            row_data.extend([
-                '',  # Total Score
-                '',  # Status Band
-                survey.current_step,  # Questions Answered
-                '', '', '', '', '', '',  # Category scores
-                'N',  # Leads Requested
-                '', '', '', '', '',  # Insights
-                survey.created_at.strftime('%Y-%m-%d %H:%M:%S') if survey.created_at else '',
-                '', '', '', '', '', '', '', '', '',  # Consultation fields
-                survey.current_step,  # Current Step
-                survey.total_steps,  # Total Steps
-                completion_pct,  # Completion %
-                'Incomplete'
-            ])
-            writer.writerow(row_data)
+        companies_module_enabled = os.environ.get("COMPANIES_MODULE_ENABLED", "true").lower() == "true"
+
+        # Headers
+        headers = [
+            'ID', 'Name', 'Email', 'Mobile Number', 'Age', 'Gender', 'Nationality', 'Emirate', 'Children',
+            'Employment Status', 'Income Range'
+        ]
+        if companies_module_enabled:
+            headers.extend(['Company', 'Unique URL'])
+        
+        headers.extend([
+            'Total Score', 'Status Band', 'Questions Answered', 
+            'Income Stream Score', 'Savings Habit Score', 'Debt Management Score', 
+            'Retirement Planning Score', 'Financial Protection Score', 'Financial Knowledge Score', 
+            'Leads Requested', 'Action Plan 1', 'Action Plan 2', 'Action Plan 3', 
+            'Action Plan 4', 'Action Plan 5', 'Submission Date',
+            'Consultation Status', 'Consultation Source', 'Preferred Contact Method',
+            'Preferred Time', 'Message', 'Consultation Created At', 'Contacted At', 'Scheduled At', 'Notes',
+            'Current Step', 'Total Steps', 'Completion %', 'Status'
+        ])
+        writer.writerow(headers)
+
+        for record in data_records:
+            if record['type'] in ["Submitted", "Lead"]:
+                response = record['response_data']
+                profile_data = record['profile_data']
+                consultation = record['consultation_data']
+                
+                age = self._calculate_age(profile_data.get('date_of_birth', ''))
+                mobile = profile_data.get('mobile_number', '')
+                if mobile and not mobile.startswith('+'):
+                    mobile = '+971 ' + mobile
+
+                # Extract category scores
+                income_stream_score = self._get_category_score(response.category_scores, 'Income Stream')
+                savings_habit_score = self._get_category_score(response.category_scores, 'Savings Habit')
+                debt_management_score = self._get_category_score(response.category_scores, 'Debt Management')
+                retirement_planning_score = self._get_category_score(response.category_scores, 'Retirement Planning')
+                financial_protection_score = self._get_category_score(response.category_scores, 'Protecting Your Family')
+                financial_knowledge_score = self._get_category_score(response.category_scores, 'Emergency Savings')
+
+                insights = self._extract_insights(response.insights)
+                
+                row = [
+                    response.id,
+                    profile_data.get('name', ''),
+                    profile_data.get('email', ''),
+                    mobile,
+                    age,
+                    profile_data.get('gender', ''),
+                    profile_data.get('nationality', ''),
+                    profile_data.get('emirate', ''),
+                    profile_data.get('children', ''),
+                    profile_data.get('employment_status', ''),
+                    profile_data.get('income_range', ''),
+                ]
+                if companies_module_enabled:
+                    row.append(profile_data.get('company_name', ''))
+                    row.append(record['unique_url'])
+                
+                row.extend([
+                    round(response.total_score, 2) if response.total_score else 0,
+                    response.status_band if response.status_band else '',
+                    response.questions_answered if response.questions_answered else 0,
+                    income_stream_score,
+                    savings_habit_score,
+                    debt_management_score,
+                    retirement_planning_score,
+                    financial_protection_score,
+                    financial_knowledge_score,
+                    'Y' if response.leads_requested else 'N',
+                    insights[0], insights[1], insights[2], insights[3], insights[4],
+                    response.created_at.strftime('%Y-%m-%d %H:%M:%S') if response.created_at else '',
+                    consultation.status if consultation else '',
+                    consultation.source if consultation else '',
+                    consultation.preferred_contact_method if consultation else '',
+                    consultation.preferred_time if consultation else '',
+                    consultation.message if consultation else '',
+                    consultation.created_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.created_at else '',
+                    consultation.contacted_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.contacted_at else '',
+                    consultation.scheduled_at.strftime('%Y-%m-%d %H:%M:%S') if consultation and consultation.scheduled_at else '',
+                    consultation.notes if consultation else '',
+                    0,  # Current Step
+                    response.total_questions if response.total_questions else 15,
+                    100,  # Completion %
+                    record['type']
+                ])
+                writer.writerow(row)
+            
+            elif record['type'] == 'Incomplete':
+                survey = record['survey_record']
+                survey_responses = survey.responses or {}
+                
+                email = survey.email or survey_responses.get('email', '')
+                phone = survey.phone_number or survey_responses.get('mobile_number', '')
+                if phone and not phone.startswith('+'):
+                    phone = '+971 ' + phone
+
+                comp_name = ''
+                if survey.company:
+                    comp_name = survey.company.company_name
+
+                completion_pct = 0
+                if survey.total_steps > 0:
+                    completion_pct = round((survey.current_step / survey.total_steps) * 100, 1)
+
+                row = [
+                    f"INC-{survey.id}",
+                    survey_responses.get('name', ''),
+                    email,
+                    phone,
+                    survey_responses.get('age', ''),
+                    survey_responses.get('gender', ''),
+                    survey_responses.get('nationality', ''),
+                    survey_responses.get('emirate', ''),
+                    survey_responses.get('children', ''),
+                    survey_responses.get('employment_status', ''),
+                    survey_responses.get('income_range', ''),
+                ]
+                if companies_module_enabled:
+                    row.append(comp_name)
+                    inc_unique_url = survey.company_url
+                    if not inc_unique_url and survey.company:
+                        inc_unique_url = survey.company.unique_url
+                    row.append(inc_unique_url or '')
+
+                row.extend([
+                    '',  # Total Score
+                    '',  # Status Band
+                    survey.current_step,  # Questions Answered
+                    '', '', '', '', '', '',  # Category scores
+                    'N',  # Leads Requested
+                    '', '', '', '', '',  # Insights
+                    survey.created_at.strftime('%Y-%m-%d %H:%M:%S') if survey.created_at else '',
+                    '', '', '', '', '', '', '', '', '',  # Consultation fields
+                    survey.current_step,  # Current Step
+                    survey.total_steps,  # Total Steps
+                    completion_pct,  # Completion %
+                    'Incomplete'
+                ])
+                writer.writerow(row)
 
         return output
+
+
 
     def _calculate_age(self, dob_str):
         if not dob_str or (isinstance(dob_str, str) and dob_str.strip() == ''):

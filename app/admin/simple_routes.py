@@ -241,10 +241,10 @@ async def get_emirate_breakdown(
     unique_users_only: Optional[bool] = Query(None),
     exclude_unique_urls: Optional[bool] = Query(None)
 ):
-    """Get breakdown by emirate."""
+    """Get breakdown by emirate with traffic light counts."""
     try:
         from app.models import FinancialClinicResponse, FinancialClinicProfile
-        from sqlalchemy import func
+        from sqlalchemy import func, case
         
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
@@ -256,7 +256,12 @@ async def get_emirate_breakdown(
         
         query = db.query(
             FinancialClinicProfile.emirate,
-            func.count(FinancialClinicResponse.id).label('count')
+            func.count(FinancialClinicResponse.id).label('count'),
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -268,11 +273,16 @@ async def get_emirate_breakdown(
         results = query.group_by(FinancialClinicProfile.emirate).all()
         
         breakdown = []
-        for emirate, count in results:
+        for emirate, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if emirate:
                 breakdown.append({
                     "emirate": emirate,
-                    "count": count
+                    "count": count,
+                    "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                 })
                 
         breakdown.sort(key=lambda x: x['count'], reverse=True)
@@ -342,11 +352,16 @@ async def get_children_breakdown(
                 # Optimized approach: Get sum of scores and count in the main query
                 pass
 
-        # Re-query to get avg scores
+        # Query with avg scores and traffic light counts
+        from sqlalchemy import case
         score_query = db.query(
             FinancialClinicProfile.children,
             func.count(FinancialClinicResponse.id).label('count'),
-            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -358,7 +373,7 @@ async def get_children_breakdown(
         results = score_query.group_by(FinancialClinicProfile.children).all()
         
         breakdown = []
-        for child_count, count, avg_score in results:
+        for child_count, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if child_count is not None:
                 label = str(child_count)
                 if child_count >= 5:
@@ -367,14 +382,14 @@ async def get_children_breakdown(
                     "count_label": label,
                     "count": count,
                     "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                     "sort_key": child_count
                 })
         
-        # Merge 5+ if needed (though simplified here)
-        # Sort by numeric value
         breakdown.sort(key=lambda x: x['sort_key'])
-        
-        # Remove sort key
         for item in breakdown:
             del item['sort_key']
             
@@ -426,11 +441,16 @@ async def get_income_breakdown(
         query = apply_date_range_filter(query, date_range, start_date, end_date)
         query = apply_demographic_filters(query, filters, db)
         
-        # Re-query to get avg scores
+        # Query with avg scores and traffic light counts
+        from sqlalchemy import case
         score_query = db.query(
             FinancialClinicProfile.income_range,
             func.count(FinancialClinicResponse.id).label('count'),
-            func.avg(FinancialClinicResponse.total_score).label('avg_score')
+            func.avg(FinancialClinicResponse.total_score).label('avg_score'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Excellent', 1), else_=0)).label('excellent'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Good', 1), else_=0)).label('good'),
+            func.sum(case((FinancialClinicResponse.status_band == 'Needs Improvement', 1), else_=0)).label('needs_improvement'),
+            func.sum(case((FinancialClinicResponse.status_band == 'At Risk', 1), else_=0)).label('at_risk'),
         ).join(
             FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
@@ -442,7 +462,6 @@ async def get_income_breakdown(
         results = score_query.group_by(FinancialClinicProfile.income_range).all()
         
         breakdown = []
-        # Define sort order for income ranges
         income_order = {
             "Below AED 5,000": 1,
             "AED 5,000 to AED 10,000": 2,
@@ -454,18 +473,20 @@ async def get_income_breakdown(
             "Above AED 100,000": 8
         }
         
-        for income_range, count, avg_score in results:
+        for income_range, count, avg_score, excellent, good, needs_improvement, at_risk in results:
             if income_range:
                 breakdown.append({
                     "range": income_range,
                     "count": count,
                     "average_score": round(float(avg_score), 2) if avg_score else 0,
+                    "excellent": int(excellent or 0),
+                    "good": int(good or 0),
+                    "needs_improvement": int(needs_improvement or 0),
+                    "at_risk": int(at_risk or 0),
                     "sort_order": income_order.get(income_range, 99)
                 })
                 
         breakdown.sort(key=lambda x: x['sort_order'])
-        
-        # Remove sort order
         for item in breakdown:
             del item['sort_order']
             
@@ -776,6 +797,7 @@ async def export_simple_admin_csv(
         ]
         if companies_module_enabled:
             base_headers.append('Company')
+            base_headers.append('Unique URL')
         base_headers.extend([
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
@@ -865,6 +887,15 @@ async def export_simple_admin_csv(
             # Add company name if Companies Module is enabled
             if companies_module_enabled:
                 row_data.append(profile_data.get('company_name', ''))
+                
+                unique_url = ''
+                if r.company_tracker:
+                    unique_url = r.company_tracker.unique_url
+                elif r.company_tracker_id:
+                    ct = db.query(CompanyTracker).filter(CompanyTracker.id == r.company_tracker_id).first()
+                    if ct:
+                        unique_url = ct.unique_url
+                row_data.append(unique_url)
             row_data.extend([
                 round(r.total_score, 2) if r.total_score else 0,
                 r.status_band if r.status_band else '',
@@ -1198,6 +1229,14 @@ async def export_simple_admin_excel(
                 if not mobile_number.startswith('+'):
                     # Default to UAE country code if not specified
                     mobile_number = '+971 ' + mobile_number
+
+            unique_url = ''
+            if r.company_tracker:
+                unique_url = r.company_tracker.unique_url
+            elif r.company_tracker_id:
+                ct = db.query(CompanyTracker).filter(CompanyTracker.id == r.company_tracker_id).first()
+                if ct:
+                    unique_url = ct.unique_url
             
             rows.append({
                 'id': r.id,
@@ -1212,6 +1251,7 @@ async def export_simple_admin_excel(
                 'employment_status': profile_data.get('employment_status', ''),
                 'income_range': profile_data.get('income_range', ''),
                 'company': profile_data.get('company_name', ''),
+                'unique_url': unique_url,
                 'total_score': round(r.total_score, 2) if r.total_score else 0,
                 'status_band': r.status_band if r.status_band else '',
                 'questions_answered': r.questions_answered if r.questions_answered else 0,
@@ -1247,6 +1287,7 @@ async def export_simple_admin_excel(
         ]
         if companies_module_enabled:
             headers.append('Company')
+            headers.append('Unique URL')
         headers.extend([
             'Total Score', 'Status Band',
             'Questions Answered', 'Income Stream Score', 'Savings Habit Score',
@@ -1273,6 +1314,7 @@ async def export_simple_admin_excel(
             ]
             if companies_module_enabled:
                 row_data.append(row['company'])
+                row_data.append(row['unique_url'])
             row_data.extend([
                 row['total_score'],
                 row['status_band'],
@@ -1594,26 +1636,83 @@ async def get_filter_options(
         
         # Get company details for company management analytics
         # Only include companies that have at least one submission
-        from app.models import CompanyDetails, FinancialClinicProfile
+        from app.models import CompanyDetails, FinancialClinicProfile, FinancialClinicResponse
         from sqlalchemy import func
         
-        # Subquery to get company names with submissions
-        companies_with_submissions = db.query(
+        # Subquery to get company names with submissions from BOTH sources:
+        # 1. FinancialClinicProfile.company_name (profile-level)
+        # 2. FinancialClinicResponse.profile_snapshot (response-level, for reused profiles)
+        companies_from_profiles = db.query(
             FinancialClinicProfile.company_name
         ).filter(
             FinancialClinicProfile.company_name.isnot(None),
             FinancialClinicProfile.company_name != ''
         ).distinct().all()
         
-        company_names_with_submissions = {row[0] for row in companies_with_submissions if row[0]}
+        # Also get company names from profile_snapshot (JSON field)
+        # This catches cases where existing profiles were reused with different company names
+        snapshot_responses = db.query(
+            FinancialClinicResponse.profile_snapshot
+        ).filter(
+            FinancialClinicResponse.profile_snapshot.isnot(None)
+        ).all()
         
-        # Get all active company details that have submissions
-        company_details = db.query(CompanyDetails).filter(
-            CompanyDetails.is_active == True,
-            CompanyDetails.company_name.in_(company_names_with_submissions)
+        snapshot_company_names = set()
+        for row in snapshot_responses:
+            if row[0] and isinstance(row[0], dict):
+                cn = row[0].get('company_name')
+                if cn and cn.strip():
+                    snapshot_company_names.add(cn.strip())
+        
+        # Merge both sources
+        company_names_with_submissions = {row[0].lower().strip() for row in companies_from_profiles if row[0]}
+        company_names_with_submissions.update({name.lower().strip() for name in snapshot_company_names})
+        
+        # Also collect the original-case names from snapshots for free-text display
+        all_company_names_original = {row[0].strip(): row[0].strip() for row in companies_from_profiles if row[0]}
+        for name in snapshot_company_names:
+            key = name.lower().strip()
+            if key not in {k.lower() for k in all_company_names_original}:
+                all_company_names_original[name] = name
+        
+        # Get all active predefined company details that have submissions
+        predefined_companies = db.query(CompanyDetails).filter(
+            CompanyDetails.is_active == True
         ).order_by(CompanyDetails.company_name).all()
         
-        # Build list with "Blank" option at top for submissions without company
+        # Filter to only include predefined companies that have submissions
+        predefined_with_submissions = [
+            c for c in predefined_companies 
+            if c.company_name and c.company_name.lower().strip() in company_names_with_submissions
+        ]
+        
+        predefined_names = {c.company_name.lower().strip() for c in predefined_with_submissions if c.company_name}
+        
+        # Get unique free-text company names (from BOTH profiles AND snapshots) not in predefined list
+        # From profiles
+        free_text_from_profiles = db.query(
+            FinancialClinicProfile.company_name
+        ).filter(
+            FinancialClinicProfile.company_name.isnot(None),
+            FinancialClinicProfile.company_name != '',
+            FinancialClinicProfile.company_details_id.is_(None)
+        ).distinct().all()
+        
+        # Merge free-text from profiles and snapshots
+        free_text_names = set()
+        for row in free_text_from_profiles:
+            name = row[0]
+            if name and name.lower().strip() not in predefined_names:
+                free_text_names.add(name)
+        
+        # Add snapshot company names that are not in predefined list
+        for name in snapshot_company_names:
+            if name.lower().strip() not in predefined_names:
+                free_text_names.add(name)
+        
+        unique_free_text = sorted(list(free_text_names))
+        
+        # Build active_companies_list with "Blank" at top
         active_companies_list = [
             {
                 "id": None,
@@ -1622,13 +1721,24 @@ async def get_filter_options(
             }
         ]
         
+        # 1. Add only predefined companies that have submissions
         active_companies_list.extend([
             {
                 "id": c.id,
                 "name": c.company_name,
-                "unique_url": None  # CompanyDetails don't have URLs
+                "unique_url": None
             }
-            for c in company_details
+            for c in predefined_with_submissions
+        ])
+        
+        # 2. Add free-text companies with a prefix to distinguish them in filters
+        active_companies_list.extend([
+            {
+                "id": f"free_text:{name}",
+                "name": f"{name} (User Entry)",
+                "unique_url": None
+            }
+            for name in unique_free_text
         ])
         
         return {
@@ -2187,13 +2297,26 @@ async def get_age_breakdown(
                         age_group = "60+"
                         
                     if age_group not in age_group_data:
-                        age_group_data[age_group] = {'count': 0, 'total_score': 0}
+                        age_group_data[age_group] = {
+                            'count': 0, 'total_score': 0,
+                            'excellent': 0, 'good': 0,
+                            'needs_improvement': 0, 'at_risk': 0
+                        }
                     age_group_data[age_group]['count'] += 1
-                    age_group_data[age_group]['total_score'] += response.total_score
-                    
+                    age_group_data[age_group]['total_score'] += (response.total_score or 0)
+                    band = response.status_band or ''
+                    if band == 'Excellent':
+                        age_group_data[age_group]['excellent'] += 1
+                    elif band == 'Good':
+                        age_group_data[age_group]['good'] += 1
+                    elif band == 'Needs Improvement':
+                        age_group_data[age_group]['needs_improvement'] += 1
+                    elif band == 'At Risk':
+                        age_group_data[age_group]['at_risk'] += 1
+
                 except Exception:
                     continue
-        
+
         # Format response
         age_groups = []
         for age_group, data in age_group_data.items():
@@ -2201,7 +2324,11 @@ async def get_age_breakdown(
             age_groups.append({
                 "age_group": age_group,
                 "count": data["count"],
-                "avg_score": avg_score
+                "avg_score": avg_score,
+                "excellent": data["excellent"],
+                "good": data["good"],
+                "needs_improvement": data["needs_improvement"],
+                "at_risk": data["at_risk"],
             })
         
         # Sort by age group
@@ -2331,19 +2458,10 @@ async def get_companies_analytics(
     unique_users_only: Optional[bool] = Query(None),
     exclude_unique_urls: Optional[bool] = Query(None)
 ):
-    """Get companies analytics - for companies in CompanyDetails table."""
+    """Get companies analytics - including both predefined and free-text entries."""
     try:
-        from app.models import FinancialClinicResponse, FinancialClinicProfile, CompanyTracker, CompanyDetails
-        
-        # Get list of valid company names from CompanyDetails table
-        valid_companies = db.query(CompanyDetails).filter(
-            CompanyDetails.is_active == True
-        ).all()
-        valid_company_names = {c.company_name.lower().strip(): c for c in valid_companies if c.company_name}
-        
-        # If no companies in CompanyDetails, return empty list
-        if not valid_company_names:
-            return {"companies": []}
+        from app.models import FinancialClinicResponse, FinancialClinicProfile
+        from sqlalchemy import func
         
         # Parse filters
         filters = parse_filter_params(
@@ -2355,97 +2473,78 @@ async def get_companies_analytics(
             filters['exclude_unique_urls'] = True
         
         # Get all responses with filters applied
-        query = db.query(FinancialClinicResponse).join(
-            FinancialClinicProfile,
+        query = db.query(
+            FinancialClinicProfile.company_name,
+            FinancialClinicResponse.status_band,
+            FinancialClinicResponse.total_score
+        ).join(
+            FinancialClinicResponse,
             FinancialClinicResponse.profile_id == FinancialClinicProfile.id
         )
-        
-        # Apply demographic filters
-        query = apply_demographic_filters(query, filters, db)
         
         # Apply date range filter
         query = apply_date_range_filter(query, date_range, start_date, end_date)
         
-        responses = query.all()
+        # Apply demographic filters
+        query = apply_demographic_filters(query, filters, db)
         
-        # Apply unique user filter only if requested
-        if unique_users_only:
-            responses = filter_unique_users(responses)
-        unique_responses = responses
+        results = query.all()
         
-        # Group by company - only include companies that exist in CompanyDetails
-        company_data = {}
+        # Group data in Python for flexibility with status bands
+        company_stats = {}
         
-        for response in unique_responses:
-            # Check for company from profile.company_name
-            profile = db.query(FinancialClinicProfile).filter(
-                FinancialClinicProfile.id == response.profile_id
-            ).first()
+        for company_name, status_band, total_score in results:
+            # Use "(Blank)" for null or empty company names
+            display_name = company_name.strip() if company_name and company_name.strip() else "(Blank)"
             
-            company_matched = False
-            matched_company_name = None
+            if display_name not in company_stats:
+                company_stats[display_name] = {
+                    "company": display_name,
+                    "total_submissions": 0,
+                    "excellent": 0,
+                    "good": 0,
+                    "needs_improvement": 0,
+                    "at_risk": 0,
+                    "total_score_sum": 0.0
+                }
             
-            if profile and profile.company_name:
-                company_name_lower = profile.company_name.lower().strip()
-                if company_name_lower in valid_company_names:
-                    company_matched = True
-                    # Use the capitalized name from CompanyDetails
-                    matched_company_name = valid_company_names[company_name_lower].company_name
+            stats = company_stats[display_name]
+            stats["total_submissions"] += 1
+            stats["total_score_sum"] += total_score if total_score else 0
             
-            # Also check for old company_tracker_id system if no profile match
-            # If matched, we attribute it to the CompanyDetails company with the same name
-            if not company_matched and response.company_tracker_id:
-                company_id = response.company_tracker_id
-                company = db.query(CompanyTracker).filter(CompanyTracker.id == company_id).first()
-                
-                if company:
-                    company_name_lower = company.company_name.lower().strip()
-                    if company_name_lower in valid_company_names:
-                        company_matched = True
-                        matched_company_name = valid_company_names[company_name_lower].company_name
-            
-            if company_matched and matched_company_name:
-                company_key = f"company_{matched_company_name}"
-                
-                if company_key not in company_data:
-                    company_data[company_key] = {
-                        "company_name": matched_company_name,
-                        "scores": [],
-                        "status_bands": []
-                    }
-                
-                company_data[company_key]["scores"].append(response.total_score)
-                company_data[company_key]["status_bands"].append(response.status_band)
+            # Map status band to count
+            if status_band == "Excellent":
+                stats["excellent"] += 1
+            elif status_band == "Good":
+                stats["good"] += 1
+            elif status_band == "Needs Improvement":
+                stats["needs_improvement"] += 1
+            elif status_band == "At Risk":
+                stats["at_risk"] += 1
         
-        # Format response
-        companies = []
-        for company_id, data in company_data.items():
-            avg_score = sum(data["scores"]) / len(data["scores"]) if data["scores"] else 0
+        # Calculate averages and format final list
+        final_companies = []
+        for name, stats in company_stats.items():
+            avg_score = stats["total_score_sum"] / stats["total_submissions"] if stats["total_submissions"] > 0 else 0
             
-            # Count by status band
-            excellent_count = data["status_bands"].count("Excellent")
-            good_count = data["status_bands"].count("Good")
-            needs_improvement_count = data["status_bands"].count("Needs Improvement")
-            at_risk_count = data["status_bands"].count("At Risk")
-            
-            companies.append({
-                "company_name": data["company_name"],
-                "total_responses": len(data["scores"]),
+            final_companies.append({
+                "company_name": stats["company"],
+                "total_responses": stats["total_submissions"],
                 "average_score": round(avg_score, 2),
-                "excellent_count": excellent_count,
-                "good_count": good_count,
-                "needs_improvement_count": needs_improvement_count,
-                "at_risk_count": at_risk_count
+                "excellent_count": stats["excellent"],
+                "good_count": stats["good"],
+                "needs_improvement_count": stats["needs_improvement"],
+                "at_risk_count": stats["at_risk"]
             })
-        
-        return {"companies": companies}
+            
+        # Sort by total submissions descending
+        final_companies.sort(key=lambda x: x["total_responses"], reverse=True)
+            
+        return {"companies": final_companies}
         
     except Exception as e:
         import traceback
-        return {
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 @simple_admin_router.get("/unique-url-analytics")
 async def get_unique_url_analytics(
@@ -2824,6 +2923,10 @@ async def get_submissions(
         )
         
         query = apply_date_range_filter(query, date_range, start_date, end_date)
+        # Apply company_id filter explicitly (apply_demographic_filters doesn't handle it)
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
         query = apply_demographic_filters(query, filters, db)
         
         # Helper function to calculate age from DOB string (DD/MM/YYYY or ISO)
@@ -2980,6 +3083,7 @@ async def get_submissions_stats(
     income_ranges: Optional[str] = Query(None),
     age_groups: Optional[str] = Query(None),
     children: Optional[str] = Query(None),
+    companies: Optional[str] = Query(None),
     activeCompanies: Optional[str] = Query(None),
     current_user: User = Depends(get_current_admin_user),
     db: Session = Depends(get_db)
@@ -2997,7 +3101,7 @@ async def get_submissions_stats(
         # Start with global filters
         filters = parse_filter_params(
             age_groups, genders, nationalities, emirates,
-            employment_statuses, income_ranges, children, None, activeCompanies
+            employment_statuses, income_ranges, children, companies, activeCompanies
         )
 
         # Merge local (tab-specific) filters
@@ -3008,7 +3112,9 @@ async def get_submissions_stats(
                 if nationality not in filters['nationalities']: filters['nationalities'].append(nationality)
             else:
                 filters['nationalities'] = [nationality]
-        if company_id: filters['company_id'] = company_id
+        if company_id:
+             # Explicitly handle company_id (local unique URL filter)
+             filters['company_id'] = company_id
         if exclude_unique_urls: filters['exclude_unique_urls'] = True
         if company_name: filters['company_name'] = company_name
         if income_range:
@@ -3029,6 +3135,28 @@ async def get_submissions_stats(
         )
         
         query = apply_date_range_filter(query, date_range, start_date, end_date)
+        
+        # Apply company_id filter explicitly (apply_demographic_filters doesn't handle it)
+        if company_id:
+            query = query.filter(FinancialClinicResponse.company_tracker_id == company_id)
+
+        # Apply Company Name Filter logic (align with get_submissions)
+        # Note: apply_demographic_filters handles company_name but doesn't handle 'blank'/'other' logic correctly
+        # so we handle it here and remove from filters if needed, OR we trust apply_demographic_filters if we fix utils.py
+        # But for now, let's look at utils.py again. It handles (Blank) but not 'blank'/'other' from local filter values.
+        # Let's handle it explicitly here to be safe and consistent with get_submissions.
+        if company_name and company_name != 'all':
+            if company_name == 'blank' or company_name == 'other':
+                query = query.filter(
+                    or_(
+                        FinancialClinicProfile.company_name.is_(None),
+                        FinancialClinicProfile.company_name == ''
+                    )
+                )
+                # Remove from filters so apply_demographic_filters doesn't try to apply it again
+                if 'company_name' in filters:
+                    del filters['company_name']
+            
         query = apply_demographic_filters(query, filters, db)
         
         # For age_group filtering, we need to filter in Python since DOB is a string
@@ -3071,6 +3199,21 @@ async def get_submissions_stats(
                         if match:
                             filtered_ids.append(response.id)
             
+            # Re-query with filtered IDs
+            if filtered_ids:
+                query = db.query(FinancialClinicResponse).filter(
+                    FinancialClinicResponse.id.in_(filtered_ids)
+                )
+            else:
+                # No results match the age filter
+                return {
+                    'total': 0,
+                    'today': 0,
+                    'this_week': 0,
+                    'this_month': 0,
+                    'average_score': 0.0
+                }
+        
             # Re-query with filtered IDs
             if filtered_ids:
                 query = db.query(FinancialClinicResponse).filter(

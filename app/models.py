@@ -14,6 +14,9 @@ from app.models_consent import (
     DataSubjectRequest
 )
 
+# Import Email Automation Config
+from app.email_automation_model import EmailAutomationConfig
+
 
 class User(Base):
     """User model for authentication and basic user information."""
@@ -655,6 +658,10 @@ class FinancialClinicProfile(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # Email Automation Tracking
+    reminder_sent_count = Column(Integer, default=0, nullable=False)
+    last_reminder_at = Column(DateTime(timezone=True), nullable=True)
+    
     # Relationships
     survey_responses = relationship("FinancialClinicResponse", back_populates="profile")
     company_details = relationship("CompanyDetails")
@@ -875,4 +882,17 @@ class CompanyCustomerProfile(Base):
     # Relationships
     company = relationship("CompanyDetails", back_populates="customer_profiles")
     creator = relationship("User")
+
+
+class CRMAPIKey(Base):
+    """API Keys for external CRM integration."""
+    __tablename__ = "crm_api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    masked_key = Column(String(50), nullable=False)  # Example: fc_te...4f3a
+    hashed_key = Column(String(255), nullable=False, index=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
 

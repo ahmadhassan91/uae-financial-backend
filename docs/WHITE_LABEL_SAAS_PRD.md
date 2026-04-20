@@ -177,7 +177,16 @@ A multi-tenant SaaS platform where:
 - [ ] Responsive sizing on mobile
 - [ ] Fallback if logo fails to load
 
-#### FR-5.2: Question Variations (Existing)
+#### FR-5.2: Dynamic Homepage Text
+**Priority:** High
+**Description:** Customize the homepage header text for each tenant.
+**Acceptance Criteria:**
+- [ ] Admin can edit "Welcome" header text per tenant
+- [ ] Default to "National Bonds Financial Clinic" if not set
+- [ ] Display custom text on tenant landing page
+- [ ] Buttons and other elements remain standard
+
+#### FR-5.3: Question Variations (Existing)
 **Priority:** Medium  
 **Description:** Assign custom question sets per tenant.
 

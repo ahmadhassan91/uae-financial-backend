@@ -28,11 +28,14 @@ from app.admin.question_variation_routes import router as admin_question_variati
 from app.admin.variation_set_routes import router as admin_variation_set_router
 from app.admin.demographic_rule_routes import router as admin_demographic_rule_router
 from app.admin.localization_routes import router as admin_localization_router
+from app.admin.localization_routes import router as admin_localization_router
 from app.admin.simple_routes import simple_admin_router
+from app.admin.email_automation_routes import router as email_automation_router
 from app.surveys.financial_clinic_routes import router as financial_clinic_router
 from debug_companies import router as debug_router
 from app.consent.routes import router as consent_router
 from app.consultations.routes import router as consultations_router
+from app.crm.routes import router as crm_router
 
 # Initialize centralized logging
 setup_logging()
@@ -303,6 +306,8 @@ app.include_router(admin_variation_set_router, prefix="/api/v1")
 app.include_router(admin_demographic_rule_router, prefix="/api/v1")
 app.include_router(admin_localization_router, prefix="/api/v1")
 app.include_router(simple_admin_router, prefix="/api/v1")
+app.include_router(email_automation_router, prefix="/api/v1/admin")
+app.include_router(crm_router, prefix="/api/v1")
 app.include_router(debug_router, prefix="/api/v1")  # Debug endpoint
 from app.admin import variation_routes
 app.include_router(variation_routes.router, prefix="/api/v1")

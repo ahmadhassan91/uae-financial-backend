@@ -482,19 +482,19 @@ async def resume_survey_session(
             detail="Survey session not found"
         )
     
-    # Check if the survey is too old (30+ days)
+    # Check if the survey is too old (9 months / 270 days)
     from datetime import timedelta
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    nine_months_ago = datetime.utcnow() - timedelta(days=270)
     
     # Handle timezone-aware vs timezone-naive comparison
     started_at = incomplete_survey.started_at
     if hasattr(started_at, 'tzinfo') and started_at.tzinfo is not None:
         started_at = started_at.replace(tzinfo=None)
         
-    if started_at < thirty_days_ago:
+    if started_at < nine_months_ago:
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
-            detail="Survey session has expired"
+            detail="Survey session has expired. Sessions expire after 9 months."
         )
     
     # Update last activity to current time

@@ -27,7 +27,9 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
     
     Args:
         query: SQLAlchemy query object
-        date_range: Predefined date range ('7d', '30d', '90d', '1y', 'ytd', 'all')
+        date_range: Predefined date range.
+            Dashboard values: '7d', '30d', '90d', '1y', 'ytd', 'all'
+            CRM API values:   'today', 'yesterday', 'last_7_days', 'all'
         start_date: Custom start date (YYYY-MM-DD format)
         end_date: Custom end date (YYYY-MM-DD format)
         model: The model containing 'created_at' field (defaults to FinancialClinicResponse)
@@ -58,7 +60,7 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
     # Apply predefined date range filters
     now = datetime.now(pytz.UTC)
     
-    if date_range == "7d":
+    if date_range in ("7d", "last_7_days"):
         start_date_dt = now - timedelta(days=7)
         query = query.filter(model.created_at >= start_date_dt)
     elif date_range == "30d":
@@ -74,6 +76,18 @@ def apply_date_range_filter(query, date_range: str, start_date: Optional[str] = 
         # Year to date - from January 1st of current year
         start_date_dt = datetime(now.year, 1, 1).replace(tzinfo=pytz.UTC)
         query = query.filter(model.created_at >= start_date_dt)
+    elif date_range == "today":
+        # From midnight of the current day (UTC)
+        start_date_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(model.created_at >= start_date_dt)
+    elif date_range == "yesterday":
+        # Full previous calendar day (UTC)
+        yesterday_start = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        yesterday_end = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        query = query.filter(
+            model.created_at >= yesterday_start,
+            model.created_at < yesterday_end
+        )
     elif date_range == "all":
         # No date filtering for "all time"
         pass
@@ -168,19 +182,37 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
     if filters.get('exclude_unique_urls'):
         query = query.filter(FinancialClinicResponse.company_tracker_id.is_(None))
 
-    # Company filter (CompanyDetails)
+    # Company filter (CompanyDetails and Free-text)
     if filters.get('activeCompanies'):
         active_comps = filters['activeCompanies']
         if isinstance(active_comps, str):
             active_comps = [ac.strip() for ac in active_comps.split(',')]
             
-        active_company_ids = [int(cid) for cid in active_comps if cid.isdigit()]
+        active_company_ids = []
+        free_text_names = []
+        
+        for ac in active_comps:
+            if str(ac).isdigit():
+                active_company_ids.append(int(ac))
+            elif str(ac).startswith('free_text:'):
+                free_text_names.append(ac.replace('free_text:', '', 1))
+            elif ac == 'blank':
+                # Handled by separate logic if needed, but adding here for safety
+                pass
+        
+
+        conditions = []
         if active_company_ids:
-            query = query.filter(FinancialClinicProfile.company_details_id.in_(active_company_ids))
+            conditions.append(FinancialClinicProfile.company_details_id.in_(active_company_ids))
+        if free_text_names:
+            conditions.append(func.trim(FinancialClinicProfile.company_name).in_(free_text_names))
+            
+        if conditions:
+            query = query.filter(or_(*conditions))
 
     # Search filter (name, email, phone, company name)
     if filters.get('search'):
-        from sqlalchemy import or_
+
         search = filters['search']
         search_term = f"%{search}%"
         query = query.filter(
@@ -191,6 +223,26 @@ def apply_demographic_filters(query, filters: Dict[str, Any], db: Session):
                 FinancialClinicProfile.company_name.ilike(search_term)
             )
         )
+
+    # Company name filter (from Submissions tab dropdown)
+    if filters.get('company_name'):
+        company_name = filters['company_name']
+        
+        # Handle "(Blank)" selection from frontend
+        if company_name == "(Blank)":
+
+            query = query.filter(
+                or_(
+                    FinancialClinicProfile.company_name.is_(None),
+                    FinancialClinicProfile.company_name == ''
+                )
+            )
+        else:
+            # Strip " (User Entry)" suffix if present
+            clean_name = company_name.replace(" (User Entry)", "").strip()
+            # Use trim/ilike to match "Microsoft" against "Microsoft "
+
+            query = query.filter(func.trim(FinancialClinicProfile.company_name).ilike(f"%{clean_name}%"))
 
     # Status band filter
     if filters.get('status_band') and filters['status_band'] != 'all':
